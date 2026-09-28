@@ -1,10 +1,10 @@
 {% extends 'painel/base.html' %}
 {% block painel_content %}
 <h1>Serviços</h1><p>Preço e duração são definidos em cada profissional.</p>
-<div class="toolbar"><a href="{% url 'painel:servico_novo' %}">+ Novo serviço</a></div>
+<div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:servico_novo' %}">+ Novo serviço</a></div>
 <div class="cards">{% for servico in page_obj %}<article class="card">
 <h2>{{ servico.nome }}</h2><span class="badge {% if not servico.ativo %}inactive{% endif %}">{{ servico.ativo|yesno:'Ativo,Inativo' }}</span>
-<p><a href="{% url 'painel:servico_editar' servico.pk %}">Editar</a></p>
+<p><a class="ui-button ui-button-secondary" href="{% url 'painel:servico_editar' servico.pk %}">Editar</a></p>
 </article>{% empty %}<p>Nenhum serviço cadastrado.</p>{% endfor %}</div>
 {% include 'painel/paginacao.html' %}
 {% endblock %}

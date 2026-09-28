@@ -86,3 +86,19 @@ Os testes cobrem os três hosts, cadastro e manipulação de campos, autenticaç
 Consulte [o diagnóstico inicial e a recuperação das migrations](docs/estado-inicial.md) antes de aplicar em outro banco que já possua dados. Os arquivos históricos estavam ausentes; a reconstrução preserva o esquema encontrado e não pretende reproduzir operações intermediárias desconhecidas.
 
 Referências: [autenticação customizada do Django](https://docs.djangoproject.com/en/6.0/topics/auth/customizing/) e [constraints de modelos](https://docs.djangoproject.com/en/6.0/ref/models/constraints/).
+
+## Página inicial pública
+
+A rota `/` apresenta a plataforma no domínio raiz e o catálogo do estabelecimento em cada subdomínio. No domínio raiz, é possível encontrar um tenant ativo pelo seu identificador (por exemplo, `marcos`). Nos subdomínios, a página exibe somente profissionais, serviços e vínculos ativos do tenant atual, com valores/durações reais, busca e filtro por profissional. Contatos privados e fotos administrativas não são publicados.
+
+O catálogo tem paginação e estados vazios. O fluxo de escolha de horários e confirmação de agendamento ainda não foi implementado; a página informa isso e oferece cadastro/login. O visual reutiliza `--brand-color` em `usuarios/static/usuarios/theme.css`; o layout da vitrine está em `usuarios/static/usuarios/home.css`.
+
+## Loja de serviços
+
+Em `/loja/`, cada tenant tem uma vitrine própria, com cards de serviços, preço e duração por profissional, busca, filtros, ordenação e paginação. `/loja/<id>/` mostra os detalhes de uma oferta ativa do mesmo tenant. A página inicial possui um botão Loja. A vitrine usa o mesmo tema `--brand-color` e não exige migrations. Agendamento, carrinho de compras, checkout e pagamento não fazem parte desta entrega.
+
+### Página comercial da plataforma
+
+O domínio principal (`http://localhost:8000/`) apresenta a plataforma para donos de estabelecimentos. Os subdomínios continuam exibindo os serviços de cada tenant, incluindo sua loja em `/loja/`.
+
+Configure `PLATFORM_SALES_URL` no ambiente com o link comercial (por exemplo, WhatsApp ou formulário de contato). Sem essa variável, os botões direcionam para a apresentação dos recursos na própria página. A cor principal continua controlada por `--brand-color` em `usuarios/static/usuarios/theme.css`.

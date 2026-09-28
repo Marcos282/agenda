@@ -5,6 +5,6 @@
 {% if form.ativo %}<p class="muted">Para desativar um registro existente, desmarque “Ativo” e salve.</p>{% endif %}
 <form class="edit-form" method="post" enctype="multipart/form-data">
 {% csrf_token %}{{ form.as_p }}
-<div class="toolbar"><button type="submit">Salvar</button><a href="{{ voltar }}">Voltar</a></div>
+<div class="toolbar"><button type="submit">Salvar</button><a class="ui-button ui-button-secondary" href="{{ voltar }}">Voltar</a></div>
 </form>
 {% endblock %}

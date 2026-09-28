@@ -37,3 +37,13 @@ class LoginForm(forms.Form):
             if self.user is None:
                 raise forms.ValidationError("E-mail ou senha inválidos para este estabelecimento.")
         return data
+
+
+class EstabelecimentoForm(forms.Form):
+    estabelecimento = forms.CharField(label='Endereço do estabelecimento', max_length=63)
+
+    def clean_estabelecimento(self):
+        from tenants.models import subdomain_validator
+        value = self.cleaned_data['estabelecimento'].strip().lower()
+        subdomain_validator(value)
+        return value

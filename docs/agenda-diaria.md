@@ -92,3 +92,15 @@ python scripts/qa_agenda.py
 ```
 
 Se preferir o Chrome instalado, use `CHROME_EXECUTABLE=/caminho/do/chrome python scripts/qa_agenda.py`. O script usa o banco temporário de testes do Django e não deve rodar junto com `manage.py test`. Captura desktop/celular e verifica abertura, navegação, edição e erros. Screenshots ficam em `/tmp/agenda-qa` (ou em `QA_SCREENSHOTS`).
+
+## Tema visual
+
+O estilo compartilhado de autenticação, painel, cadastros e agenda fica em `usuarios/static/usuarios/theme.css`. Para trocar o verde, altere apenas:
+
+```css
+:root {
+  --brand-color: #287454;
+}
+```
+
+Os tons suaves, bordas, foco e hover são derivados dessa variável via `color-mix`. Uma futura configuração por tenant poderá sobrescrever `--brand-color` no elemento raiz, sem reescrever os componentes. Use uma cor suficientemente escura para manter a leitura dos botões com texto branco. Cores semânticas de erro, cancelamento e ocupação permanecem independentes.

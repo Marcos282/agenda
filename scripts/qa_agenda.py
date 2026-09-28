@@ -20,6 +20,7 @@ from playwright.sync_api import sync_playwright, expect
 from tenants.models import Tenant
 from profissionais.models import Profissional
 from usuarios.models import User
+from catalogo.models import Servico, ProfissionalServico
 from agenda.models import Disponibilidade
 from django.db import connections
 
@@ -42,6 +43,8 @@ try:
     tenant = Tenant.objects.create(nome='Marcos', subdomain='marcos')
     joao = Profissional.objects.create(tenant=tenant, nome='João')
     sandro = Profissional.objects.create(tenant=tenant, nome='Sandro')
+    service = Servico.objects.create(tenant=tenant, nome='Corte de cabelo')
+    ProfissionalServico.objects.create(tenant=tenant, profissional=joao, servico=service, valor='40.00', duracao_minutos=40)
     User.objects.create_user('visual@example.test', 'Visual-Test!2026', tenant=tenant, tipo='ADMIN')
     server = LiveServerThread('127.0.0.1', StaticFilesHandler)
     server.start(); server.is_ready.wait(timeout=10)
@@ -58,6 +61,38 @@ try:
         page = browser.new_page(viewport={'width': 1440, 'height': 1100}, locale='pt-BR')
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto(base + '/')
+        expect(page.locator('.service-card')).to_have_count(1)
+        page.screenshot(path=str(folder / 'home-desktop.png'), full_page=True)
+        page.set_viewport_size({'width': 390, 'height': 844})
+        assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Homepage mobile overflow'
+        page.screenshot(path=str(folder / 'home-mobile.png'), full_page=True)
+        page.get_by_label('Buscar serviço ou profissional').fill('Não existe')
+        page.get_by_role('button', name='Buscar →').click()
+        expect(page.get_by_role('heading', name='Nenhum serviço encontrado')).to_be_visible()
+        page.goto(f'http://localhost:{server.port}/')
+        expect(page.get_by_role('heading', name='Salões de beleza')).to_be_visible()
+        assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Platform mobile overflow'
+        page.screenshot(path=str(folder / 'plataforma-mobile.png'), full_page=True)
+        page.set_viewport_size({'width': 1440, 'height': 1100})
+        page.screenshot(path=str(folder / 'plataforma-desktop.png'), full_page=True)
+        page.get_by_label('Endereço do estabelecimento').fill('marcos')
+        page.get_by_role('button', name='Encontrar estabelecimento →').click()
+        page.wait_for_url(lambda url: url.startswith(base + '/'))
+        expect(page.locator('.service-card')).to_have_count(1)
+        page.set_viewport_size({'width': 1440, 'height': 1100})
+        page.goto(base + '/loja/')
+        expect(page.locator('.product-card')).to_have_count(1)
+        page.screenshot(path=str(folder / 'loja-desktop.png'), full_page=True)
+        page.set_viewport_size({'width': 390, 'height': 844})
+        assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Shop mobile overflow'
+        page.screenshot(path=str(folder / 'loja-mobile.png'), full_page=True)
+        page.get_by_role('link', name='Ver serviço', exact=False).last.click()
+        expect(page.get_by_role('heading', name='Corte de cabelo', exact=True, level=1)).to_be_visible()
+        expect(page.get_by_text('40 minutos de atendimento')).to_be_visible()
+        assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Shop details overflow'
+        page.screenshot(path=str(folder / 'loja-detalhe-mobile.png'), full_page=True)
+        page.set_viewport_size({'width': 1440, 'height': 1100})
         page.goto(base + '/login/')
         page.get_by_label('E-mail').fill('visual@example.test')
         page.locator('[name="password"]').fill('Visual-Test!2026')
@@ -82,6 +117,13 @@ try:
         expect(page.locator('.timeline-block.closed')).to_have_count(1)
         assert len(active_ids()) == 2
         page.screenshot(path=str(folder / 'desktop-aberta.png'), full_page=True)
+        # A single runtime variable recolors both shared buttons and agenda accents.
+        before = page.locator('.agenda-button.secondary').first.evaluate('(el) => getComputedStyle(el).color')
+        page.evaluate("document.documentElement.style.setProperty('--brand-color', '#65439a')")
+        after = page.locator('.agenda-button.secondary').first.evaluate('(el) => getComputedStyle(el).color')
+        assert before != after, 'Theme variable did not recolor agenda controls'
+        page.evaluate("document.documentElement.style.removeProperty('--brand-color')")
+
         page.get_by_role('link', name='Próximo dia').click()
         expect(page.locator('.agenda-status')).to_have_text('○ Agenda fechada')
         page.get_by_role('link', name='Dia anterior').click()
