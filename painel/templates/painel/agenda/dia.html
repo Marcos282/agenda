@@ -1,0 +1,64 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Agenda{% if profissional %} · {{ profissional.nome }}{% endif %} · {{ dia|date:'d/m/Y' }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/agenda.css' %}">{% endblock %}
+{% block painel_content %}
+<div class="agenda-page">
+<header class="agenda-header"><div><span class="agenda-kicker">SEU ESTABELECIMENTO, DIA A DIA</span><h1>Agenda</h1><p>Um dia de cada vez. Cada profissional no seu ritmo.</p></div><span class="timezone-label">Horário de {{ request.tenant.timezone }}</span></header>
+<section class="day-navigation" aria-label="Selecionar dia">
+  <div class="day-arrows">
+    {% if anterior %}<a class="icon-button" href="{% url 'painel:agenda' %}?data={{ anterior }}{% if profissional %}&amp;profissional={{ profissional.pk }}{% endif %}" aria-label="Dia anterior">←</a>{% endif %}
+    <div class="selected-date"><strong>{{ dia|date:'d \d\e F, Y' }}</strong><span>{{ dia|date:'l' }}</span></div>
+    {% if proximo %}<a class="icon-button" href="{% url 'painel:agenda' %}?data={{ proximo }}{% if profissional %}&amp;profissional={{ profissional.pk }}{% endif %}" aria-label="Próximo dia">→</a>{% endif %}
+  </div>
+  <div class="date-controls"><a class="agenda-button secondary" href="{% url 'painel:agenda' %}?data={{ hoje }}{% if profissional %}&amp;profissional={{ profissional.pk }}{% endif %}">Hoje</a>
+    <form method="get" action="{% url 'painel:agenda' %}" class="date-picker"><label for="agenda-date" class="sr-only">Selecionar data</label><input id="agenda-date" type="date" name="data" value="{{ data_iso }}" required>
+      {% if profissional %}<input type="hidden" name="profissional" value="{{ profissional.pk }}">{% endif %}<button type="submit" class="agenda-button secondary">Ver dia</button>
+    </form>
+  </div>
+</section>
+<nav class="professional-tabs" aria-label="Selecionar profissional">
+{% for item in profissionais %}
+<a class="professional-tab {% if item.pk == profissional.pk %}selected{% endif %}" href="{% url 'painel:agenda' %}?data={{ data_iso }}&amp;profissional={{ item.pk }}" {% if item.pk == profissional.pk %}aria-current="page"{% endif %}>
+{% if item.foto %}<img class="agenda-avatar" src="{% url 'painel:profissional_foto' item.pk %}" alt="">{% else %}<span class="agenda-avatar initials" aria-hidden="true">{{ item.nome|first|upper }}</span>{% endif %}
+<span><strong>{{ item.nome }}</strong><span class="tab-status {% if item.ativo and item.tem_periodos %}open{% endif %}">{% if not item.ativo %}○ Inativo{% elif item.tem_periodos %}● Aberta{% else %}○ Fechada{% endif %}</span></span>
+</a>
+{% empty %}<div class="empty-professionals"><p>Cadastre seu primeiro profissional para começar a organizar a agenda.</p><a class="agenda-button" href="{% url 'painel:profissional_novo' %}">+ Novo profissional</a></div>{% endfor %}
+</nav>
+{% if profissional %}
+<section class="day-card" aria-labelledby="professional-heading">
+<header class="professional-heading"><div><h2 id="professional-heading">{{ profissional.nome }}</h2><p>{{ dia|date:'l, d/m/Y' }}</p></div>
+<div class="day-actions"><span class="agenda-status {% if aberta %}is-open{% else %}is-closed{% endif %}">{% if aberta %}● Agenda aberta{% else %}○ Agenda fechada{% endif %}</span>
+{% if profissional.ativo and aberta %}<a class="agenda-button secondary" data-open-schedule href="{{ agenda_url }}&amp;configurar=1#schedule-editor">{% if aberta %}Configurar horários{% else %}+ Abrir agenda{% endif %}</a>{% endif %}</div></header>
+{% if aberta %}
+<div class="timeline-legend" aria-label="Legenda"><span><i class="legend-free"></i>Livre</span><span><i class="legend-booked"></i>Agendamento</span><span><i class="legend-closed"></i>Intervalo / fechado</span></div>
+<div class="timeline-wrap" data-timeline-container>
+<div class="timeline" data-timeline aria-label="Linha do tempo de {{ profissional.nome }}"></div>
+<div class="timeline-fallback"><p>Períodos abertos:</p><ul>{% for periodo in periodos %}<li>{{ periodo.hora_inicio|time:'H:i' }} → {{ periodo.hora_fim|time:'H:i' }} · Livre</li>{% endfor %}</ul><p>Fora desses períodos, a agenda está fechada.</p></div>
+</div>
+<div class="day-footer"><span>✓ Períodos de atendimento definidos</span><span>Fora dos períodos: fechado</span></div>
+{% else %}
+<div class="closed-day"><span class="closed-icon" aria-hidden="true">☾</span><h3>{% if profissional.ativo %}Este dia ainda está fechado{% else %}Profissional inativo{% endif %}</h3>
+<p>{% if profissional.ativo %}Nenhum período foi aberto para atendimento neste dia.<br>Defina os horários para abrir a agenda de {{ profissional.nome }}.{% else %}Ative o profissional para disponibilizar seus períodos de atendimento.{% endif %}</p>
+{% if profissional.ativo %}<a class="agenda-button" data-open-schedule href="{{ agenda_url }}&amp;configurar=1#schedule-editor">+ Abrir agenda</a>{% else %}<a class="agenda-button secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar profissional</a>{% endif %}
+</div>
+{% endif %}
+</section>
+<section id="schedule-editor" class="schedule-editor {% if not configurando %}editor-collapsed{% endif %}" aria-labelledby="editor-title" data-editor data-show="{{ configurando|yesno:'true,false' }}">
+<div class="editor-surface"><header class="editor-heading"><div><span class="agenda-kicker">PERÍODOS DE ATENDIMENTO</span><h2 id="editor-title">{% if aberta %}Configurar horários{% else %}Abrir agenda{% endif %}</h2></div><a href="{{ agenda_url }}" class="icon-button" data-close-schedule aria-label="Fechar configuração">×</a></header>
+<div class="editor-context"><strong>{{ profissional.nome }}</strong><span>{{ dia|date:'d/m/Y' }}</span></div>
+<p class="editor-help">Adicione os períodos em que haverá atendimento. O tempo entre eles fica fechado.</p>
+{% if erro_agenda %}<p class="agenda-error" role="alert">{{ erro_agenda }} <a href="{{ agenda_url }}&amp;configurar=1">Recarregar configuração</a></p>{% endif %}
+<form method="post" action="{{ agenda_url }}" data-period-form>{% csrf_token %}<input type="hidden" name="revisao" value="{{ revisao }}">
+{{ formset.management_form }}{{ formset.non_form_errors }}
+<div class="period-rows" data-period-rows>{% for form in formset %}{% include 'painel/agenda/periodo.html' %}{% endfor %}</div>
+<button type="button" class="add-period" data-add-period hidden>+ Adicionar período</button>
+<template data-empty-period>{% include 'painel/agenda/periodo.html' with form=formset.empty_form %}</template>
+<p class="close-day-hint">Para fechar o dia, remova todos os períodos e salve. O histórico será preservado.</p>
+<footer class="editor-footer"><a class="agenda-button secondary" href="{{ agenda_url }}" data-close-schedule>Cancelar</a><button type="submit" class="agenda-button">{% if aberta %}Salvar horários{% else %}Abrir agenda{% endif %}</button></footer>
+</form></div>
+</section>
+{{ timeline|json_script:'agenda-data' }}
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'painel/agenda.js' %}" defer></script>{% endblock %}

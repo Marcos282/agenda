@@ -1,0 +1,17 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Painel · {{ request.tenant.nome }}{% endblock %}
+{% block extra_css %}
+main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:20px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.card{border:1px solid #dce5df;border-radius:10px;padding:20px}
+.card h2{margin-top:0;font-size:1.2rem}.badge{font-size:.85rem;padding:4px 8px;background:#edf5ef;border-radius:4px}
+.inactive{background:#f0eded;color:#695252}.photo{width:64px;height:64px;object-fit:cover;border-radius:50%}
+.edit-form{max-width:520px}.panel-nav{padding-bottom:20px;border-bottom:1px solid #dce5df;margin:0 0 24px}
+@media(max-width:960px){main{margin:24px 16px}}
+{% endblock %}
+{% block content %}
+<nav class="panel-nav" aria-label="Painel administrativo">
+<a href="{% url 'painel:inicio' %}">Painel</a><a href="{% url 'painel:profissionais' %}">Profissionais</a>
+<a href="{% url 'painel:servicos' %}">Serviços</a><a href="{% url 'painel:agenda' %}">Agenda</a>
+</nav>
+{% block painel_content %}{% endblock %}
+{% endblock %}

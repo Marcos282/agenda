@@ -1,0 +1,10 @@
+{% extends 'painel/base.html' %}
+{% block painel_content %}
+<h1>{{ titulo }}</h1>
+{% if profissional %}<p>{{ profissional.nome }}{% if not profissional.ativo %} · Profissional inativo{% endif %}</p>{% endif %}
+{% if form.ativo %}<p class="muted">Para desativar um registro existente, desmarque “Ativo” e salve.</p>{% endif %}
+<form class="edit-form" method="post" enctype="multipart/form-data">
+{% csrf_token %}{{ form.as_p }}
+<div class="toolbar"><button type="submit">Salvar</button><a href="{{ voltar }}">Voltar</a></div>
+</form>
+{% endblock %}

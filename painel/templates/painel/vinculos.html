@@ -1,0 +1,13 @@
+{% extends 'painel/base.html' %}
+{% block painel_content %}
+<h1>{{ profissional.nome }} · Serviços</h1>
+{% if profissional.ativo %}<div class="toolbar"><a href="{% url 'painel:vinculo_novo' profissional.pk %}">+ Adicionar serviço</a></div>
+{% else %}<p class="notice">Profissional inativo. Seus serviços não estão disponíveis para novos atendimentos.</p>{% endif %}
+<div class="cards">{% for vinculo in page_obj %}<article class="card">
+<h2>{{ vinculo.servico.nome }}</h2><p>R$ {{ vinculo.valor|floatformat:2 }} · {{ vinculo.duracao_minutos }} min</p>
+<span class="badge {% if not vinculo.ativo %}inactive{% endif %}">{{ vinculo.ativo|yesno:'Ativo,Inativo' }}</span>
+{% if not vinculo.servico.ativo %}<p>Serviço desativado no catálogo.</p>{% endif %}
+<p><a href="{% url 'painel:vinculo_editar' profissional.pk vinculo.pk %}">Editar</a></p>
+</article>{% empty %}<p>Nenhum serviço vinculado.</p>{% endfor %}</div>
+{% include 'painel/paginacao.html' %}
+{% endblock %}

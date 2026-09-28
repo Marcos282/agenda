@@ -1,0 +1,10 @@
+{% extends 'usuarios/base.html' %}
+{% block content %}
+{% if request.tenant %}
+<h1>Bem-vindo a {{ request.tenant.nome }}</h1>
+<p>Crie sua conta ou entre para acessar seu estabelecimento.</p>
+{% else %}
+<h1>Seu estabelecimento, mais perto.</h1>
+<p>Acesse o endereço do seu estabelecimento para criar sua conta ou entrar.</p>
+{% endif %}
+{% endblock %}

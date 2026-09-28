@@ -1,0 +1,10 @@
+{% extends 'painel/base.html' %}
+{% block painel_content %}
+<h1>Organize seu estabelecimento</h1>
+<p>Cadastre os profissionais e os serviços. Depois, defina o valor, a duração e os períodos de atendimento de cada profissional.</p>
+<div class="cards">
+<section class="card"><h2>Profissionais</h2><p>Equipe, serviços e disponibilidade individual.</p><a href="{% url 'painel:profissionais' %}">Gerenciar profissionais →</a></section>
+<section class="card"><h2>Serviços</h2><p>Catálogo de atendimentos do estabelecimento.</p><a href="{% url 'painel:servicos' %}">Gerenciar serviços →</a></section>
+<section class="card"><h2>Agenda diária</h2><p>Escolha um profissional e abra os períodos de atendimento do dia.</p><a href="{% url 'painel:agenda' %}">Abrir agenda →</a></section>
+</div>
+{% endblock %}

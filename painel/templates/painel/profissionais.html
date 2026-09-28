@@ -1,0 +1,13 @@
+{% extends 'painel/base.html' %}
+{% block painel_content %}
+<h1>Profissionais</h1>
+<div class="toolbar"><a href="{% url 'painel:profissional_novo' %}">+ Novo profissional</a></div>
+<div class="cards">
+{% for profissional in page_obj %}<article class="card">
+{% if profissional.foto %}<img class="photo" src="{% url 'painel:profissional_foto' profissional.pk %}" alt="Foto de {{ profissional.nome }}">{% endif %}
+<h2>{{ profissional.nome }}</h2>
+<span class="badge {% if not profissional.ativo %}inactive{% endif %}">{{ profissional.ativo|yesno:'Ativo,Inativo' }}</span>
+<div class="toolbar"><a href="{% url 'painel:profissional_editar' profissional.pk %}">Editar</a><a href="{% url 'painel:vinculos' profissional.pk %}">Serviços</a><a href="{% url 'painel:disponibilidades' profissional.pk %}">Agenda</a></div>
+</article>{% empty %}<p>Nenhum profissional cadastrado. A agenda de cada novo profissional começa fechada.</p>{% endfor %}
+</div>{% include 'painel/paginacao.html' %}
+{% endblock %}

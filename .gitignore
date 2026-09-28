@@ -1,0 +1,9 @@
+myenv/
+.venv/
+__pycache__/
+*.py[cod]
+.local-settings.json
+.env
+*.dump
+media/
+staticfiles/

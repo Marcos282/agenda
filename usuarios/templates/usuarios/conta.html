@@ -1,0 +1,6 @@
+{% extends 'usuarios/base.html' %}
+{% block content %}
+<h1>Minha conta</h1>
+<p>Você está conectado a <strong>{{ request.tenant.nome }}</strong>.</p>
+<p>{{ user.email }}</p>
+{% endblock %}

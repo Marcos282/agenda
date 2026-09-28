@@ -1,0 +1,10 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+<h1>{{ titulo }}</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">{{ botao }}</button>
+</form>
+{% endblock %}

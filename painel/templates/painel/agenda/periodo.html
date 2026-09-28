@@ -1,0 +1,7 @@
+<div class="period-row" data-period-row>
+  <div class="period-field"><label for="{{ form.hora_inicio.id_for_label }}">Início</label>{{ form.hora_inicio }}{{ form.hora_inicio.errors }}</div>
+  <span class="period-arrow" aria-hidden="true">→</span>
+  <div class="period-field"><label for="{{ form.hora_fim.id_for_label }}">Fim</label>{{ form.hora_fim }}{{ form.hora_fim.errors }}</div>
+  <label class="period-remove" for="{{ form.DELETE.id_for_label }}">{{ form.DELETE }}<span>Remover</span></label>
+  {{ form.non_field_errors }}
+</div>
