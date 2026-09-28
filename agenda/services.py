@@ -1,4 +1,4 @@
-"""Atomic daily configuration; no slots, deletions, or booking rules."""
+"""Atomic daily configuration preserving confirmed reservations."""
 import hashlib
 import hmac
 from django.core.exceptions import ValidationError
@@ -30,6 +30,8 @@ def configurar_dia(*, tenant, profissional_id, data, periodos, revisao):
         if previous_end is not None and start < previous_end:
             raise ValidationError('Os períodos se sobrepõem.')
         previous_end = end
+    from .booking import validar_cobertura
+    validar_cobertura(tenant=tenant, profissional_id=profissional.pk, data=data, periodos=periodos)
     desejados = set(periodos)
     existentes = {(p.hora_inicio, p.hora_fim) for p in atuais}
     removidos = [p.pk for p in atuais if (p.hora_inicio, p.hora_fim) not in desejados]

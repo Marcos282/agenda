@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'catalogo',
     'agenda',
     'painel',
+    'whatsapp',
 
 ]
 
@@ -171,3 +172,8 @@ if not DEBUG and SECRET_KEY.startswith("django-insecure-"):
 
 # Public commercial contact (e.g. https://wa.me/...); never a secret.
 PLATFORM_SALES_URL = os.environ.get("PLATFORM_SALES_URL", "")
+
+# Evolution API credentials belong to this deployment, never to browser forms.
+EVOLUTION_API_URL = os.environ.get('EVOLUTION_API_URL', LOCAL.get('EVOLUTION_API_URL', ''))
+EVOLUTION_API_KEY = os.environ.get('EVOLUTION_API_KEY', LOCAL.get('EVOLUTION_API_KEY', ''))
+EVOLUTION_INSTANCE_PREFIX = os.environ.get('EVOLUTION_INSTANCE_PREFIX', 'barbe_tenant')

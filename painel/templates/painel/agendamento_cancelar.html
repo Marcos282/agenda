@@ -1,0 +1,13 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Cancelar agendamento · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}">{% endblock %}
+{% block painel_content %}
+<span class="booking-step">AGENDAMENTO #{{ agendamento.pk }}</span><h1>Cancelar agendamento</h1>
+<section class="booking-receipt"><span class="booking-status">{{ agendamento.get_status_display }}</span><h2>{{ agendamento.servico_nome }}</h2><p>Com {{ agendamento.profissional_nome }}</p>
+<dl><div><dt>Cliente</dt><dd>{{ agendamento.cliente_nome }}</dd></div><div><dt>WhatsApp</dt><dd>{{ agendamento.whatsapp_contato|default:'Não informado' }}</dd></div><div><dt>Data</dt><dd>{{ agendamento.inicio|date:'d/m/Y' }}</dd></div><div><dt>Horário</dt><dd>{{ agendamento.inicio|time:'H:i' }} → {{ agendamento.fim|time:'H:i' }}</dd></div><div><dt>Valor</dt><dd>R$ {{ agendamento.valor|floatformat:2 }}</dd></div></dl>
+<small>Horário de {{ request.tenant.timezone }}.</small></section>
+{% if erro %}<p class="booking-error" role="alert">{{ erro }}</p>{% endif %}
+{% if pode_cancelar %}<p>Confirma o cancelamento deste atendimento? O horário ficará disponível novamente. O agendamento continuará no histórico do cliente como cancelado.</p>
+<form method="post">{% csrf_token %}<div class="booking-actions"><button type="submit">Confirmar cancelamento</button><a class="ui-button ui-button-secondary" href="{{ voltar }}">Manter agendamento</a></div></form>
+{% else %}<p>{% if agendamento.status == 'CANCELADO' %}Este agendamento já foi cancelado.{% else %}Não é possível cancelar um atendimento que já começou.{% endif %}</p><a class="ui-button ui-button-secondary" href="{{ voltar }}">Voltar à agenda</a>{% endif %}
+{% endblock %}

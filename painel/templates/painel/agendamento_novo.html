@@ -1,0 +1,24 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Novo agendamento · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}">{% endblock %}
+{% block painel_content %}
+<span class="booking-step">AGENDAMENTO PELO ESTABELECIMENTO</span><h1>Novo agendamento</h1>
+{% if selecionando %}
+<p class="booking-subtitle">Informe o nome e o WhatsApp do cliente para reservar um horário.</p>
+<form method="post" class="edit-form">{% csrf_token %}{{ form.as_p }}<button type="submit" name="acao" value="consultar">Escolher horário →</button></form>
+<p class="booking-note">Não é necessário que o cliente tenha uma conta. A agenda precisa estar aberta para a data escolhida.</p>
+{% else %}
+<section class="booking-summary"><span class="booking-symbol" aria-hidden="true">◷</span><div><h2>{{ oferta.servico.nome }}</h2><p>Com {{ oferta.profissional.nome }}</p><strong>R$ {{ oferta.valor|floatformat:2 }} <span>· {{ oferta.duracao_minutos }} min</span></strong></div></section>
+<div class="booking-day"><div><strong>{{ dia|date:'l, d/m/Y' }}</strong><small>Horário de {{ request.tenant.timezone }}</small></div></div>
+<p><strong>Cliente:</strong> {{ nome }}<br><small>WhatsApp: {{ whatsapp }}</small></p>
+{% if horario_form.errors %}<div class="booking-error" role="alert">{{ horario_form.non_field_errors }}{{ horario_form.hora.errors }}{{ horario_form.cotacao.errors }}</div>{% endif %}
+<form method="post" class="booking-confirm">{% csrf_token %}{% for field in form %}{{ field.as_hidden }}{% endfor %}{{ horario_form.cotacao }}
+{% if horarios %}<fieldset><legend>Escolha o início do atendimento</legend><div class="booking-slots">{% for horario in horarios %}<label class="booking-slot"><input type="radio" name="hora" value="{{ horario.hora }}" required {% if horario_form.hora.value == horario.hora %}checked{% endif %}><span><strong>{{ horario.hora }}</strong><small>até {{ horario.fim }}</small></span></label>{% endfor %}</div></fieldset>
+<p class="booking-note">A reserva será confirmada imediatamente e aparecerá na agenda do profissional e no histórico do cliente no painel.</p>
+<button type="submit" name="acao" value="confirmar">Confirmar agendamento →</button>
+{% else %}<div class="booking-empty"><h2>Nenhum horário disponível neste dia.</h2><p>Confira os períodos abertos na agenda ou escolha outro serviço e outra data.</p></div>{% endif %}
+<button type="submit" name="acao" value="editar" formnovalidate class="ui-button ui-button-secondary">← Alterar dados</button>
+</form>
+{% endif %}
+<div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}{% if oferta %}?profissional={{ oferta.profissional_id }}&amp;data={{ dia|date:'Y-m-d' }}{% endif %}">Voltar à agenda</a></div>
+{% endblock %}

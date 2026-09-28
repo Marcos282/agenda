@@ -43,7 +43,7 @@
       add('free', freeStart, window.end);
       cursor = window.end;
     }
-    for (const a of appointments) add(a.status === 'CANCELADO' ? 'cancelled' : 'booked', Math.max(start, a.start), Math.min(end, a.end), {appointment: a});
+    for (const a of appointments) add(a.status === 'CANCELADO' ? 'cancelled' : a.status === 'NAO_COMPARECEU' ? 'no-show' : 'booked', Math.max(start, a.start), Math.min(end, a.end), {appointment: a});
     const ticks = [{at: start, text: clock(start)}];
     for (let at = Math.ceil(start / 3600) * 3600; at < end; at += 3600) {
       if (at > start && at - start >= 900 && end - at >= 900) ticks.push({at, text: clock(at)});
@@ -66,7 +66,7 @@
       block.className = `timeline-block ${item.kind}${item.height < 48 ? ' compact' : ''}`;
       block.style.top = `${item.top}px`; block.style.height = `${item.height}px`;
       const title = appointment ? `${appointment.cliente} · ${appointment.servico}` : item.kind === 'closed' ? 'Intervalo / fechado' : 'Livre';
-      const details = `${clock(item.start)} → ${clock(item.end)}${appointment ? ` · ${Math.round((appointment.end - appointment.start) / 60)} min · R$ ${appointment.valor} · ${appointment.status}` : ''}`;
+      const details = `${clock(item.start)} → ${clock(item.end)}${appointment ? ` · ${Math.round((appointment.end - appointment.start) / 60)} min · R$ ${appointment.valor} · ${appointment.statusLabel || appointment.status}` : ''}`;
       block.setAttribute('aria-label', `${title}. ${details}`); block.title = `${title}. ${details}`;
       const heading = document.createElement('strong'); heading.textContent = title;
       const text = document.createElement('span'); text.textContent = details;
@@ -76,7 +76,16 @@
         const h = document.createElement('h3'); h.textContent = title;
         const p = document.createElement('p'); p.textContent = details;
         const close = document.createElement('button'); close.textContent = 'Fechar'; close.addEventListener('click', () => dialog.close());
-        dialog.append(h, p, close); document.body.append(dialog); dialog.addEventListener('close', () => dialog.remove()); dialog.showModal();
+        dialog.append(h, p);
+        if (appointment.cancelUrl) {
+          const cancel = document.createElement('a'); cancel.className = 'ui-button ui-button-secondary';
+          cancel.href = appointment.cancelUrl; cancel.textContent = 'Cancelar agendamento'; dialog.append(cancel);
+        }
+        if (appointment.noShowUrl) {
+          const noShow = document.createElement('a'); noShow.className = 'ui-button ui-button-secondary';
+          noShow.href = appointment.noShowUrl; noShow.textContent = 'Marcar falta'; dialog.append(noShow);
+        }
+        dialog.append(close); document.body.append(dialog); dialog.addEventListener('close', () => dialog.remove()); dialog.showModal();
       });
       element.append(block);
     }

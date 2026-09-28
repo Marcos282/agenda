@@ -47,7 +47,7 @@ class FoundationTests(TestCase):
         for tenant in [self.marcos, self.wanessa]:
             email = f'{tenant.subdomain}@example.com'
             response = self.client.post('/cadastro/', {
-                'email': email.upper(), 'password1': PASSWORD, 'password2': PASSWORD,
+                'email': email.upper(), 'whatsapp': '(11) 99999-1234', 'password1': PASSWORD, 'password2': PASSWORD,
                 'tenant_id': self.sofia.pk, 'tenant': self.sofia.pk,
                 'tipo': 'ADMIN', 'is_staff': True, 'is_superuser': True,
             }, HTTP_HOST=f'{tenant.subdomain}.localhost')
@@ -66,7 +66,7 @@ class FoundationTests(TestCase):
 
     def test_password_confirmation_and_validators(self):
         for password1, password2 in [(PASSWORD, 'different'), ('12345678', '12345678')]:
-            response = self.client.post('/cadastro/', {'email': 'new@example.com', 'password1': password1, 'password2': password2}, HTTP_HOST='marcos.localhost')
+            response = self.client.post('/cadastro/', {'email': 'new@example.com', 'whatsapp': '11999991234', 'password1': password1, 'password2': password2}, HTTP_HOST='marcos.localhost')
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['form'].errors)
         self.assertFalse(User.objects.filter(email='new@example.com').exists())
@@ -117,7 +117,7 @@ class FoundationTests(TestCase):
         self.assertEqual(self.post_login().status_code, 404)
 
     def test_duplicate_email_rejected_across_tenants_form_and_database(self):
-        response = self.client.post('/cadastro/', {'email': self.user.email.upper(), 'password1': PASSWORD, 'password2': PASSWORD}, HTTP_HOST='wanessa.localhost')
+        response = self.client.post('/cadastro/', {'email': self.user.email.upper(), 'whatsapp': '11999991234', 'password1': PASSWORD, 'password2': PASSWORD}, HTTP_HOST='wanessa.localhost')
         self.assertIn('email', response.context['form'].errors)
         for email in [self.user.email, self.user.email.upper()]:
             with self.subTest(email=email), self.assertRaises(IntegrityError), transaction.atomic():

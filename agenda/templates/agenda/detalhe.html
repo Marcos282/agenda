@@ -1,0 +1,8 @@
+{% extends 'agenda/base.html' %}
+{% block content %}
+<span class="booking-step">SEU AGENDAMENTO #{{ agendamento.pk }}</span><h1>{% if agendamento.status == 'CANCELADO' %}Agendamento cancelado{% elif agendamento.status == 'NAO_COMPARECEU' %}Não compareceu{% else %}Seu horário está reservado.{% endif %}</h1>
+<section class="booking-receipt"><span class="booking-status">{% if agendamento.status == 'CONFIRMADO' %}✓{% else %}○{% endif %} {{ agendamento.get_status_display }}</span><h2>{{ agendamento.servico_nome }}</h2><p>Com {{ agendamento.profissional_nome }}</p><dl><div><dt>Data</dt><dd>{{ agendamento.inicio|date:'d/m/Y' }}</dd></div><div><dt>Horário</dt><dd>{{ agendamento.inicio|time:'H:i' }} → {{ agendamento.fim|time:'H:i' }}</dd></div><div><dt>Duração</dt><dd>{{ agendamento.duracao_minutos }} minutos</dd></div><div><dt>Valor</dt><dd>R$ {{ agendamento.valor|floatformat:2 }}</dd></div><div><dt>Cliente</dt><dd>{{ agendamento.cliente_nome }}</dd></div></dl><small>Horário de {{ request.tenant.timezone }}. Nenhum pagamento online foi realizado.</small></section>
+{% if erro %}<p role="alert" class="booking-error">{{ erro }}</p>{% endif %}
+<div class="booking-actions"><a class="ui-button" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Explorar serviços</a></div>
+{% if pode_cancelar %}<details class="booking-cancel"><summary>Precisa cancelar?</summary><p>Ao cancelar, o horário ficará disponível para outras pessoas. Esta reserva não poderá ser reativada.</p><form method="post">{% csrf_token %}<button class="ui-button ui-button-secondary" type="submit">Confirmar cancelamento</button></form></details>{% endif %}
+{% endblock %}

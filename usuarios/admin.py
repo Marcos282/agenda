@@ -7,7 +7,7 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('email', 'tenant', 'tipo', 'is_active')
     list_filter = ('tipo', 'is_active', 'tenant')
     search_fields = ('email',)
-    fields = ('email', 'tenant', 'tipo', 'is_active', 'is_staff', 'is_superuser', 'date_joined', 'last_login')
+    fields = ('email', 'whatsapp', 'tenant', 'tipo', 'is_active', 'is_staff', 'is_superuser', 'date_joined', 'last_login')
     readonly_fields = tuple(field for field in fields if field != 'tipo')
 
     def get_readonly_fields(self, request, obj=None):

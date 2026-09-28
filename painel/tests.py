@@ -8,7 +8,7 @@ from threading import Barrier
 from PIL import Image
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import IntegrityError, close_old_connections, connection, connections, transaction
+from django.db import IntegrityError, OperationalError, close_old_connections, connection, connections, transaction
 from django.db.models.deletion import ProtectedError
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
@@ -317,6 +317,12 @@ class ConcurrentWindowsTests(TransactionTestCase):
                 return 'created'
             except IntegrityError as exc:
                 return exc.__cause__.diag.constraint_name
+            except OperationalError as exc:
+                # Raw simultaneous GiST inserts can resolve by aborting a deadlock victim.
+                # Application writes serialize on the professional instead.
+                if getattr(exc.__cause__, 'sqlstate', None) != '40P01':
+                    raise
+                return 'deadlock_aborted'
             finally:
                 connections['default'].close()
 
@@ -324,5 +330,6 @@ class ConcurrentWindowsTests(TransactionTestCase):
             one = executor.submit(insert_window, 9, 12)
             two = executor.submit(insert_window, 10, 13)
             results = [one.result(timeout=15), two.result(timeout=15)]
-        self.assertCountEqual(results, ['created', 'disp_sem_sobreposicao'])
+        self.assertEqual(results.count('created'), 1)
+        self.assertTrue(all(result in {'created', 'disp_sem_sobreposicao', 'deadlock_aborted'} for result in results))
         self.assertEqual(Disponibilidade.objects.count(), 1)

@@ -7,4 +7,5 @@
   {{ form.as_p }}
   <button type="submit">{{ botao }}</button>
 </form>
+{% if login_form %}<p>Ainda não tem conta?</p><a class="ui-button ui-button-secondary" href="{% url 'cadastro' %}{% if destino %}?next={{ destino|urlencode }}{% endif %}">Criar conta</a>{% endif %}
 {% endblock %}

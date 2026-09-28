@@ -102,3 +102,21 @@ Em `/loja/`, cada tenant tem uma vitrine própria, com cards de serviços, preç
 O domínio principal (`http://localhost:8000/`) apresenta a plataforma para donos de estabelecimentos. Os subdomínios continuam exibindo os serviços de cada tenant, incluindo sua loja em `/loja/`.
 
 Configure `PLATFORM_SALES_URL` no ambiente com o link comercial (por exemplo, WhatsApp ou formulário de contato). Sem essa variável, os botões direcionam para a apresentação dos recursos na própria página. A cor principal continua controlada por `--brand-color` em `usuarios/static/usuarios/theme.css`.
+
+### Agendamentos online
+
+O cliente pode agendar pela loja ou pelos serviços da página do estabelecimento. A confirmação exige login e é automática, com consulta e cancelamento em `/agendamentos/`. As reservas aparecem na agenda administrativa. Antes de iniciar o servidor atualizado, execute `myenv/bin/python manage.py migrate`. Detalhes em [docs/agendamentos.md](docs/agendamentos.md).
+
+### WhatsApp dos clientes
+
+O cadastro público exige WhatsApp com DDD. Números brasileiros são salvos com `+55`; números de outros países devem ser informados com `+` e código do país. O cliente pode atualizar o contato em `/conta/`.
+
+Contas anteriores sem WhatsApp são preservadas. Ao entrar, o cliente é direcionado para completar o cadastro; novas reservas, inclusive pelo painel, exigem esse contato. Consultas e cancelamentos de reservas existentes continuam disponíveis. A validação confere o formato do telefone; não verifica a existência de uma conta WhatsApp nem envia mensagens.
+
+A confirmação do agendamento também exibe WhatsApp obrigatório, preenchido com o contato da conta. Enviar vazio ou inválido bloqueia a reserva, mesmo quando a conta já possui um número. Correções do número são salvas junto com a reserva, na mesma transação.
+
+No agendamento pelo painel, informe o nome do cliente em texto e o WhatsApp obrigatório. Não é exigida conta do cliente; um contato é registrado com seu histórico na seção Clientes. Agendamentos públicos continuam exigindo login.
+
+### WhatsApp e lembretes de agendamento
+
+O painel possui configuração por estabelecimento, conexão Evolution API por QR code e mensagem de lembrete com antecedência ajustável (padrão: 2 horas). Consulte [configuração e execução periódica](docs/whatsapp.md) para ativar o envio automático.

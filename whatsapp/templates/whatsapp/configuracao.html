@@ -1,0 +1,34 @@
+{% extends 'painel/base.html' %}
+{% block title %}WhatsApp{% endblock %}
+{% block extra_css %}{{ block.super }}
+.whatsapp-stack{display:grid;gap:20px}.whatsapp-stack textarea,.whatsapp-stack input[type=number]{width:100%;box-sizing:border-box}.whatsapp-stack textarea{resize:vertical;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font:inherit;line-height:1.6;min-height:170px}.whatsapp-stack textarea:focus-visible{outline:3px solid var(--focus);outline-offset:3px}.whatsapp-stack .helptext{display:block;color:var(--muted);font-size:.9rem;margin-top:6px}.whatsapp-stack code{display:inline-block;padding:4px 7px;background:var(--brand-soft);border-radius:6px;margin:3px}.whatsapp-qr{width:280px;max-width:100%;height:auto}.send-row{padding:12px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}.errorlist{color:#a52323}
+.connection-status{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:30px;background:#f0eded;color:#695252;font-weight:650}.connection-status::before{content:"";width:8px;height:8px;background:currentColor;border-radius:50%}.connection-status.online{background:var(--brand-soft);color:var(--brand-ink)}.connection-status.pending{background:#fff3dc;color:#77500a}.connection-number{overflow-wrap:anywhere}
+{% endblock %}
+{% block painel_content %}
+<h1>WhatsApp</h1><p>Conecte o número do estabelecimento e personalize os lembretes dos seus clientes.</p>
+<div class="whatsapp-stack">
+<section class="card"><h2>Conexão</h2>
+<div aria-live="polite"><span class="connection-status {{ connection.kind }}">{{ connection.label }}</span>
+<p class="connection-number"><strong>Telefone:</strong> {% if connection.number %}{{ connection.number }}{% elif connection.kind == 'online' %}Número não informado pela API.{% elif connection.label == 'Status indisponível' %}Indisponível no momento.{% else %}Nenhum número conectado.{% endif %}</p>
+{% if connection.label == 'Status indisponível' %}<p>Não foi possível consultar a conexão. Tente verificar novamente.</p>{% endif %}</div>
+{% if api_configurada %}
+<p>Conecte pelo QR code em WhatsApp → Aparelhos conectados → Conectar aparelho.</p>
+<form method="post">{% csrf_token %}<div class="toolbar">
+<button name="acao" value="conectar">Conectar / gerar QR code</button>
+<button class="ui-button ui-button-secondary" name="acao" value="verificar">Verificar conexão</button>
+<button class="ui-button ui-button-quiet" name="acao" value="desconectar">Desconectar</button></div></form>
+{% else %}<p class="notice">Conexão pendente: a Evolution API precisa ser configurada no servidor. Você já pode preparar a mensagem e a antecedência abaixo.</p>{% endif %}
+{% if status %}<p role="status">{{ status }}</p>{% endif %}
+{% if qr %}<img class="whatsapp-qr" src="{{ qr }}" alt="QR code para conectar o WhatsApp do estabelecimento"><p>Se o código expirar, gere outro.</p>{% endif %}
+</section>
+<section class="card"><h2>Lembrete do agendamento</h2><p>Um lembrete por agendamento confirmado, para o WhatsApp cadastrado pelo cliente ou no painel. Agendamentos cancelados não recebem lembretes.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}
+<p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{estabelecimento}</code> <code>{data}</code> <code>{hora}</code></p>
+<p>A data e a hora usam o fuso do estabelecimento. Alterações valem para os lembretes ainda não enviados. Agendamentos feitos dentro da antecedência recebem o lembrete no próximo processamento, antes do início.</p>
+<button name="acao" value="salvar">Salvar configurações</button>
+</form><p class="helptext">O envio exige WhatsApp conectado e processamento automático ativo no servidor.</p></section>
+<section class="card"><h2>Últimos lembretes</h2>
+{% for envio in envios %}<div class="send-row"><strong>{{ envio.agendamento.cliente_nome }}</strong> · {{ envio.agendamento.inicio|date:'d/m/Y H:i' }}<br>{{ envio.get_status_display }}{% if envio.erro %}<p>{{ envio.erro }}</p>{% endif %}</div>{% empty %}<p>Nenhum lembrete processado ainda.</p>{% endfor %}
+<p class="helptext">“Aceito pela API” não confirma a entrega ao aparelho. Envios iniciados ou incertos não são repetidos automaticamente.</p>
+</section></div>
+{% endblock %}

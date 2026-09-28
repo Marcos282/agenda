@@ -53,3 +53,84 @@ class Disponibilidade(TenantOwnedModel):
             ).exclude(pk=self.pk)
             if overlaps.exists():
                 raise ValidationError('Já existe um período ativo sobreposto para este profissional nesta data.')
+
+
+    def save(self, *args, **kwargs):
+        from django.db import transaction
+        from profissionais.models import Profissional
+        from .booking import validar_cobertura
+        with transaction.atomic():
+            # Also protect the legacy period editor, which does not use configurar_dia.
+            old = type(self).objects.filter(pk=self.pk).first() if self.pk else None
+            ids = sorted({self.profissional_id} | ({old.profissional_id} if old else set()))
+            list(Profissional.objects.select_for_update().filter(pk__in=ids).order_by('pk'))
+            if old:
+                dates = {(old.profissional_id, old.data), (self.profissional_id, self.data)}
+                for prof_id, day in dates:
+                    periods = list(type(self).objects.filter(tenant_id=self.tenant_id,
+                        profissional_id=prof_id, data=day, ativo=True).exclude(pk=self.pk).values_list('hora_inicio', 'hora_fim'))
+                    if self.ativo and self.profissional_id == prof_id and self.data == day:
+                        periods.append((self.hora_inicio, self.hora_fim))
+                    validar_cobertura(tenant=self.tenant, profissional_id=prof_id, data=day, periodos=periods)
+            return super().save(*args, **kwargs)
+
+
+class Agendamento(models.Model):
+    class Status(models.TextChoices):
+        CONFIRMADO = 'CONFIRMADO', 'Confirmado'
+        CANCELADO = 'CANCELADO', 'Cancelado'
+        NAO_COMPARECEU = 'NAO_COMPARECEU', 'Não compareceu'
+
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    cliente = models.ForeignKey('usuarios.User', on_delete=models.PROTECT, related_name='agendamentos', null=True, blank=True)
+    contato = models.ForeignKey('usuarios.ContatoCliente', on_delete=models.PROTECT, related_name='agendamentos', null=True, blank=True)
+    oferta = models.ForeignKey('catalogo.ProfissionalServico', on_delete=models.PROTECT, related_name='agendamentos')
+    profissional = models.ForeignKey('profissionais.Profissional', on_delete=models.PROTECT, related_name='agendamentos')
+    cliente_nome = models.CharField(max_length=150)
+    servico_nome = models.CharField(max_length=150)
+    profissional_nome = models.CharField(max_length=150)
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField()
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    duracao_minutos = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.CONFIRMADO)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    cancelado_em = models.DateTimeField(null=True, blank=True)
+    nao_compareceu_em = models.DateTimeField(null=True, blank=True)
+    objects = TenantQuerySet.as_manager()
+
+    class Meta:
+        ordering = ['inicio', 'pk']
+        indexes = [models.Index(fields=['tenant', 'cliente', 'inicio'], name='ag_cliente_inicio_idx')]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(cliente__isnull=False, contato__isnull=True) | models.Q(cliente__isnull=True, contato__isnull=False), name='ag_cliente_ou_contato'),
+            models.CheckConstraint(condition=models.Q(inicio__lt=models.F('fim')), name='ag_inicio_antes_fim'),
+            models.CheckConstraint(condition=models.Q(valor__gt=0, duracao_minutos__gt=0), name='ag_valor_duracao_positivos'),
+            models.CheckConstraint(condition=models.Q(status='CONFIRMADO', cancelado_em__isnull=True, nao_compareceu_em__isnull=True) | models.Q(status='CANCELADO', cancelado_em__isnull=False, nao_compareceu_em__isnull=True) | models.Q(status='NAO_COMPARECEU', cancelado_em__isnull=True, nao_compareceu_em__isnull=False), name='ag_status_consistente'),
+            ExclusionConstraint(name='ag_sem_sobreposicao', expressions=[
+                ('tenant', RangeOperators.EQUAL), ('profissional', RangeOperators.EQUAL),
+                (models.Func('inicio', 'fim', models.Value('[)'), function='TSTZRANGE', output_field=DateTimeRangeField()), RangeOperators.OVERLAPS),
+            ], condition=models.Q(status__in=['CONFIRMADO', 'NAO_COMPARECEU']), violation_error_message='Esse horário já está reservado.'),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.cliente_id and self.cliente.tenant_id != self.tenant_id:
+            raise ValidationError('Cliente de outro estabelecimento.')
+        if self.contato_id and self.contato.tenant_id != self.tenant_id:
+            raise ValidationError('Contato de outro estabelecimento.')
+        if self.oferta_id and (self.oferta.tenant_id != self.tenant_id or self.oferta.profissional_id != self.profissional_id):
+            raise ValidationError('Serviço e profissional devem pertencer ao estabelecimento.')
+        if self.inicio and self.fim and self.duracao_minutos:
+            from datetime import timedelta
+            if self.fim - self.inicio != timedelta(minutes=self.duracao_minutos):
+                raise ValidationError('A duração deve corresponder ao intervalo reservado.')
+
+    @property
+    def whatsapp_contato(self):
+        return self.contato.whatsapp if self.contato_id else self.cliente.whatsapp
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

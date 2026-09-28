@@ -1,0 +1,10 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Registrar falta · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}">{% endblock %}
+{% block painel_content %}
+<span class="booking-step">AGENDAMENTO #{{ agendamento.pk }}</span><h1>Registrar falta</h1>
+<section class="booking-receipt"><span class="booking-status">{{ agendamento.get_status_display }}</span><h2>{{ agendamento.cliente_nome }}</h2><p>{{ agendamento.servico_nome }} · Com {{ agendamento.profissional_nome }}</p><dl><div><dt>Data</dt><dd>{{ agendamento.inicio|date:'d/m/Y' }}</dd></div><div><dt>Horário</dt><dd>{{ agendamento.inicio|time:'H:i' }} → {{ agendamento.fim|time:'H:i' }}</dd></div></dl><small>Horário de {{ request.tenant.timezone }}.</small></section>
+{% if erro %}<p class="booking-error" role="alert">{{ erro }}</p>{% endif %}
+{% if pode_marcar %}<p>Confirma que o cliente não compareceu? O atendimento ficará registrado como <strong>Não compareceu</strong> na agenda e no histórico do cliente.</p><form method="post">{% csrf_token %}<div class="booking-actions"><button type="submit">Confirmar falta</button><a class="ui-button ui-button-secondary" href="{{ voltar }}">Voltar sem alterar</a></div></form>
+{% else %}<p>{% if agendamento.status == 'NAO_COMPARECEU' %}A falta já foi registrada.{% elif agendamento.status == 'CANCELADO' %}Este agendamento foi cancelado e não pode receber uma falta.{% else %}Aguarde o horário de início do atendimento para registrar uma falta.{% endif %}</p><a class="ui-button ui-button-secondary" href="{{ voltar }}">Voltar à agenda</a>{% endif %}
+{% endblock %}

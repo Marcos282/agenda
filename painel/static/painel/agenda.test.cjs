@@ -12,3 +12,10 @@ assert(blocks[1].top>blocks[0].top);
 const real=layout({...base,windows:[{start:32820,end:35220}]});
 assert(Math.abs(real.height-56)<1e-8); // 40 real minutes, not a multiple of any fixed slot.
 console.log('Agenda JS: intervalos, lacunas, timezone e proporções 20/40/60 min OK.');
+
+// No-show remains visible and retains its real interval in the day's history.
+{
+  const noShowPlan = require('./agenda.js').layout({date:'2026-09-30', timeZone:'America/Sao_Paulo', windows:[{start:32400,end:36000}], appointments:[{inicio:'2026-09-30T12:00:00Z',fim:'2026-09-30T12:40:00Z',status:'NAO_COMPARECEU'}]});
+  const absent = noShowPlan.blocks.find(b => b.kind === 'no-show');
+  if (!absent || absent.end - absent.start !== 2400 || noShowPlan.blocks.filter(b=>b.kind==='free').some(b=>b.start<34800)) throw new Error('Invalid no-show layout');
+}

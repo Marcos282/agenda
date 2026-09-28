@@ -13,3 +13,9 @@ main{max-width:1120px;background:#fff;margin:28px auto;padding:28px 34px;box-sha
 .period-remove{min-height:0}
 .professional-tab:hover{border-color:var(--brand-border);background:var(--brand-subtle)}
 .professional-tab.selected{background:var(--brand-soft)}
+.booked-summary{padding:20px 24px;border-top:1px solid var(--line)}.booked-summary h3{font-size:15px;margin:0 0 14px}.booked-summary ul{list-style:none;padding:0;margin:0;display:grid;gap:10px}.booked-summary li{padding:13px 16px;border:1px solid var(--brand-border);border-radius:10px;background:var(--brand-subtle);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+
+.timeline-block.no-show{background:#fff4e4;border:1px solid #d5a454;border-left:4px solid #a56c16;color:#704509}
+
+.legend-no-show{background:#fff4e4;border:1px solid #a56c16}
+.day-actions{flex-wrap:wrap}button.timeline-block{display:block;text-align:left;padding:4px 8px}button.timeline-block strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}button.timeline-block span{font-size:10px;line-height:13px;margin-top:3px}

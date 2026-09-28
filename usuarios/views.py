@@ -5,7 +5,15 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 from tenants.decorators import tenant_required
-from .forms import CadastroForm, LoginForm
+from .forms import CadastroForm, LoginForm, WhatsAppForm
+
+
+def destino_apos_login(request):
+    from django.utils.http import url_has_allowed_host_and_scheme
+    value = request.GET.get('next', '')
+    if value and url_has_allowed_host_and_scheme(value, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return value
+    return None
 
 
 @require_http_methods(["GET"])
@@ -78,7 +86,7 @@ def home(request, profissional_id=None):
 @require_http_methods(["GET", "POST"])
 def cadastro(request):
     if request.user.is_authenticated:
-        return redirect('conta')
+        return redirect(destino_apos_login(request) or 'conta')
     form = CadastroForm(request.POST if request.method == 'POST' else None, tenant=request.tenant)
     if request.method == 'POST' and form.is_valid():
         try:
@@ -91,7 +99,10 @@ def cadastro(request):
                 raise
             form.add_error('email', 'Não foi possível cadastrar este e-mail.')
         else:
-            return redirect('login')
+            from django.urls import reverse
+            from urllib.parse import urlencode
+            destino = destino_apos_login(request)
+            return redirect(reverse('login') + ('?' + urlencode({'next': destino}) if destino else ''))
     return render(request, 'usuarios/form.html', {'form': form, 'titulo': 'Criar conta', 'botao': 'Cadastrar'})
 
 
@@ -99,18 +110,32 @@ def cadastro(request):
 @require_http_methods(["GET", "POST"])
 def entrar(request):
     if request.user.is_authenticated:
-        return redirect('conta')
+        return redirect(destino_apos_login(request) or 'conta')
     form = LoginForm(request.POST if request.method == 'POST' else None, request=request)
     if request.method == 'POST' and form.is_valid():
         login(request, form.user)
-        return redirect('conta')
-    return render(request, 'usuarios/form.html', {'form': form, 'titulo': 'Entrar', 'botao': 'Entrar'})
+        if form.user.tipo == 'CLIENTE' and not form.user.whatsapp:
+            from django.urls import reverse
+            from urllib.parse import urlencode
+            destino = destino_apos_login(request)
+            return redirect(reverse('conta') + ('?' + urlencode({'next': destino}) if destino else ''))
+        return redirect(destino_apos_login(request) or 'conta')
+    return render(request, 'usuarios/form.html', {'form': form, 'titulo': 'Entrar', 'botao': 'Entrar', 'destino': destino_apos_login(request), 'login_form': True})
 
 
 @tenant_required
 @login_required
+@require_http_methods(['GET', 'POST'])
 def conta(request):
-    return render(request, 'usuarios/conta.html')
+    from django.contrib import messages
+    form = WhatsAppForm(request.POST if request.method == 'POST' else None, instance=request.user)
+    if request.method == 'POST' and form.is_valid():
+        # Save only the contact field, never role/tenant/password from the submitted data.
+        request.user.whatsapp = form.cleaned_data['whatsapp']
+        request.user.save(update_fields=['whatsapp'])
+        messages.success(request, 'WhatsApp atualizado.')
+        return redirect(destino_apos_login(request) or 'conta')
+    return render(request, 'usuarios/conta.html', {'whatsapp_form': form})
 
 
 sair = tenant_required(LogoutView.as_view())
@@ -150,3 +175,22 @@ def loja(request, item_id=None):
         'equipe': Profissional.objects.for_tenant(request.tenant).ativos(),
         'termo': termo, 'profissional_selecionado': profissional, 'ordem': ordem, 'filtros': filtros.urlencode(),
     })
+
+
+@tenant_required
+@require_http_methods(['GET'])
+def profissional_foto_publica(request, pk):
+    from django.http import FileResponse, Http404
+    from django.shortcuts import get_object_or_404
+    from profissionais.models import Profissional
+
+    profissional = get_object_or_404(Profissional.objects.for_tenant(request.tenant).ativos(), pk=pk)
+    if not profissional.foto:
+        raise Http404
+    try:
+        response = FileResponse(profissional.foto.open('rb'), content_type='image/jpeg')
+    except FileNotFoundError:
+        raise Http404
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response

@@ -29,7 +29,7 @@ class PublicHomeTests(TestCase):
         self.assertNotContains(page,'Maria')
         self.assertNotContains(page,'privado@example.com')
         self.assertNotContains(page,'11987654321')
-        self.assertContains(page,'confirmação de agendamentos estarão disponíveis em breve')
+        self.assertContains(page,'confirme seu agendamento online')
 
     def test_search_and_filter(self):
         self.assertEqual(list(self.get('?q=corte').context['ofertas']),[self.offer])
@@ -77,7 +77,7 @@ class PublicHomeTests(TestCase):
         self.assertEqual(self.client.get('/loja/',HTTP_HOST='localhost').status_code,404)
         detail=self.client.get(f'/loja/{self.offer.pk}/',HTTP_HOST='marcos.localhost')
         self.assertContains(detail,'40 minutos de atendimento')
-        self.assertContains(detail,'Agendamentos online em breve')
+        self.assertContains(detail,'Agendar horário →')
         self.assertEqual(self.client.get(f'/loja/{self.offer.pk}/',HTTP_HOST='wanessa.localhost').status_code,404)
         self.offer.ativo=False;self.offer.save()
         self.assertEqual(self.client.get(f'/loja/{self.offer.pk}/',HTTP_HOST='marcos.localhost').status_code,404)
@@ -108,3 +108,25 @@ class PublicHomeTests(TestCase):
         self.assertEqual(self.client.get(path,HTTP_HOST='localhost').status_code,404)
         self.prof.ativo=False;self.prof.save()
         self.assertEqual(self.client.get(path,HTTP_HOST='marcos.localhost').status_code,404)
+
+    def test_photo_card_and_tenant_scoped_access(self):
+        from tempfile import TemporaryDirectory
+        from django.test import override_settings
+        from django.core.files.base import ContentFile
+        from django.urls import reverse
+        from PIL import Image
+        from io import BytesIO
+        with TemporaryDirectory() as folder, override_settings(MEDIA_ROOT=folder):
+            photo = BytesIO()
+            Image.new('RGB', (64, 64), 'green').save(photo, 'JPEG')
+            self.prof.foto.save('photo.jpg', ContentFile(photo.getvalue()))
+            url = reverse('profissional_foto_publica', args=[self.prof.pk])
+            self.assertContains(self.get(), 'src="'+url+'"')
+            response = self.client.get(url, HTTP_HOST='marcos.localhost')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(b''.join(response.streaming_content), photo.getvalue())
+            self.assertEqual(self.client.get(url, HTTP_HOST='wanessa.localhost').status_code, 404)
+            self.assertEqual(self.client.get(url, HTTP_HOST='localhost').status_code, 404)
+            self.prof.ativo=False
+            self.prof.save()
+            self.assertEqual(self.client.get(url, HTTP_HOST='marcos.localhost').status_code, 404)

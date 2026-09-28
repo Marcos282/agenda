@@ -1,0 +1,9 @@
+{% extends 'agenda/base.html' %}
+{% block content %}
+<span class="booking-step">01 / ESCOLHA O DIA</span>
+<h1>Um tempo para você.</h1><p class="booking-subtitle">Escolha uma data para consultar os horários de atendimento.</p>
+<section class="booking-summary"><span class="booking-symbol" aria-hidden="true">✦</span><div><h2>{{ oferta.servico.nome }}</h2><p>Com {{ oferta.profissional.nome }}</p><strong>R$ {{ oferta.valor|floatformat:2 }} <span>· {{ oferta.duracao_minutos }} min</span></strong></div></section>
+<form method="get" class="booking-date">{{ form.as_p }}<button type="submit">Ver horários disponíveis →</button></form>
+<p class="booking-note">Horários de {{ request.tenant.timezone }}. Apenas os períodos abertos pelo estabelecimento estarão disponíveis.</p>
+<a class="ui-button ui-button-secondary" href="{% url 'loja_item' oferta.pk %}">← Voltar ao serviço</a>
+{% endblock %}

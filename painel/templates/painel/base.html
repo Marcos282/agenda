@@ -12,6 +12,9 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 <nav class="panel-nav" aria-label="Painel administrativo">
 <a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}" {% if request.resolver_match.url_name == 'inicio' %}aria-current="page"{% endif %}>Painel</a><a class="ui-button ui-button-secondary" href="{% url 'painel:profissionais' %}" {% if 'profissionais' in request.path %}aria-current="page"{% endif %}>Profissionais</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:servicos' %}" {% if request.resolver_match.url_name == 'servicos' or request.resolver_match.url_name == 'servico_novo' or request.resolver_match.url_name == 'servico_editar' %}aria-current="page"{% endif %}>Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}" {% if request.resolver_match.url_name == 'agenda' or request.resolver_match.url_name == 'disponibilidades' %}aria-current="page"{% endif %}>Agenda</a>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}" {% if request.resolver_match.url_name == 'clientes' or request.resolver_match.url_name == 'cliente_historico' %}aria-current="page"{% endif %}>Clientes</a>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:agendamento_novo' %}" {% if request.resolver_match.url_name == 'agendamento_novo' %}aria-current="page"{% endif %}>+ Agendamento</a>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}" {% if request.resolver_match.url_name == 'whatsapp' %}aria-current="page"{% endif %}>WhatsApp</a>
 </nav>
 {% block painel_content %}{% endblock %}
 {% endblock %}

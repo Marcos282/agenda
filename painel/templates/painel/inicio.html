@@ -2,7 +2,9 @@
 {% block painel_content %}
 <h1>Organize seu estabelecimento</h1>
 <p>Cadastre os profissionais e os serviços. Depois, defina o valor, a duração e os períodos de atendimento de cada profissional.</p>
+<div class="toolbar"><a class="ui-button" href="{% url 'painel:agendamento_novo' %}">+ Novo agendamento</a></div>
 <div class="cards">
+<section class="card"><h2>Clientes</h2><p>Busque contatos e consulte o histórico de agendamentos, cancelamentos e faltas.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}">Ver clientes →</a></section>
 <section class="card"><h2>Profissionais</h2><p>Equipe, serviços e disponibilidade individual.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:profissionais' %}">Gerenciar profissionais →</a></section>
 <section class="card"><h2>Serviços</h2><p>Catálogo de atendimentos do estabelecimento.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:servicos' %}">Gerenciar serviços →</a></section>
 <section class="card"><h2>Agenda diária</h2><p>Escolha um profissional e abra os períodos de atendimento do dia.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}">Abrir agenda →</a></section>

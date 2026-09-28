@@ -33,6 +33,7 @@ class ProfissionalServico(TenantOwnedModel):
         ordering = ['servico__nome', 'pk']
         constraints = [
             models.UniqueConstraint(fields=['tenant', 'profissional', 'servico'], name='prof_servico_tenant_unique'),
+            models.UniqueConstraint(fields=['id', 'tenant', 'profissional'], name='ps_id_tenant_prof_unique'),
             models.CheckConstraint(condition=models.Q(valor__gt=0), name='prof_servico_valor_positivo'),
             models.CheckConstraint(condition=models.Q(duracao_minutos__gt=0), name='prof_servico_duracao_positiva'),
         ]

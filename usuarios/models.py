@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models.functions import Lower, Trim
 from django.core.exceptions import ValidationError
 from .managers import UserManager
+from tenants.base import TenantQuerySet
+from .validators import normalizar_whatsapp, validate_whatsapp
 
 
 class User(AbstractUser):
@@ -16,6 +18,8 @@ class User(AbstractUser):
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.CLIENTE)
     username = None
     email = models.EmailField(unique=True)
+    # Empty values are retained for legacy accounts until the customer completes the profile.
+    whatsapp = models.CharField('WhatsApp', max_length=16, blank=True, default='', validators=[validate_whatsapp])
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
     objects = UserManager()
@@ -36,6 +40,8 @@ class User(AbstractUser):
     def clean(self):
         super().clean()
         self.email = type(self).objects.normalize_email(self.email)
+        if self.whatsapp:
+            self.whatsapp = normalizar_whatsapp(self.whatsapp)
         if self.is_superuser:
             if self.tenant_id or not self.is_staff or self.tipo != self.Tipo.ADMIN:
                 raise ValidationError("Superusuário global exige tenant vazio, is_staff e tipo ADMIN.")
@@ -44,6 +50,8 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         self.email = type(self).objects.normalize_email(self.email)
+        if self.whatsapp:
+            self.whatsapp = normalizar_whatsapp(self.whatsapp)
         return super().save(*args, **kwargs)
 
 
@@ -62,4 +70,25 @@ class Cliente(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class ContatoCliente(models.Model):
+    """Customer recorded by staff, without an authentication account."""
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    nome = models.CharField(max_length=150)
+    whatsapp = models.CharField(max_length=16, validators=[validate_whatsapp])
+    is_active = models.BooleanField(default=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+    objects = TenantQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower('nome'), 'whatsapp', 'tenant', name='contato_nome_whatsapp_tenant_uniq'),
+            models.UniqueConstraint(fields=['id', 'tenant'], name='contato_id_tenant_unique'),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.nome = ' '.join(self.nome.split())
+        self.whatsapp = normalizar_whatsapp(self.whatsapp)
         return super().save(*args, **kwargs)
