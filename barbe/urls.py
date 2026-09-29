@@ -1,8 +1,16 @@
 from barbe.admin import site
 from django.urls import path, include
-from usuarios import views
+from usuarios import views, registro
+from django.views.generic import TemplateView
 
 urlpatterns = [
+    path('registro', registro.registro, name='registro'),
+    path('registro/', registro.registro),
+    path('registro/concluido/', registro.registro_concluido, name='registro_concluido'),
+    path('lembrar-senha/', registro.RecuperarSenha.as_view(), name='lembrar_senha'),
+    path('lembrar-senha/enviado/', TemplateView.as_view(template_name='usuarios/senha_email_enviado.html'), name='senha_email_enviado'),
+    path('redefinir-senha/<uidb64>/<token>/', registro.RedefinirSenha.as_view(), name='password_reset_confirm'),
+    path('senha-redefinida/', registro.senha_redefinida, name='senha_redefinida'),
     path('agendamentos/', include('agenda.urls')),
     path('painel/', include('painel.urls')),
     path('', views.home, name='home'),

@@ -177,3 +177,34 @@ PLATFORM_SALES_URL = os.environ.get("PLATFORM_SALES_URL", "")
 EVOLUTION_API_URL = os.environ.get('EVOLUTION_API_URL', LOCAL.get('EVOLUTION_API_URL', ''))
 EVOLUTION_API_KEY = os.environ.get('EVOLUTION_API_KEY', LOCAL.get('EVOLUTION_API_KEY', ''))
 EVOLUTION_INSTANCE_PREFIX = os.environ.get('EVOLUTION_INSTANCE_PREFIX', 'barbe_tenant')
+
+# Password recovery: Resend SMTP when its API key is configured.
+DEFAULT_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL', LOCAL.get('RESEND_FROM_EMAIL', os.environ.get('DEFAULT_FROM_EMAIL', 'Tá Combinado <nao-responda@tacombinado.net>')))
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', LOCAL.get('RESEND_API_KEY', ''))
+PASSWORD_RESET_TIMEOUT = 3600
+if RESEND_API_KEY:
+    MAILERS['default'] = {
+        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+        'OPTIONS': {
+            'host': 'smtp.resend.com',
+            'port': 465,
+            'username': 'resend',
+            'password': RESEND_API_KEY,
+            'use_tls': False,
+            'use_ssl': True,
+            'timeout': 15,
+        },
+    }
+elif os.environ.get('EMAIL_HOST'):
+    MAILERS['default'] = {
+        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+        'OPTIONS': {
+            'host': os.environ['EMAIL_HOST'],
+            'port': int(os.environ.get('EMAIL_PORT', '587')),
+            'username': os.environ.get('EMAIL_HOST_USER', ''),
+            'password': os.environ.get('EMAIL_HOST_PASSWORD', ''),
+            'use_tls': os.environ.get('EMAIL_USE_TLS', 'true').lower() == 'true',
+            'use_ssl': os.environ.get('EMAIL_USE_SSL', 'false').lower() == 'true',
+            'timeout': 15,
+        },
+    }

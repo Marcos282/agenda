@@ -1,0 +1,8 @@
+Olá!
+
+Recebemos uma solicitação para redefinir a senha do seu acesso ao Tá Combinado.
+
+Crie uma nova senha neste endereço:
+{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+
+Se você não solicitou a alteração, ignore este e-mail. Sua senha continuará a mesma.

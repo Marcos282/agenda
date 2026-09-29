@@ -1,0 +1,2 @@
+{% extends 'usuarios/base.html' %}
+{% block content %}{% if validlink %}<h1>Crie uma nova senha</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Salvar nova senha</button></form>{% else %}<h1>Link inválido ou expirado</h1><p>Solicite um novo link para recuperar seu acesso.</p><a class="ui-button" href="{% url 'lembrar_senha' %}">Solicitar novo link</a>{% endif %}{% endblock %}

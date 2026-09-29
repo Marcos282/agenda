@@ -1,0 +1,3 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Recuperar senha{% endblock %}
+{% block content %}<h1>Esqueceu sua senha?</h1><p>Informe seu e-mail de cadastro para receber um link e criar uma nova senha.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Enviar link de recuperação</button></form><p><a href="{% if request.tenant %}{% url 'login' %}{% else %}{% url 'registro' %}{% endif %}">Voltar</a></p>{% endblock %}
