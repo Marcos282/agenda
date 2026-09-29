@@ -107,6 +107,23 @@ class MercadoPagoBillingTests(TestCase):
         self.assertIn('payer_email_invalid', str(raised.exception))
         self.assertNotIn('test-access-token', str(raised.exception))
 
+    def test_mixed_test_and_real_accounts_explains_how_to_fix_without_retrying(self):
+        from tenants.mercado_pago import MercadoPagoError, create_subscription
+        error = HTTPError('https://api.mercadopago.com/preapproval', 400, 'Bad Request', {},
+            BytesIO(json.dumps({'message': 'Both payer and collector must be real or test users'}).encode()))
+        previous_expiration = self.tenant.expira_em
+        with patch('tenants.mercado_pago.urlopen', side_effect=error) as send:
+            with self.assertRaises(MercadoPagoError) as raised:
+                create_subscription(tenant_id=self.tenant.pk, payer_email='owner@example.test', amount=30)
+        self.assertEqual(send.call_count, 1)
+        self.assertIn('comprador e vendedor estão em ambientes diferentes', str(raised.exception))
+        self.assertNotIn('test-access-token', str(raised.exception))
+        self.assertEqual(raised.exception.diagnostics['response']['http_status'], 400)
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.mercado_pago_assinatura_id, '')
+        self.assertEqual(self.tenant.mercado_pago_checkout_url, '')
+        self.assertEqual(self.tenant.expira_em, previous_expiration)
+
     def _signed_webhook(self, data_id, event_type):
         request_id = 'request-test-123'
         timestamp = '1790700000'

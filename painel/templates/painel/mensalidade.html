@@ -2,54 +2,100 @@
 {% block title %}Mensalidade · Painel{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}">{% endblock %}
 {% block painel_content %}
-<span class="eyebrow">SEU ESTABELECIMENTO NA PLATAFORMA</span>
-<h1>Mensalidade</h1>
-<p class="billing-intro">O plano de {{ request.tenant.nome }} para usar o Tá Combinado.</p>
-<div class="billing-grid">
-<section class="billing-plan" aria-labelledby="plan-title">
-<span class="billing-label">PLANO DO ESTABELECIMENTO</span>
-<h2 id="plan-title">Tá Combinado</h2>
-{% if valor_mensal %}<p class="billing-price">R$ {{ valor_mensal|floatformat:2 }}<span>/mês</span></p>{% else %}<p class="billing-price billing-price-pending">{% if checkout_url %}Consulte o valor no Mercado Pago{% else %}Plano mensal{% endif %}</p>{% endif %}
-<div class="billing-countdown {% if prazo_expirado or expira_hoje %}billing-countdown-due{% endif %}" role="status"><strong>{{ dias_restantes }}</strong><span>{% if prazo_expirado %}Prazo expirado{% elif expira_hoje %}Expira hoje{% else %}dia{{ dias_restantes|pluralize }} para expirar{% endif %}</span></div>
-<p>Uma plataforma para organizar seus atendimentos e receber agendamentos online.</p>
-<ul class="billing-features"><li>Agenda e agendamentos online</li><li>Gestão de profissionais e serviços</li><li>Histórico de clientes pelo WhatsApp</li><li>Loja online e QR Code para divulgação</li></ul>
-<div class="billing-store"><span>Estabelecimento</span><strong>{{ request.tenant.nome }}</strong><small>{{ request.tenant.subdomain }}</small><span class="billing-expiration">Data de expiração</span><strong>{{ data_expiracao|date:"d/m/Y" }}</strong></div>
-</section>
-<section class="billing-payment" aria-labelledby="payment-title">
-<div class="billing-provider">Mercado Pago</div>
-<h2 id="payment-title">Pagamento da mensalidade</h2>
-{% if assinatura_ativa %}
-<span class="billing-status">Assinatura recorrente ativa</span>
-<p>O Mercado Pago cobra {{ valor_mensal|floatformat:2 }} por mês. A validade é renovada por 30 dias após cada cobrança aprovada.</p>
-<a class="ui-button billing-pay" href="https://www.mercadopago.com.br/subscriptions" target="_blank" rel="noopener noreferrer">Gerenciar assinatura no Mercado Pago ↗</a>
-{% elif checkout_url and assinatura_status == 'pending' %}
-<span class="billing-status">Assinatura aguardando confirmação</span>
-<p>Conclua a autorização da cobrança recorrente. O acesso será renovado quando o Mercado Pago confirmar o pagamento.</p>
-<a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>
-{% elif checkout_configurado %}
-<span class="billing-status">{% if prazo_expirado %}Acesso bloqueado até a confirmação do pagamento{% else %}30 dias grátis desde o cadastro{% endif %}</span>
-<p>Assine por R$ {{ valor_mensal|floatformat:2 }} por mês. Se pagar antes do vencimento, os 30 novos dias serão somados ao prazo atual.</p>
-<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="assinar"><button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button>
-<details class="billing-debug-toggle"><summary>Diagnóstico técnico (opcional)</summary><p>Mostra um resumo do envio e da resposta. Credenciais, e-mail completo, identificadores e parâmetros do checkout são ocultados.</p><label><input type="checkbox" name="debug_mp" value="1"> Exibir diagnóstico nesta página</label></details>
-</form>
-{% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Você pode iniciar uma nova assinatura.</p>{% endif %}
-{% else %}
-<span class="billing-status billing-pending">Em configuração</span>
-<p>O pagamento estará disponível depois que a integração segura do Mercado Pago for configurada.</p>
-<button type="button" class="billing-pay" disabled>Pagamento ainda indisponível</button>
-<p class="billing-note">O cartão é informado somente no checkout hospedado pelo Mercado Pago.</p>
-{% endif %}
-<div class="billing-details"><h3>Confirmação e comprovantes</h3><p>A confirmação chega pelo Mercado Pago. O sistema registra cada cobrança aprovada uma única vez e atualiza a data de expiração automaticamente.</p></div>
-</section>
+<div class="billing-page">
+  <header class="billing-header">
+    <span class="billing-eyebrow">CONTA DO ESTABELECIMENTO</span>
+    <h1>Mensalidade</h1>
+    <p>Consulte seu plano e mantenha os serviços do estabelecimento ativos.</p>
+  </header>
+
+  <div class="billing-grid">
+    <section class="billing-card billing-plan" aria-labelledby="plan-title">
+      <div class="billing-card-heading">
+        <div><span class="billing-eyebrow">PLANO DO ESTABELECIMENTO</span><h2 id="plan-title">Tá Combinado</h2></div>
+        <span class="billing-status-label {% if prazo_expirado or expira_hoje %}billing-status-due{% endif %}">{% if prazo_expirado %}Prazo expirado{% elif expira_hoje %}Expira hoje{% else %}{{ dias_restantes }} dia{{ dias_restantes|pluralize }} para expirar{% endif %}</span>
+      </div>
+
+      {% if valor_mensal %}
+        <p class="billing-price">R$ {{ valor_mensal|floatformat:2 }}<span> / mês</span></p>
+      {% else %}
+        <p class="billing-price billing-price-pending">{% if checkout_url %}Consulte o valor no Mercado Pago{% else %}Plano mensal{% endif %}</p>
+      {% endif %}
+
+      <p class="billing-plan-description">Tudo o que você precisa para organizar e divulgar seus atendimentos.</p>
+      <ul class="billing-features">
+        <li>Agenda e agendamentos online</li>
+        <li>Gestão de profissionais e serviços</li>
+        <li>Histórico de clientes pelo WhatsApp</li>
+        <li>Loja online e QR Code para divulgação</li>
+      </ul>
+
+      <dl class="billing-details-list">
+        <div><dt>Estabelecimento</dt><dd>{{ request.tenant.nome }}</dd></div>
+        <div><dt>Data de expiração</dt><dd>{{ data_expiracao|date:"d/m/Y" }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="billing-card billing-payment" aria-labelledby="payment-title">
+      <div class="billing-card-heading">
+        <div><span class="billing-eyebrow">PAGAMENTO</span><h2 id="payment-title">Sua assinatura</h2></div>
+        <span class="billing-provider">Mercado Pago</span>
+      </div>
+
+      {% if assinatura_ativa %}
+        <span class="billing-status-label">Assinatura ativa</span>
+        <p class="billing-payment-copy">Seu plano está ativo. A validade é renovada por 30 dias após cada cobrança aprovada.</p>
+        <p class="billing-payment-amount">R$ {{ valor_mensal|floatformat:2 }}<span> / mês</span></p>
+        <a class="ui-button billing-pay" href="https://www.mercadopago.com.br/subscriptions" target="_blank" rel="noopener noreferrer">Gerenciar assinatura ↗</a>
+      {% elif checkout_url and assinatura_status == 'pending' %}
+        <span class="billing-status-label billing-status-pending">Aguardando confirmação</span>
+        <p class="billing-payment-copy">Conclua a autorização da cobrança no Mercado Pago. O acesso será renovado após a confirmação.</p>
+        <a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>
+      {% elif checkout_configurado %}
+        <span class="billing-status-label">{% if prazo_expirado %}Acesso pausado{% else %}30 dias grátis desde o cadastro{% endif %}</span>
+        <p class="billing-payment-copy">Assine por R$ {{ valor_mensal|floatformat:2 }} por mês. Se renovar antes do vencimento, os próximos 30 dias serão somados ao prazo atual.</p>
+        <div class="billing-checkout-note"><strong>Pagamento protegido</strong><span>Você continuará no checkout do Mercado Pago para revisar a assinatura e informar os dados necessários. O sistema não armazena dados de pagamento.</span></div>
+        <form method="post" class="billing-payment-form">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="assinar">
+          <button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button>
+          <details class="billing-debug-toggle">
+            <summary>Diagnóstico técnico (opcional)</summary>
+            <p>Mostra um resumo do envio e da resposta. Credenciais, e-mail completo, identificadores e parâmetros do checkout são ocultados.</p>
+            <label><input type="checkbox" name="debug_mp" value="1"> Exibir diagnóstico nesta página</label>
+          </details>
+        </form>
+        {% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Você pode iniciar uma nova assinatura.</p>{% endif %}
+      {% else %}
+        <span class="billing-status-label billing-status-pending">Em configuração</span>
+        <p class="billing-payment-copy">O pagamento estará disponível assim que a integração do Mercado Pago for configurada.</p>
+        <button type="button" class="ui-button billing-pay" disabled>Pagamento ainda indisponível</button>
+        <p class="billing-note">Os dados de pagamento são informados somente no checkout hospedado pelo Mercado Pago.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="billing-card billing-how" aria-labelledby="billing-how-title">
+    <div class="billing-card-heading">
+      <div><span class="billing-eyebrow">COMO FUNCIONA</span><h2 id="billing-how-title">Ativação simples e segura</h2></div>
+    </div>
+    <ol class="billing-steps">
+      <li><strong>1. Inicie a assinatura</strong><span>Abra o checkout oficial do Mercado Pago.</span></li>
+      <li><strong>2. Revise e autorize</strong><span>Confira as condições e conclua o pagamento.</span></li>
+      <li><strong>3. Continue usando</strong><span>A confirmação atualiza o acesso automaticamente.</span></li>
+    </ol>
+    <p class="billing-footnote">Cada cobrança aprovada é registrada uma única vez. A data de expiração é atualizada automaticamente após a confirmação do Mercado Pago.</p>
+  </section>
+
+  {% if payment_debug %}
+    <section class="billing-card billing-details" aria-labelledby="debug-title">
+      <h2 id="debug-title">Diagnóstico do Mercado Pago</h2>
+      {% if payment_error %}<p role="alert">{{ payment_error }}</p>{% endif %}
+      {% if checkout_url %}<p>Solicitação aceita pelo provedor. Abra o checkout para concluir a autorização:</p><a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>{% endif %}
+      <p>Valores sensíveis foram mascarados; o conteúdo abaixo é um resumo, não inclui credenciais.</p>
+      <h3>Enviado</h3><pre>{{ debug_info.request|pprint }}</pre>
+      <h3>Devolvido</h3><pre>{{ debug_info.response|pprint }}</pre>
+    </section>
+  {% endif %}
 </div>
-{% if payment_debug %}
-<section class="billing-details" aria-labelledby="debug-title">
-<h2 id="debug-title">Diagnóstico do Mercado Pago</h2>
-{% if payment_error %}<p role="alert">{{ payment_error }}</p>{% endif %}
-{% if checkout_url %}<p>Solicitação aceita pelo provedor. Abra o checkout para concluir a autorização:</p><a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>{% endif %}
-<p>Valores sensíveis foram mascarados; o conteúdo abaixo é um resumo, não inclui credenciais.</p>
-<h3>Enviado</h3><pre>{{ debug_info.request|pprint }}</pre>
-<h3>Devolvido</h3><pre>{{ debug_info.response|pprint }}</pre>
-</section>
-{% endif %}
 {% endblock %}

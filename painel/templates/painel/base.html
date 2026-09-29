@@ -9,7 +9,7 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 @media(max-width:960px){main{margin:24px 16px}}
 {% endblock %}
 {% block content %}
-<nav class="panel-nav" aria-label="Painel administrativo">
+{% if request.resolver_match.url_name != 'meu_cadastro' %}<nav class="panel-nav" aria-label="Painel administrativo">
 {% if request.tenant.dias_para_expirar < 0 %}
 <a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" aria-current="page">Mensalidade</a>
 {% else %}
@@ -21,6 +21,6 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 <a class="ui-button ui-button-secondary" href="{% url 'painel:loja_qrcode' %}" {% if request.resolver_match.url_name == 'loja_qrcode' %}aria-current="page"{% endif %}>QR Code da loja</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" {% if request.resolver_match.url_name == 'mensalidade' %}aria-current="page"{% endif %}>Mensalidade</a>
 {% endif %}
-</nav>
+</nav>{% endif %}
 {% block painel_content %}{% endblock %}
 {% endblock %}

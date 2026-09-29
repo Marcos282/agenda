@@ -6,6 +6,7 @@ from whatsapp.views import configuracao_whatsapp
 app_name = 'painel'
 urlpatterns = [
     path('mensalidade/', mensalidade_views.mensalidade, name='mensalidade'),
+    path('meu-cadastro/', views.meu_cadastro, name='meu_cadastro'),
     path('loja/qr/', loja_qrcode_views.loja_qrcode, name='loja_qrcode'),
     path('loja/qr.png', loja_qrcode_views.loja_qrcode_imagem, name='loja_qrcode_imagem'),
     path('whatsapp/', configuracao_whatsapp, name='whatsapp'),

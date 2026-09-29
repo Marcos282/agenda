@@ -1,0 +1,39 @@
+{% extends 'painel/base.html' %}
+{% block title %}Meu cadastro · Painel{% endblock %}
+{% block extra_css %}
+.owner-profile{max-width:760px}.owner-profile-heading{margin-bottom:22px}.owner-profile-heading h1{margin:0 0 7px}.owner-profile-heading p{margin:0;color:var(--muted);font-size:14px}.owner-profile-url{margin:18px 0;padding:14px 16px;border:1px solid var(--brand-border);border-radius:12px;background:var(--brand-subtle)}.owner-profile-url span{display:block;margin-bottom:5px;color:var(--muted);font-size:11px}.owner-profile-url strong{color:var(--brand-ink);font-size:15px;overflow-wrap:anywhere}.owner-profile-card{padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.owner-profile-card h2{margin:0 0 18px;font-size:17px}.owner-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px}.owner-profile-field{min-width:0}.owner-profile-field-wide{grid-column:1 / -1}.owner-profile-field input,.owner-profile-field select{margin-top:7px}.owner-profile-field .errorlist{margin-top:6px}.owner-profile-email input{background:#f1f3f2;color:#66716b;cursor:not-allowed}.owner-profile-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.owner-profile-help{margin:0 0 18px;color:var(--muted);font-size:12px;line-height:1.5}@media(max-width:560px){.owner-profile-card{padding:18px}.owner-profile-grid{grid-template-columns:1fr}}
+{% endblock %}
+{% block painel_content %}
+<section class="owner-profile">
+  <header class="owner-profile-heading">
+    <h1>Meu cadastro</h1>
+    <p>Dados do responsável pela conta e endereço do estabelecimento.</p>
+  </header>
+
+  <div class="owner-profile-url">
+    <span>Endereço público do estabelecimento</span>
+    <strong>https://{{ endereco_publico }}/</strong>
+  </div>
+
+  <form method="post" class="owner-profile-card">
+    {% csrf_token %}
+    <h2>Dados do responsável</h2>
+    {% if form.errors %}<div class="notice" role="alert">Não foi possível salvar. Confira os campos indicados abaixo.{{ form.non_field_errors }}</div>{% endif %}
+    <p class="owner-profile-help">Mantenha seus dados atualizados. O login da conta não pode ser alterado nesta tela.</p>
+    <div class="owner-profile-grid">
+      {% for field in form %}
+        <div class="owner-profile-field {% if field.name == 'first_name' or field.name == 'endereco' %}owner-profile-field-wide{% endif %} {% if field.name == 'email' %}owner-profile-email{% endif %}">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.help_text %}<small class="helptext">{{ field.help_text }}</small>{% endif %}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="owner-profile-actions">
+      <button type="submit">Salvar cadastro</button>
+      <a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}">Voltar ao painel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

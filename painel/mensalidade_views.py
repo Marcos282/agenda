@@ -52,10 +52,11 @@ def mensalidade(request):
             return redirect('painel:mensalidade')
         debug_enabled = request.POST.get('debug_mp') == '1'
         diagnostics = {} if debug_enabled else None
+        test_payer_email = settings.MERCADO_PAGO_TEST_PAYER_EMAIL.strip() if settings.DEBUG else ''
         try:
             checkout_url = create_subscription(
                 tenant_id=request.tenant.pk,
-                payer_email=request.user.email,
+                payer_email=test_payer_email or request.user.email,
                 amount=amount,
                 diagnostics=diagnostics,
             )

@@ -20,6 +20,12 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     # Empty values are retained for legacy accounts until the customer completes the profile.
     whatsapp = models.CharField('WhatsApp', max_length=16, blank=True, default='', validators=[validate_whatsapp])
+    cpf = models.CharField('CPF', max_length=11, blank=True, default='')
+    endereco = models.CharField('Endereço', max_length=200, blank=True, default='')
+    bairro = models.CharField('Bairro', max_length=100, blank=True, default='')
+    numero_endereco = models.CharField('Número', max_length=20, blank=True, default='')
+    cidade = models.CharField('Cidade', max_length=100, blank=True, default='')
+    estado = models.CharField('Estado (UF)', max_length=2, blank=True, default='')
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
     objects = UserManager()

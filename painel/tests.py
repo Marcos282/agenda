@@ -67,6 +67,67 @@ class PanelTests(TestCase):
         self.assertEqual(self.get('/painel/').status_code, 200)
         self.assertEqual(self.get('/painel/', 'wanessa.localhost').status_code, 403)
 
+    def test_owner_profile_page_shows_store_url_and_read_only_login(self):
+        response = self.get(reverse('painel:meu_cadastro'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Meu cadastro')
+        self.assertContains(response, 'https://marcos.tacombinado.net/')
+        self.assertContains(response, 'name="email"')
+        self.assertContains(response, 'disabled')
+        self.assertContains(response, 'name="first_name"')
+        self.assertNotContains(response, 'name="last_name"')
+        self.assertNotContains(response, 'aria-label="Painel administrativo"')
+        self.assertNotContains(response, 'aria-label="Minha conta"')
+        self.assertContains(self.get('/painel/'), 'Meu cadastro')
+        self.assertEqual(self.get(reverse('painel:meu_cadastro'), 'wanessa.localhost').status_code, 403)
+
+    def test_owner_profile_saves_only_owner_details_and_validates_cpf(self):
+        response = self.post(reverse('painel:meu_cadastro'), {
+            'first_name': 'Marcos Antonio',
+            'email': 'changed@example.test',
+            'cpf': '529.982.247-25',
+            'telefone': '(11) 99999-1234',
+            'endereco': 'Rua das Flores',
+            'bairro': 'Centro',
+            'numero_endereco': '123',
+            'cidade': 'São Paulo',
+            'estado': 'SP',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.email, 'admin@marcos.test')
+        self.assertEqual(self.admin.get_full_name(), 'Marcos Antonio')
+        self.assertEqual(self.admin.cpf, '52998224725')
+        self.assertEqual(self.admin.whatsapp, '+5511999991234')
+        self.assertEqual(self.admin.endereco, 'Rua das Flores')
+        self.assertEqual(self.admin.bairro, 'Centro')
+        self.assertEqual(self.admin.numero_endereco, '123')
+        self.assertEqual(self.admin.cidade, 'São Paulo')
+        self.assertEqual(self.admin.estado, 'SP')
+        self.assertEqual(self.admin.last_name, '')
+        saved = self.get(reverse('painel:meu_cadastro'))
+        self.assertContains(saved, 'Cadastro salvo com sucesso.')
+        for field, expected in {
+            'first_name': 'Marcos Antonio', 'email': 'admin@marcos.test',
+            'cpf': '52998224725', 'telefone': '+5511999991234',
+            'endereco': 'Rua das Flores', 'bairro': 'Centro',
+            'numero_endereco': '123', 'cidade': 'São Paulo', 'estado': 'SP',
+        }.items():
+            self.assertEqual(saved.context['form'][field].value(), expected)
+
+        response = self.post(reverse('painel:meu_cadastro'), {
+            'first_name': 'Nome que não deve ser salvo', 'email': self.admin.email, 'cpf': '11111111111',
+            'telefone': '(11) 99999-1234', 'endereco': 'Rua das Flores',
+            'bairro': 'Centro', 'numero_endereco': '123', 'cidade': 'São Paulo',
+            'estado': 'SP',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Informe um CPF válido.')
+        self.assertContains(response, 'Não foi possível salvar.')
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.get_full_name(), 'Marcos Antonio')
+        self.assertEqual(self.admin.cpf, '52998224725')
+
     def test_lists_are_isolated_both_directions(self):
         for user, host, own, other, own_service, other_service in [
             (self.admin, 'marcos.localhost', 'João', 'Maria', 'Corte', 'Manicure'),

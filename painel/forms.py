@@ -1,11 +1,94 @@
 from io import BytesIO
+import re
+
 from PIL import Image, ImageOps
 from django import forms
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.core.files.base import ContentFile
 from profissionais.models import Profissional
 from catalogo.models import Servico, ProfissionalServico
 from agenda.models import Disponibilidade
+from usuarios.validators import normalizar_whatsapp
+
+
+class CadastroResponsavelForm(forms.Form):
+    first_name = forms.CharField(label='Nome', max_length=150, widget=forms.TextInput(attrs={'autocomplete': 'name'}))
+    email = forms.EmailField(label='Login (e-mail)', disabled=True)
+    cpf = forms.CharField(
+        label='CPF',
+        max_length=14,
+        widget=forms.TextInput(attrs={'inputmode': 'numeric', 'autocomplete': 'off', 'placeholder': '000.000.000-00'}),
+    )
+    telefone = forms.CharField(
+        label='Telefone / WhatsApp',
+        max_length=40,
+        widget=forms.TextInput(attrs={'type': 'tel', 'autocomplete': 'tel', 'placeholder': '(11) 99999-9999'}),
+    )
+    endereco = forms.CharField(label='Endereço', max_length=200, widget=forms.TextInput(attrs={'autocomplete': 'address-line1'}))
+    bairro = forms.CharField(label='Bairro', max_length=100)
+    numero_endereco = forms.CharField(label='Número', max_length=20)
+    cidade = forms.CharField(label='Cidade', max_length=100, widget=forms.TextInput(attrs={'autocomplete': 'address-level2'}))
+    estado = forms.ChoiceField(
+        label='Estado (UF)',
+        choices=[('', 'Selecione')] + [(uf, uf) for uf in (
+            'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+            'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
+            'SP', 'SE', 'TO',
+        )],
+        widget=forms.Select(attrs={'autocomplete': 'address-level1'}),
+    )
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.initial['email'] = user.email
+        if not self.is_bound:
+            self.initial.update({
+                'first_name': user.get_full_name(),
+                'cpf': user.cpf,
+                'telefone': user.whatsapp,
+                'endereco': user.endereco,
+                'bairro': user.bairro,
+                'numero_endereco': user.numero_endereco,
+                'cidade': user.cidade,
+                'estado': user.estado,
+            })
+
+    def clean_first_name(self):
+        return ' '.join(self.cleaned_data['first_name'].split())
+
+    def clean_cpf(self):
+        cpf = re.sub(r'\D', '', self.cleaned_data['cpf'])
+        if len(cpf) != 11 or len(set(cpf)) == 1:
+            raise forms.ValidationError('Informe um CPF válido.')
+        primeiro = sum(int(digito) * peso for digito, peso in zip(cpf[:9], range(10, 1, -1))) * 10 % 11
+        primeiro = 0 if primeiro == 10 else primeiro
+        segundo = sum(int(digito) * peso for digito, peso in zip(cpf[:10], range(11, 1, -1))) * 10 % 11
+        segundo = 0 if segundo == 10 else segundo
+        if cpf[-2:] != f'{primeiro}{segundo}':
+            raise forms.ValidationError('Informe um CPF válido.')
+        return cpf
+
+    def clean_telefone(self):
+        try:
+            return normalizar_whatsapp(self.cleaned_data['telefone'])
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def save(self):
+        self.user.first_name = self.cleaned_data['first_name']
+        self.user.last_name = ''
+        for field in (
+            'cpf', 'endereco', 'bairro', 'numero_endereco', 'cidade', 'estado',
+        ):
+            setattr(self.user, field, self.cleaned_data[field])
+        self.user.whatsapp = self.cleaned_data['telefone']
+        self.user.save(update_fields=[
+            'first_name', 'last_name', 'cpf', 'whatsapp', 'endereco',
+            'bairro', 'numero_endereco', 'cidade', 'estado',
+        ])
+        return self.user
 
 
 class TenantForm(forms.ModelForm):

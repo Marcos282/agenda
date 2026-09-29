@@ -140,7 +140,7 @@ def _request(method, path, *, payload=None, idempotency_key=None, diagnostics=No
         ] if isinstance(causes, list) else []
         logger.warning(
             'Mercado Pago API rejected %s: HTTP %s, error=%s, message=%s, cause_codes=%s',
-            path, exc.code, error_name, message, cause_codes,
+            path, exc.code, _safe_text(error_name), _safe_text(message), [_safe_text(code) for code in cause_codes],
         )
         response_info = _response_summary(
             error_response if isinstance(error_response, dict) else {},
@@ -150,6 +150,13 @@ def _request(method, path, *, payload=None, idempotency_key=None, diagnostics=No
         if diagnostics is not None:
             diagnostics.update({'request': request_info, 'response': response_info})
         safe_message = _safe_text(message)
+        if exc.code == 400 and 'both payer and collector must be real or test users' in str(message).lower():
+            raise MercadoPagoError(
+                'O Mercado Pago recusou a solicitação (HTTP 400): comprador e vendedor estão em ambientes diferentes. '
+                'Para testar, use uma conta compradora de teste com a conta vendedora de teste. '
+                'Para cobrar de verdade, as duas contas precisam ser reais.',
+                diagnostics={'request': request_info, 'response': response_info},
+            ) from exc
         if exc.code < 500 and safe_message:
             detail = f' O Mercado Pago informou: {safe_message}'
             if cause_codes:

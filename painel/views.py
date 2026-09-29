@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
@@ -10,7 +11,7 @@ from agenda.models import Disponibilidade
 from catalogo.models import Servico, ProfissionalServico
 from profissionais.models import Profissional
 from .decorators import admin_tenant_required
-from .forms import ProfissionalForm, ServicoForm, ProfissionalServicoForm, DisponibilidadeForm
+from .forms import CadastroResponsavelForm, ProfissionalForm, ServicoForm, ProfissionalServicoForm, DisponibilidadeForm
 
 
 CONFLICTS = {
@@ -60,6 +61,23 @@ def edit_form(request, form, title, back_url, profissional=None):
 @require_http_methods(['GET'])
 def inicio(request):
     return render(request, 'painel/inicio.html')
+
+
+@admin_tenant_required
+@require_http_methods(['GET', 'POST'])
+def meu_cadastro(request):
+    form = CadastroResponsavelForm(
+        request.POST if request.method == 'POST' else None,
+        user=request.user,
+    )
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Cadastro salvo com sucesso.')
+        return redirect('painel:meu_cadastro')
+    return render(request, 'painel/meu_cadastro.html', {
+        'form': form,
+        'endereco_publico': f'{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}',
+    })
 
 
 @admin_tenant_required

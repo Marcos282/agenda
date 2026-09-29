@@ -12,7 +12,21 @@ MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
 MERCADO_PAGO_WEBHOOK_SECRET=segredo-de-assinatura-do-webhook
 ```
 
-Obtenha o Access Token nas credenciais da aplicação Mercado Pago (use credenciais de produção no servidor e de teste apenas localmente). Obtenha o segredo de assinatura em **Suas integrações → Webhooks**. Nunca coloque essas credenciais no HTML, JavaScript, repositório ou mensagens de suporte. O preço padrão é `30.00`; ele também precisa corresponder ao valor configurado no Mercado Pago.
+Obtenha o Access Token nas credenciais da aplicação Mercado Pago. Para cobranças reais, use a aplicação da conta recebedora real; para testar Assinaturas, siga a configuração específica abaixo. Obtenha o segredo de assinatura em **Suas integrações → Webhooks**. Nunca coloque essas credenciais no HTML, JavaScript, repositório ou mensagens de suporte. O preço padrão é `30.00`; ele também precisa corresponder ao valor configurado no Mercado Pago.
+
+### Teste local em sandbox
+
+Para Assinaturas, crie duas contas de teste no Mercado Pago: vendedor e comprador. Entre com o vendedor de teste, crie sua aplicação e use o Access Token das **credenciais de produção dessa conta de teste**, conforme a documentação do provedor. Um token com prefixo `APP_USR-` também pode pertencer a uma conta de teste; o prefixo sozinho não identifica o tipo da conta. Configure no `.env` local o token do vendedor de teste, o segredo do webhook da aplicação e o e-mail exato da conta compradora de teste:
+
+```dotenv
+MERCADO_PAGO_ACCESS_TOKEN=token-da-aplicacao-do-vendedor-de-teste
+MERCADO_PAGO_WEBHOOK_SECRET=segredo-de-teste-do-webhook
+MERCADO_PAGO_TEST_PAYER_EMAIL=email-da-conta-compradora-de-teste
+```
+
+O erro `Both payer and collector must be real or test users` indica mistura de contas reais e de teste. Confira também se o navegador está conectado ao comprador de teste ao concluir o checkout. Não use o e-mail do vendedor como comprador. Referência: [orientações oficiais para testar Assinaturas](https://www.mercadopago.com.br/developers/pt/news/2023/11/16/Questions-on-how-to-test-your-integration--).
+
+`MERCADO_PAGO_TEST_PAYER_EMAIL` só é aplicado com `DEBUG=true`; fora do modo de desenvolvimento o sistema continua usando o e-mail do administrador autenticado. Não use credenciais ou contas reais para esse teste. O endpoint local não recebe webhooks diretamente da internet; validar a confirmação de pagamento exige expor o ambiente local por um túnel HTTPS e configurar a URL de webhook correspondente.
 
 O domínio público precisa estar acessível por HTTPS. O checkout envia `notification_url` para `https://<subdomínio>.tacombinado.net/integracoes/mercado-pago/webhook/`. Em produção, configure `TENANT_BASE_DOMAIN=tacombinado.net` e mantenha `STORE_BASE_DOMAIN=tacombinado.net` (ou o domínio público efetivo) para que os webhooks cheguem ao tenant correto.
 
