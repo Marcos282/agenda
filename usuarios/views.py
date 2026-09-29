@@ -4,6 +4,7 @@ from django.contrib.auth.views import LogoutView
 from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
+from tenants.domains import tenant_base_domain_for_host
 from tenants.decorators import tenant_required
 from .forms import CadastroForm, LoginForm, WhatsAppForm
 
@@ -38,7 +39,8 @@ def home(request, profissional_id=None):
             if tenant:
                 _, port = split_domain_port(request.get_host())
                 suffix = ':' + port if port else ''
-                return redirect(f'{request.scheme}://{tenant.subdomain}.{settings.TENANT_BASE_DOMAIN}{suffix}/')
+                base_domain = tenant_base_domain_for_host(request.get_host())
+                return redirect(f'{request.scheme}://{tenant.subdomain}.{base_domain}{suffix}/')
             form.add_error('estabelecimento', 'Estabelecimento não encontrado. Confira o endereço informado.')
         return render(request, 'usuarios/plataforma.html', {
             'estabelecimento_form': form,

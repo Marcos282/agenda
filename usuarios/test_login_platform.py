@@ -32,6 +32,31 @@ class PlatformLoginTests(TestCase):
         self.assertEqual(self.client.get('/painel/',HTTP_HOST='salao.localhost:8000').status_code,200)
         self.assertEqual(self.complete(ticket).status_code,403)
 
+    def test_production_base_domain_keeps_localhost_login_on_local_subdomain(self):
+        with self.settings(TENANT_BASE_DOMAIN='tacombinado.net'):
+            response = self.client.post(
+                '/login/',
+                {'email': self.user.email, 'password': 'Senha!9274Teste'},
+                HTTP_HOST='localhost:8001',
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.context['target'],
+                'http://salao.localhost:8001/login/continuar/',
+            )
+            ticket = response.context['ticket']
+            completed = self.complete(
+                ticket,
+                host='salao.localhost:8001',
+                origin='http://localhost:8001',
+            )
+        self.assertEqual(completed.status_code, 302)
+        self.assertEqual(completed.url, '/painel/')
+        self.assertEqual(
+            self.client.get('/painel/', HTTP_HOST='salao.localhost:8001').status_code,
+            200,
+        )
+
     def test_origin_tenant_and_expiration(self):
         ticket=self.ticket()
         self.assertEqual(self.complete(ticket,origin='http://evil.example').status_code,403)

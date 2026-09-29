@@ -36,7 +36,9 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 TENANT_BASE_DOMAIN = os.environ.get("TENANT_BASE_DOMAIN", "localhost").lower()
 # Public address used when sharing a store, including from local development.
 STORE_BASE_DOMAIN = os.environ.get("STORE_BASE_DOMAIN", "tacombinado.net").strip().lower()
-ALLOWED_HOSTS = [TENANT_BASE_DOMAIN, "." + TENANT_BASE_DOMAIN, "127.0.0.1", "[::1]"]
+ALLOWED_HOSTS = [TENANT_BASE_DOMAIN, "." + TENANT_BASE_DOMAIN, "localhost", "127.0.0.1", "[::1]"]
+if DEBUG:
+    ALLOWED_HOSTS.append(".localhost")
 
 
 # Application definition
@@ -213,6 +215,7 @@ elif os.environ.get('EMAIL_HOST'):
         },
     }
 
-# Platform subscription checkout. These are public plan settings, never credentials.
-MERCADO_PAGO_SUBSCRIPTION_PLAN_ID = os.environ.get('MERCADO_PAGO_SUBSCRIPTION_PLAN_ID', LOCAL.get('MERCADO_PAGO_SUBSCRIPTION_PLAN_ID', ''))
-PLATFORM_MONTHLY_PRICE = os.environ.get('PLATFORM_MONTHLY_PRICE', LOCAL.get('PLATFORM_MONTHLY_PRICE', ''))
+# Mercado Pago subscription settings and server-side credentials.
+PLATFORM_MONTHLY_PRICE = os.environ.get('PLATFORM_MONTHLY_PRICE', LOCAL.get('PLATFORM_MONTHLY_PRICE', '30.00'))
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get('MERCADO_PAGO_ACCESS_TOKEN', '')
+MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get('MERCADO_PAGO_WEBHOOK_SECRET', '')

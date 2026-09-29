@@ -10,6 +10,7 @@ from django.http.request import split_domain_port
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_http_methods
+from tenants.domains import tenant_base_domain_for_host
 from tenants.models import Tenant, subdomain_validator
 from .models import User
 
@@ -51,7 +52,8 @@ class RegistroForm(forms.Form):
 def tenant_login_url(request, tenant, destino='/painel/'):
     _, port = split_domain_port(request.get_host())
     suffix = ':' + port if port else ''
-    return f'{request.scheme}://{tenant.subdomain}.{settings.TENANT_BASE_DOMAIN}{suffix}{reverse("login")}?next={destino}'
+    base_domain = tenant_base_domain_for_host(request.get_host())
+    return f'{request.scheme}://{tenant.subdomain}.{base_domain}{suffix}{reverse("login")}?next={destino}'
 
 
 @require_http_methods(['GET', 'POST'])

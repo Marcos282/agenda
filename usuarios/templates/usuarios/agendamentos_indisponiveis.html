@@ -1,0 +1,18 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agendamentos temporariamente indisponíveis</title>
+  <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}">
+</head>
+<body>
+  <main>
+    <span class="eyebrow">{{ request.tenant.nome }}</span>
+    <h1>Agendamentos temporariamente indisponíveis</h1>
+    <p>Este estabelecimento não está recebendo novos agendamentos no momento. Tente novamente mais tarde.</p>
+    <a class="ui-button ui-button-secondary" href="{% url 'home' %}">Voltar ao início</a>
+  </main>
+</body>
+</html>

@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from tenants.domains import tenant_base_domain_for_host
 from .models import User
 
 
@@ -24,7 +25,8 @@ def iniciar(request, user):
     _, port = split_domain_port(request.get_host())
     suffix = ':' + port if port else ''
     scheme = request.scheme if settings.DEBUG else 'https'
-    target = f'{scheme}://{user.tenant.subdomain}.{settings.TENANT_BASE_DOMAIN}{suffix}{reverse("login_continuar")}'
+    base_domain = tenant_base_domain_for_host(request.get_host())
+    target = f'{scheme}://{user.tenant.subdomain}.{base_domain}{suffix}{reverse("login_continuar")}'
     response = render(request, 'usuarios/login_transfer.html', {'target': target, 'ticket':ticket.session_key})
     response['Cache-Control'] = 'no-store'
     response['Referrer-Policy'] = 'origin'

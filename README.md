@@ -127,4 +127,4 @@ No painel, o botão **QR Code da loja**, ao lado de **WhatsApp**, mostra o QR Co
 
 ### Mensalidade da plataforma
 
-O botão **Mensalidade**, ao lado do QR Code da loja, mostra o plano do estabelecimento e o acesso ao checkout de assinatura do Mercado Pago quando configurado. Sem plano, a página exibe “Em configuração”. Consulte [configuração e limites da integração](docs/mensalidade.md).
+O botão **Mensalidade**, ao lado do QR Code da loja, oferece assinatura recorrente de R$ 30,00/mês pelo Mercado Pago. Cada estabelecimento inicia com 30 dias grátis desde seu cadastro; após o vencimento, o administrador só pode acessar Mensalidade e os novos agendamentos ficam pausados. Uma cobrança aprovada soma 30 dias ao prazo atual, sem renovação dupla em notificações repetidas. Configure token e segredo do webhook no ambiente ou no `.local-settings.json` local. Consulte [configuração e operação](docs/mensalidade.md).

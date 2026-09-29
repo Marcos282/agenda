@@ -51,6 +51,10 @@ class PublicHomeTests(TestCase):
         root=self.client.get('/',HTTP_HOST='localhost:8000')
         self.assertContains(root,'Salões de beleza')
         self.assertNotContains(root,'Manicure exclusiva')
+        self.assertContains(root,'Seus clientes recebem lembretes automáticos pelo WhatsApp antes do atendimento.')
+        self.assertContains(root,'30 dias grátis')
+        self.assertContains(root,'R$ 30,00 por mês.')
+        self.assertContains(root,'Experimentar grátis')
         response=self.client.get('/?estabelecimento=marcos',HTTP_HOST='localhost:8000')
         self.assertEqual(response.url,'http://marcos.localhost:8000/')
         for slug in ['missing','evil.example','//evil.test','marcos@evil.test']:

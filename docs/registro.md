@@ -2,7 +2,7 @@
 
 A página comercial possui o botão **Contratar**, que leva a `/registro` (também aceita `/registro/`). O formulário pede subdomínio, e-mail, senha e confirmação. O sufixo visual é `.tacombinado.net`.
 
-O cadastro cria atomicamente um tenant ativo e seu usuário ADMIN, sem privilégios de superusuário/staff. O nome inicial do estabelecimento é o subdomínio. Não há cobrança ou integração de pagamento nesta etapa. Subdomínios reservados, inválidos ou duplicados e e-mails já utilizados são recusados. As senhas passam pelos validadores Django.
+O cadastro cria atomicamente um tenant ativo e seu usuário ADMIN, sem privilégios de superusuário/staff. O nome inicial do estabelecimento é o subdomínio. O estabelecimento recebe 30 dias de acesso grátis a partir da data local do cadastro; depois, o pagamento mensal é gerenciado pela tela Mensalidade. Subdomínios reservados, inválidos ou duplicados e e-mails já utilizados são recusados. As senhas passam pelos validadores Django.
 
 Após criar a conta, o botão de acesso usa o domínio `TENANT_BASE_DOMAIN`: em desenvolvimento, `seunegocio.localhost`; em produção, configure `TENANT_BASE_DOMAIN=tacombinado.net`. O usuário entra no subdomínio com seu e-mail e senha. A sessão não é compartilhada entre domínios. O DNS wildcard e o certificado dos subdomínios devem estar configurados em produção.
 
@@ -36,4 +36,4 @@ A transferência usa um ticket opaco de uso único, com duração de 60 segundos
 
 ## Data de expiração
 
-O cadastro do estabelecimento inclui `expira_em`, editável somente pela administração global e visível em Mensalidade. Novos cadastros expiram 30 dias após a data local do cadastro. Mensalidade mostra a contagem regressiva diária. O visitante não escolhe o prazo, e a data não bloqueia o acesso automaticamente nesta etapa.
+O cadastro do estabelecimento inclui `expira_em`, editável somente pela administração global e visível em Mensalidade. Novos cadastros expiram 30 dias após a data local do cadastro. Mensalidade mostra a contagem regressiva diária. O visitante não escolhe o prazo. A integração de pagamento renova 30 dias após cada cobrança aprovada; regras de bloqueio e configuração estão em [mensalidade.md](mensalidade.md).

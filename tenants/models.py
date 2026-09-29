@@ -30,6 +30,11 @@ class Tenant(models.Model):
     ativo = models.BooleanField(default=True)
     expira_em = models.DateField('Data de expiração', null=True, blank=True,
         help_text='Validade do acesso. Quando não informada, será definida como 30 dias após o cadastro.')
+    mercado_pago_assinatura_id = models.CharField(max_length=100, blank=True, default='')
+    mercado_pago_assinatura_status = models.CharField(max_length=30, blank=True, default='')
+    mercado_pago_checkout_url = models.URLField(max_length=500, blank=True, default='')
+    mercado_pago_idempotency_key = models.UUIDField(null=True, blank=True)
+    mercado_pago_valor_assinatura = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
@@ -63,3 +68,12 @@ class Tenant(models.Model):
 
     def __str__(self):
         return self.nome
+
+
+class PlataformaPagamento(models.Model):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, related_name='pagamentos_plataforma')
+    mercado_pago_payment_id = models.CharField(max_length=100, unique=True)
+    mercado_pago_assinatura_id = models.CharField(max_length=100)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    aprovado_em = models.DateTimeField(null=True, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)

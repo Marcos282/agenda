@@ -1,30 +1,41 @@
-# Mensalidade da plataforma
+# Mensalidade e assinatura Mercado Pago
 
-O botão **Mensalidade**, ao lado de **QR Code da loja**, abre `/painel/mensalidade/`. A página é exclusiva do administrador do estabelecimento e apresenta o plano de uso da plataforma.
+O botão **Mensalidade** fica disponível ao administrador do estabelecimento em `/painel/mensalidade/`. A integração cria uma assinatura recorrente a cada 30 dias por R$ 30,00 por tenant, usando o checkout hospedado do Mercado Pago. A aplicação não recebe nem armazena dados de cartão.
 
-## Configuração do checkout
+## Credenciais
 
-Crie o plano mensal na conta recebedora da plataforma no Mercado Pago. Configure no ambiente do servidor:
+Configure as variáveis abaixo no `.env` da raiz do projeto em desenvolvimento local. O arquivo é carregado pelo Django e ignorado pelo Git. Em produção, defina os mesmos nomes no ambiente do processo:
 
 ```dotenv
-MERCADO_PAGO_SUBSCRIPTION_PLAN_ID=identificador_do_plano
-PLATFORM_MONTHLY_PRICE=valor_regular_do_plano
+PLATFORM_MONTHLY_PRICE=30.00
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
+MERCADO_PAGO_WEBHOOK_SECRET=segredo-de-assinatura-do-webhook
 ```
 
-Configure o preço regular com ponto decimal, somente quando definido. A oferta informada é de R$ 29,90/mês para os 20 primeiros cadastros. A oferta não é exibida na página Mensalidade. A atribuição e o controle das 20 vagas dependem da futura configuração singleton e não são simulados nesta entrega. `PLATFORM_MONTHLY_PRICE` é informativo: deve corresponder ao preço configurado no Mercado Pago. Sem valor, a página informa que o preço deve ser consultado no checkout. O ID vem do parâmetro `preapproval_plan_id` do link de assinatura. As variáveis também podem ser configuradas no arquivo local não versionado `.local-settings.json`; o ambiente tem precedência.
+Obtenha o Access Token nas credenciais da aplicação Mercado Pago (use credenciais de produção no servidor e de teste apenas localmente). Obtenha o segredo de assinatura em **Suas integrações → Webhooks**. Nunca coloque essas credenciais no HTML, JavaScript, repositório ou mensagens de suporte. O preço padrão é `30.00`; ele também precisa corresponder ao valor configurado no Mercado Pago.
 
-A página monta um link HTTPS para o checkout do plano no domínio brasileiro do Mercado Pago. O usuário confere valor e condições e autoriza a assinatura no provedor. Não são coletados cartão, senha ou Access Token no painel. Sem ID de plano válido, a tela mostra “Em configuração” e o botão de pagamento fica desabilitado.
+O domínio público precisa estar acessível por HTTPS. O checkout envia `notification_url` para `https://<subdomínio>.tacombinado.net/integracoes/mercado-pago/webhook/`. Em produção, configure `TENANT_BASE_DOMAIN=tacombinado.net` e mantenha `STORE_BASE_DOMAIN=tacombinado.net` (ou o domínio público efetivo) para que os webhooks cheguem ao tenant correto.
 
-## Limites desta entrega
+## Configuração de webhooks no Mercado Pago
 
-A integração atual oferece o acesso ao checkout hospedado. Ela não cria assinaturas via API, não associa automaticamente uma assinatura ao tenant e não sincroniza pagamentos, vencimentos, cancelamentos ou histórico. Abrir o checkout ou voltar dele não altera o status de pagamento nem o acesso ao sistema. O painel não declara que uma assinatura está ativa ou paga. Quem já assinou deve consultar a assinatura no Mercado Pago antes de contratar novamente.
+Na aplicação do Mercado Pago, habilite notificações de **Assinaturas (preapproval)** e **Pagamentos autorizados de assinatura**. Use o segredo de assinatura da mesma aplicação em `MERCADO_PAGO_WEBHOOK_SECRET`. O endpoint valida `x-signature` com HMAC-SHA256 e consulta os dados do evento pela API autenticada antes de alterar qualquer prazo. Respostas não disponíveis são retornadas como erro temporário para permitir nova tentativa do provedor.
 
-Para automatizar o controle financeiro, será necessário acrescentar a vinculação de cada assinatura ao estabelecimento, credenciais do servidor, consulta à API e webhooks autenticados.
+## Ciclo de acesso
 
-Referência oficial: [Plano de assinatura e link de checkout (`init_point`)](https://www.mercadopago.com.br/developers/pt/reference/online-payments/subscriptions/create-preapproval-plan/post).
+- O cadastro inicia 30 dias grátis, contabilizados pela data local do estabelecimento.
+- O painel mostra os dias restantes. No dia da expiração ele indica “Expira hoje”; o bloqueio começa no dia seguinte.
+- Após o vencimento, o administrador pode entrar somente na tela **Mensalidade** do painel. As demais rotas administrativas redirecionam para lá.
+- A loja pública pode continuar exibindo o catálogo, mas novos agendamentos são temporariamente bloqueados. Consultas e cancelamentos de reservas já existentes continuam acessíveis.
+- Uma cobrança só renova o acesso depois de confirmada como aprovada pela API do Mercado Pago. Cada pagamento é registrado por ID único, portanto webhooks repetidos não duplicam a renovação.
+- Cada cobrança aprovada acrescenta 30 dias à data de expiração atual quando o pagamento ocorre antes do vencimento. Se o prazo já venceu, os 30 dias começam a contar da data local do pagamento.
+- A assinatura fica vinculada ao tenant por referência externa, e seu status é atualizado por webhook. O administrador pode continuar ou gerenciar a assinatura no Mercado Pago.
 
-## Expiração do estabelecimento
+É necessária a migration `tenants.0006_mercado_pago_subscription`; aplique as migrations antes de iniciar a versão atualizada:
 
-`Tenant.expira_em` armazena a data de expiração do estabelecimento pagante, e não do consumidor que agenda serviços. É preenchida automaticamente com a data local do cadastro mais 30 dias, considerando o fuso do estabelecimento. Cadastros antigos sem prazo recebem a mesma regra a partir da data original; datas já definidas são preservadas. O superusuário edita o campo em **Administração da plataforma → Tenants**, onde também aparece na listagem e no filtro. A página Mensalidade exibe a data e um contador calculado a cada acesso: 30, 29, 28… dias. No vencimento mostra “Expira hoje” e depois “Prazo expirado”, sempre sem números negativos. O administrador do estabelecimento não pode alterar a data. O formulário público de registro não aceita uma expiração enviada pelo visitante.
+```bash
+myenv/bin/python manage.py migrate
+```
 
-A data ainda não bloqueia acesso nem se renova ao retornar do Mercado Pago. Editar o cadastro não reinicia o prazo. A política de vencimento e renovação e a tabela singleton de preços serão conectadas posteriormente.
+## Limites e operação
+
+A aprovação depende de Access Token válido, preço configurado, webhook público HTTPS e segredo correspondente à aplicação do Mercado Pago. Sem essas configurações, o painel mantém o botão indisponível e não estende o prazo. Testes automatizados usam respostas simuladas e não iniciam cobranças reais.

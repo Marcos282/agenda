@@ -2,11 +2,13 @@ from barbe.admin import site
 from django.urls import path, include
 from usuarios import views, registro, login_transfer
 from django.views.generic import TemplateView
+from tenants.payment_views import mercado_pago_webhook
 
 urlpatterns = [
     path('registro', registro.registro, name='registro'),
     path('registro/', registro.registro),
     path('registro/concluido/', registro.registro_concluido, name='registro_concluido'),
+    path('integracoes/mercado-pago/webhook/', mercado_pago_webhook, name='mercado_pago_webhook'),
     path('lembrar-senha/', registro.RecuperarSenha.as_view(), name='lembrar_senha'),
     path('lembrar-senha/enviado/', TemplateView.as_view(template_name='usuarios/senha_email_enviado.html'), name='senha_email_enviado'),
     path('redefinir-senha/<uidb64>/<token>/', registro.RedefinirSenha.as_view(), name='password_reset_confirm'),

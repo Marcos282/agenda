@@ -10,6 +10,9 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 {% endblock %}
 {% block content %}
 <nav class="panel-nav" aria-label="Painel administrativo">
+{% if request.tenant.dias_para_expirar < 0 %}
+<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" aria-current="page">Mensalidade</a>
+{% else %}
 <a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}" {% if request.resolver_match.url_name == 'inicio' %}aria-current="page"{% endif %}>Painel</a><a class="ui-button ui-button-secondary" href="{% url 'painel:profissionais' %}" {% if 'profissionais' in request.path %}aria-current="page"{% endif %}>Profissionais</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:servicos' %}" {% if request.resolver_match.url_name == 'servicos' or request.resolver_match.url_name == 'servico_novo' or request.resolver_match.url_name == 'servico_editar' %}aria-current="page"{% endif %}>Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}" {% if request.resolver_match.url_name == 'agenda' or request.resolver_match.url_name == 'disponibilidades' %}aria-current="page"{% endif %}>Agenda</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}" {% if request.resolver_match.url_name == 'clientes' or request.resolver_match.url_name == 'cliente_historico' %}aria-current="page"{% endif %}>Clientes</a>
@@ -17,6 +20,7 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 <a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}" {% if request.resolver_match.url_name == 'whatsapp' %}aria-current="page"{% endif %}>WhatsApp</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:loja_qrcode' %}" {% if request.resolver_match.url_name == 'loja_qrcode' %}aria-current="page"{% endif %}>QR Code da loja</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" {% if request.resolver_match.url_name == 'mensalidade' %}aria-current="page"{% endif %}>Mensalidade</a>
+{% endif %}
 </nav>
 {% block painel_content %}{% endblock %}
 {% endblock %}

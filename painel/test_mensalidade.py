@@ -9,7 +9,7 @@ from tenants.models import Tenant
 from usuarios.models import User
 
 
-@override_settings(MERCADO_PAGO_SUBSCRIPTION_PLAN_ID='', PLATFORM_MONTHLY_PRICE='')
+@override_settings(MERCADO_PAGO_ACCESS_TOKEN='', MERCADO_PAGO_WEBHOOK_SECRET='', PLATFORM_MONTHLY_PRICE='')
 class MensalidadeTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -31,28 +31,42 @@ class MensalidadeTests(TestCase):
         self.assertContains(page, 'Em configuração')
         self.assertContains(page, 'Pagamento ainda indisponível')
         self.assertEqual(page.context['dias_restantes'], 30)
-        self.assertIsNone(page.context['checkout_url'])
+        self.assertFalse(page.context['checkout_configurado'])
         self.assertIn('no-store', page['Cache-Control'])
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, self.tenant.data_expiracao)
 
-    @override_settings(MERCADO_PAGO_SUBSCRIPTION_PLAN_ID='plan_123', PLATFORM_MONTHLY_PRICE='29.90')
-    def test_checkout_and_expiration_read_only(self):
+    @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
+    def test_subscription_configuration_and_expiration_read_only(self):
         self.tenant.expira_em = date(2026, 12, 31)
         self.tenant.save()
         page = self.client.get(self.url, **self.host)
-        self.assertEqual(page.context['checkout_url'], 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=plan_123')
-        self.assertEqual(page.context['valor_mensal'], Decimal('29.90'))
+        self.assertTrue(page.context['checkout_configurado'])
+        self.assertEqual(page.context['valor_mensal'], Decimal('30.00'))
         self.assertContains(page, '31/12/2026')
+        self.assertContains(page, '30 dias')
         self.assertNotContains(page, 'name="expira_em"')
-        self.assertEqual(self.client.post(self.url, {'expira_em': '2099-12-31'}, **self.host).status_code, 405)
+        self.assertEqual(self.client.post(self.url, {'expira_em': '2099-12-31'}, **self.host).status_code, 302)
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, date(2026, 12, 31))
 
-    @override_settings(MERCADO_PAGO_SUBSCRIPTION_PLAN_ID='bad&redirect=evil', PLATFORM_MONTHLY_PRICE='NaN')
+    @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
+    def test_post_starts_subscription_and_redirects_to_hosted_checkout(self):
+        checkout = 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=123'
+        with patch('painel.mensalidade_views.create_subscription', return_value=checkout) as start:
+            response = self.client.post(self.url, {'acao': 'assinar'}, **self.host)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], checkout)
+        start.assert_called_once_with(
+            tenant_id=self.tenant.pk,
+            payer_email=self.admin.email,
+            amount=Decimal('30.00'),
+        )
+
+    @override_settings(PLATFORM_MONTHLY_PRICE='NaN')
     def test_invalid_config_does_not_enable_checkout(self):
         page = self.client.get(self.url, **self.host)
-        self.assertIsNone(page.context['checkout_url'])
+        self.assertEqual(page.context['checkout_url'], '')
         self.assertIsNone(page.context['valor_mensal'])
 
     def test_permissions_and_tenant_scope(self):

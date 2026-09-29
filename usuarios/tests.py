@@ -43,6 +43,14 @@ class FoundationTests(TestCase):
         for path in ['/cadastro/', '/conta/']:
             self.assertEqual(self.client.get(path, HTTP_HOST='localhost').status_code, 404)
 
+    def test_localhost_with_port_is_valid_root_host_when_base_domain_is_production(self):
+        with self.settings(TENANT_BASE_DOMAIN='tacombinado.net'):
+            response = self.client.get('/login/', HTTP_HOST='localhost:8001')
+            submitted = self.client.post('/login/', {'email': 'nao-existe@example.test', 'password': 'invalid'}, HTTP_HOST='localhost:8001')
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.wsgi_request.tenant)
+        self.assertEqual(submitted.status_code, 200)
+
     def test_registration_uses_host_and_ignores_privilege_injection(self):
         for tenant in [self.marcos, self.wanessa]:
             email = f'{tenant.subdomain}@example.com'

@@ -18,18 +18,26 @@
 <section class="billing-payment" aria-labelledby="payment-title">
 <div class="billing-provider">Mercado Pago</div>
 <h2 id="payment-title">Pagamento da mensalidade</h2>
-{% if checkout_url %}
-<span class="billing-status">Checkout disponível</span>
-<p>Continue no Mercado Pago para conferir o valor, a frequência de cobrança e as condições do plano antes de assinar.</p>
+{% if assinatura_ativa %}
+<span class="billing-status">Assinatura recorrente ativa</span>
+<p>O Mercado Pago cobra {{ valor_mensal|floatformat:2 }} por mês. A validade é renovada por 30 dias após cada cobrança aprovada.</p>
+<a class="ui-button billing-pay" href="https://www.mercadopago.com.br/subscriptions" target="_blank" rel="noopener noreferrer">Gerenciar assinatura no Mercado Pago ↗</a>
+{% elif checkout_url and assinatura_status == 'pending' %}
+<span class="billing-status">Assinatura aguardando confirmação</span>
+<p>Conclua a autorização da cobrança recorrente. O acesso será renovado quando o Mercado Pago confirmar o pagamento.</p>
 <a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>
-<p class="billing-note">Se você já possui uma assinatura, consulte-a no Mercado Pago antes de contratar novamente.</p>
+{% elif checkout_configurado %}
+<span class="billing-status">{% if prazo_expirado %}Acesso bloqueado até a confirmação do pagamento{% else %}30 dias grátis desde o cadastro{% endif %}</span>
+<p>Assine por R$ {{ valor_mensal|floatformat:2 }} por mês. Se pagar antes do vencimento, os 30 novos dias serão somados ao prazo atual.</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="assinar"><button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button></form>
+{% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Você pode iniciar uma nova assinatura.</p>{% endif %}
 {% else %}
 <span class="billing-status billing-pending">Em configuração</span>
-<p>O pagamento pelo Mercado Pago estará disponível assim que o plano mensal da plataforma for configurado.</p>
+<p>O pagamento estará disponível depois que a integração segura do Mercado Pago for configurada.</p>
 <button type="button" class="billing-pay" disabled>Pagamento ainda indisponível</button>
-<p class="billing-note">Nenhuma cobrança é realizada nesta página.</p>
+<p class="billing-note">O cartão é informado somente no checkout hospedado pelo Mercado Pago.</p>
 {% endif %}
-<div class="billing-details"><h3>Confirmação e comprovantes</h3><p>Os dados de pagamento são preenchidos no Mercado Pago. A consulta automática do status e do histórico de cobranças ainda não está disponível neste painel.</p></div>
+<div class="billing-details"><h3>Confirmação e comprovantes</h3><p>A confirmação chega pelo Mercado Pago. O sistema registra cada cobrança aprovada uma única vez e atualiza a data de expiração automaticamente.</p></div>
 </section>
 </div>
 {% endblock %}
