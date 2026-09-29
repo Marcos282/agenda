@@ -1,7 +1,7 @@
 {% extends 'usuarios/base.html' %}
 {% block title %}Contratar · Tá Combinado{% endblock %}
 {% block extra_css %}
-.domain-field{display:flex;align-items:stretch;border:1px solid #cfd7d1;border-radius:9px;overflow:hidden}.domain-field input{min-width:0;border:0;border-radius:0;flex:1;width:0}.domain-field span{display:flex;align-items:center;white-space:nowrap;padding:12px;background:#edf0ed;color:#626a65;font-size:14px}.domain-field:focus-within{outline:3px solid var(--focus);outline-offset:2px}.domain-field input:focus-visible{outline:none}.signup-button{width:100%}.signup-links{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:24px}.signup-field{margin:20px 0}.helptext{display:block;color:var(--muted);font-size:12px}.helptext ul{padding-left:18px}.errorlist{color:#9b2929;font-size:13px;padding-left:18px}@media(max-width:540px){main{margin:24px 12px;padding:24px 18px}.domain-field span{font-size:12px;padding:10px}}
+.domain-field{display:flex;align-items:stretch;border:1px solid #cfd7d1;border-radius:9px;overflow:hidden}.domain-field input{min-width:0;border:0;border-radius:0;flex:1;width:0}.domain-field span{display:flex;align-items:center;white-space:nowrap;padding:12px;background:#edf0ed;color:#626a65;font-size:14px}.domain-field:focus-within{outline:3px solid var(--focus);outline-offset:2px}.domain-field input:focus-visible{outline:none}.signup-button{width:100%}.signup-links{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:24px}.signup-links .ui-button{flex:1 1 170px;text-align:center}.signup-field{margin:20px 0}.helptext{display:block;color:var(--muted);font-size:12px}.helptext ul{padding-left:18px}.errorlist{color:#9b2929;font-size:13px;padding-left:18px}@media(max-width:540px){main{margin:24px 12px;padding:24px 18px}.domain-field span{font-size:12px;padding:10px}}
 {% endblock %}
 {% block content %}
 <h1>Seu negócio no Tá Combinado</h1><p>Escolha o endereço do seu estabelecimento e crie seu acesso de administrador.</p>
@@ -10,5 +10,5 @@
 <div class="domain-field">{{ form.subdomain }}<span id="domain-suffix">.tacombinado.net</span></div>{{ form.subdomain.errors }}
 {% for field in form %}{% if field.name != 'subdomain' %}<div class="signup-field">{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}</div>{% endif %}{% endfor %}
 <button class="signup-button" type="submit">Criar meu estabelecimento</button></form>
-<div class="signup-links"><a href="{% url 'login' %}">Já tenho uma conta</a><a href="{% url 'lembrar_senha' %}">Esqueci minha senha</a></div>
+<div class="signup-links"><a class="ui-button ui-button-secondary" href="{% url 'login' %}">Já tenho uma conta</a><a class="ui-button ui-button-secondary" href="{% url 'lembrar_senha' %}">Esqueci minha senha</a></div>
 {% endblock %}
