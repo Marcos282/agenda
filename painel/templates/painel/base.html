@@ -15,6 +15,8 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 <a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}" {% if request.resolver_match.url_name == 'clientes' or request.resolver_match.url_name == 'cliente_historico' %}aria-current="page"{% endif %}>Clientes</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:agendamento_novo' %}" {% if request.resolver_match.url_name == 'agendamento_novo' %}aria-current="page"{% endif %}>+ Agendamento</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}" {% if request.resolver_match.url_name == 'whatsapp' %}aria-current="page"{% endif %}>WhatsApp</a>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:loja_qrcode' %}" {% if request.resolver_match.url_name == 'loja_qrcode' %}aria-current="page"{% endif %}>QR Code da loja</a>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" {% if request.resolver_match.url_name == 'mensalidade' %}aria-current="page"{% endif %}>Mensalidade</a>
 </nav>
 {% block painel_content %}{% endblock %}
 {% endblock %}

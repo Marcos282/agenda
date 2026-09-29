@@ -1,16 +1,20 @@
 from django.urls import path
-from . import views, agenda_views, agendamento_views, cliente_views
+from . import views, agenda_views, agendamento_views, cliente_views, loja_qrcode_views, mensalidade_views
 
 from whatsapp.views import configuracao_whatsapp
 
 app_name = 'painel'
 urlpatterns = [
+    path('mensalidade/', mensalidade_views.mensalidade, name='mensalidade'),
+    path('loja/qr/', loja_qrcode_views.loja_qrcode, name='loja_qrcode'),
+    path('loja/qr.png', loja_qrcode_views.loja_qrcode_imagem, name='loja_qrcode_imagem'),
     path('whatsapp/', configuracao_whatsapp, name='whatsapp'),
     path('', views.inicio, name='inicio'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),
     path('agendamentos/<int:pk>/cancelar/', agendamento_views.cancelar_agendamento, name='agendamento_cancelar'),
     path('agendamentos/<int:pk>/falta/', agendamento_views.falta, name='agendamento_falta'),
     path('clientes/', cliente_views.lista, name='clientes'),
+    path('clientes/whatsapp/<str:whatsapp>/', cliente_views.whatsapp_historico, name='whatsapp_historico'),
     path('clientes/contatos/<int:pk>/', cliente_views.contato_historico, name='contato_historico'),
     path('clientes/<int:pk>/', cliente_views.historico, name='cliente_historico'),
     path('agenda/', agenda_views.agenda, name='agenda'),

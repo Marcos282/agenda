@@ -105,7 +105,7 @@ Configure `PLATFORM_SALES_URL` no ambiente com o link comercial (por exemplo, Wh
 
 ### Agendamentos online
 
-O cliente pode agendar pela loja ou pelos serviços da página do estabelecimento. A confirmação exige login e é automática, com consulta e cancelamento em `/agendamentos/`. As reservas aparecem na agenda administrativa. Antes de iniciar o servidor atualizado, execute `myenv/bin/python manage.py migrate`. Detalhes em [docs/agendamentos.md](docs/agendamentos.md).
+O cliente pode agendar pela loja ou pelos serviços da página do estabelecimento. A confirmação exige apenas nome e WhatsApp e é automática, sem e-mail ou senha. Consulta e cancelamento ficam em `/agendamentos/` neste navegador e no link pessoal mostrado na confirmação. As reservas aparecem na agenda administrativa. Antes de iniciar o servidor atualizado, execute `myenv/bin/python manage.py migrate`. Detalhes em [docs/agendamentos.md](docs/agendamentos.md).
 
 ### WhatsApp dos clientes
 
@@ -115,8 +115,16 @@ Contas anteriores sem WhatsApp são preservadas. Ao entrar, o cliente é direcio
 
 A confirmação do agendamento também exibe WhatsApp obrigatório, preenchido com o contato da conta. Enviar vazio ou inválido bloqueia a reserva, mesmo quando a conta já possui um número. Correções do número são salvas junto com a reserva, na mesma transação.
 
-No agendamento pelo painel, informe o nome do cliente em texto e o WhatsApp obrigatório. Não é exigida conta do cliente; um contato é registrado com seu histórico na seção Clientes. Agendamentos públicos continuam exigindo login.
+No agendamento pelo painel, informe o nome do cliente em texto e o WhatsApp obrigatório. Não é exigida conta do cliente; um contato é registrado com seu histórico na seção Clientes. Agendamentos públicos também aceitam nome e WhatsApp sem login.
 
 ### WhatsApp e lembretes de agendamento
 
 O painel possui configuração por estabelecimento, conexão Evolution API por QR code e mensagem de lembrete com antecedência ajustável (padrão: 2 horas). Consulte [configuração e execução periódica](docs/whatsapp.md) para ativar o envio automático.
+
+### QR Code da loja
+
+No painel, o botão **QR Code da loja**, ao lado de **WhatsApp**, mostra o QR Code do endereço público do estabelecimento (por exemplo, `https://marcos.tacombinado.net/`). É possível baixar a imagem PNG para compartilhar ou imprimir. O domínio público é configurado por `STORE_BASE_DOMAIN` (padrão: `tacombinado.net`), independente do endereço local usado para acessar o painel. A imagem é gerada no próprio servidor, sem serviços externos.
+
+### Mensalidade da plataforma
+
+O botão **Mensalidade**, ao lado do QR Code da loja, mostra o plano do estabelecimento e o acesso ao checkout de assinatura do Mercado Pago quando configurado. Sem plano, a página exibe “Em configuração”. Consulte [configuração e limites da integração](docs/mensalidade.md).

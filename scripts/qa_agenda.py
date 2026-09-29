@@ -39,7 +39,7 @@ def active_ids():
 
 def prepare_no_show(tenant_id, offer_id):
     from unittest.mock import patch
-    from agenda.booking import reservar, instante_local
+    from agenda.booking import reservar_por_whatsapp, instante_local
     def create():
         try:
             tenant = Tenant.objects.get(pk=tenant_id)
@@ -47,9 +47,8 @@ def prepare_no_show(tenant_id, offer_id):
             day = timezone.localdate() - timedelta(days=1)
             Disponibilidade.objects.create(tenant=tenant, profissional=offer.profissional, data=day,
                 hora_inicio=time(9), hora_fim=time(12))
-            customer = User.objects.get(email='customer-qa@example.test')
             with patch('django.utils.timezone.now', return_value=instante_local(day, time(8), tenant)):
-                reservar(tenant=tenant, cliente=customer, oferta_id=offer_id, dia=day, hora=time(9),
+                reservar_por_whatsapp(tenant=tenant, whatsapp='11999991234', oferta_id=offer_id, dia=day, hora=time(9),
                     nome='Cliente ausente', valor_exibido='40.00', duracao_exibida=40)
             return day.isoformat()
         finally:
@@ -144,6 +143,33 @@ try:
         page.locator('[name="password"]').fill('Visual-Test!2026')
         page.get_by_role('button', name='Entrar', exact=True).click()
         page.wait_for_url('**/conta/')
+        page.goto(base + '/painel/')
+        page.get_by_role('link', name='QR Code da loja', exact=True).click()
+        expect(page.get_by_role('heading', name='QR Code da loja', exact=True)).to_be_visible()
+        expect(page.locator('.store-qr-url')).to_have_text('https://marcos.tacombinado.net/')
+        expect(page.locator('.store-qr img')).to_be_visible()
+        page.wait_for_function("() => { const img = document.querySelector('.store-qr img'); return img && img.complete && img.naturalWidth > 0; }")
+        page.screenshot(path=str(folder / 'store-qr-desktop.png'), full_page=True)
+        page.set_viewport_size({'width':390,'height':844})
+        assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Store QR mobile overflow'
+        page.screenshot(path=str(folder / 'store-qr-mobile.png'), full_page=True)
+        with page.expect_download() as download_info:
+            page.get_by_role('link', name='Baixar QR Code', exact=True).click()
+        download = download_info.value
+        assert download.suggested_filename == 'qrcode-marcos.png'
+        download.save_as(str(folder / 'qrcode-marcos.png'))
+        page.set_viewport_size({'width':1440,'height':1100})
+        page.get_by_role('link', name='Mensalidade', exact=True).click()
+        expect(page.get_by_role('heading', name='Mensalidade', exact=True)).to_be_visible()
+        expect(page.get_by_text('Oferta de lançamento', exact=True)).to_have_count(0)
+        expect(page.get_by_role('button', name='Pagamento ainda indisponível')).to_be_disabled()
+        expect(page.locator('.billing-countdown strong')).to_have_text('30')
+        expect(page.get_by_text('dias para expirar', exact=True)).to_be_visible()
+        page.screenshot(path=str(folder / 'mensalidade-desktop.png'), full_page=True)
+        page.set_viewport_size({'width':390,'height':844})
+        assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Monthly billing mobile overflow'
+        page.screenshot(path=str(folder / 'mensalidade-mobile.png'), full_page=True)
+        page.set_viewport_size({'width':1440,'height':1100})
         page.goto(base + '/painel/whatsapp/')
         expect(page.get_by_role('heading', name='WhatsApp', exact=True)).to_be_visible()
         expect(page.locator('input[name=antecedencia_minutos]')).to_have_value('120')
@@ -210,7 +236,7 @@ try:
         assert len(active_ids()) == 2
         page.keyboard.press('Escape')
         expect(page.get_by_role('dialog')).to_have_count(0)
-        # Full customer journey, including signup return, confirmation, admin display and cancellation.
+        # Guest journey: name and WhatsApp, confirmation, admin display and cancellation.
         customer_context = browser.new_context(viewport={'width': 1280, 'height': 950}, locale='pt-BR')
         customer = customer_context.new_page()
         customer.on('pageerror', lambda error: errors.append(str(error)))
@@ -218,20 +244,9 @@ try:
         customer.get_by_role('link', name='Agendar horário →').click()
         customer.get_by_label('Escolha a data').fill(day)
         customer.get_by_role('button', name='Ver horários disponíveis →').click()
-        customer.get_by_role('link', name='Entrar para agendar').click()
-        customer.get_by_role('link', name='Criar conta', exact=True).first.click()
-        customer.get_by_label('E-mail').fill('customer-qa@example.test')
-        customer.get_by_label('WhatsApp', exact=False).fill('(11) 99999-1234')
-        customer.locator('[name="password1"]').fill('Customer-QA!2026')
-        customer.locator('[name="password2"]').fill('Customer-QA!2026')
-        customer.get_by_role('button', name='Cadastrar', exact=True).click()
-        customer.get_by_label('E-mail').fill('customer-qa@example.test')
-        customer.locator('[name="password"]').fill('Customer-QA!2026')
-        customer.get_by_role('button', name='Entrar', exact=True).click()
-        customer.wait_for_url(f'**/agendamentos/servico/{offer.pk}/{day}/')
         customer.get_by_label('Seu nome').fill('Cliente de teste')
         contact = customer.locator('[name=whatsapp]')
-        expect(contact).to_have_value('+5511999991234')
+        expect(contact).to_have_value('')
         contact.fill('')
         assert contact.evaluate('(el) => el.required && !el.checkValidity()'), 'WhatsApp must be required at confirmation'
         contact.fill('(11) 99999-1234')
@@ -242,6 +257,7 @@ try:
         customer.screenshot(path=str(folder / 'booking-mobile.png'), full_page=True)
         customer.get_by_role('button', name='Confirmar agendamento →').click()
         expect(customer.get_by_role('heading', name='Seu horário está reservado.')).to_be_visible()
+        assert customer.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Receipt mobile overflow'
         customer.screenshot(path=str(folder / 'booking-confirmed-mobile.png'), full_page=True)
         page.goto(agenda)
         expect(page.locator('.timeline-block.booked')).to_have_count(1)
@@ -287,7 +303,7 @@ try:
         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'No-show agenda mobile overflow'
         page.screenshot(path=str(folder / 'panel-no-show-mobile.png'), full_page=True)
         customer.reload()
-        expect(customer.locator('.booking-list .booking-status').filter(has_text='Não compareceu')).to_have_count(1)
+        expect(customer.locator('.booking-list .booking-status').filter(has_text='Não compareceu')).to_have_count(0)
         page.get_by_role('link', name='Clientes', exact=True).click()
         page.get_by_label('Buscar cliente ou WhatsApp').fill('(11) 99999-1234')
         page.get_by_role('button', name='Buscar', exact=True).click()

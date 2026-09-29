@@ -174,16 +174,32 @@ def registrar_falta(*, tenant, administrador, agendamento_id):
 
 
 @transaction.atomic
-def reservar_pelo_painel(*, tenant, administrador, nome, whatsapp, **dados):
-    from django.core.exceptions import PermissionDenied
+def reservar_por_whatsapp(*, tenant, nome, whatsapp, acesso_publico=False, **dados):
+    from uuid import uuid4
+    from tenants.models import Tenant
     from usuarios.models import ContatoCliente
     from usuarios.validators import normalizar_whatsapp
-    if not administrador.is_active or administrador.tipo != 'ADMIN' or administrador.tenant_id != tenant.pk:
-        raise PermissionDenied('Apenas administradores deste estabelecimento podem agendar pelo painel.')
+
     nome = ' '.join(nome.split())
     if not nome or len(nome) > 150:
         raise ValidationError('Informe o nome do cliente, com até 150 caracteres.')
     whatsapp = normalizar_whatsapp(whatsapp)
-    # An unverified phone must never grant access to an existing login account/history.
-    contato, _ = ContatoCliente.objects.get_or_create(tenant=tenant, nome__iexact=nome, whatsapp=whatsapp, defaults={'nome': nome})
-    return reservar(tenant=tenant, cliente=None, contato=contato, nome=nome, **dados)
+    # Serialize contact lookup/creation, including requests for different professionals.
+    Tenant.objects.select_for_update().get(pk=tenant.pk, ativo=True)
+    contato = ContatoCliente.objects.for_tenant(tenant).filter(whatsapp=whatsapp).order_by('pk').first()
+    if contato is None:
+        contato = ContatoCliente.objects.create(tenant=tenant, nome=nome, whatsapp=whatsapp)
+    # Keep the existing contact name; each booking records the name supplied this time.
+    booking = reservar(tenant=tenant, cliente=None, contato=contato, nome=nome, **dados)
+    if acesso_publico:
+        booking.acesso_token = uuid4()
+        booking.save(update_fields=['acesso_token'])
+    return booking
+
+
+@transaction.atomic
+def reservar_pelo_painel(*, tenant, administrador, nome, whatsapp, **dados):
+    from django.core.exceptions import PermissionDenied
+    if not administrador.is_active or administrador.tipo != 'ADMIN' or administrador.tenant_id != tenant.pk:
+        raise PermissionDenied('Apenas administradores deste estabelecimento podem agendar pelo painel.')
+    return reservar_por_whatsapp(tenant=tenant, nome=nome, whatsapp=whatsapp, **dados)

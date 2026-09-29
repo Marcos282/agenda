@@ -34,6 +34,8 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", LOCAL.get("SECRET_KEY", "django
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 
 TENANT_BASE_DOMAIN = os.environ.get("TENANT_BASE_DOMAIN", "localhost").lower()
+# Public address used when sharing a store, including from local development.
+STORE_BASE_DOMAIN = os.environ.get("STORE_BASE_DOMAIN", "tacombinado.net").strip().lower()
 ALLOWED_HOSTS = [TENANT_BASE_DOMAIN, "." + TENANT_BASE_DOMAIN, "127.0.0.1", "[::1]"]
 
 
@@ -210,3 +212,7 @@ elif os.environ.get('EMAIL_HOST'):
             'timeout': 15,
         },
     }
+
+# Platform subscription checkout. These are public plan settings, never credentials.
+MERCADO_PAGO_SUBSCRIPTION_PLAN_ID = os.environ.get('MERCADO_PAGO_SUBSCRIPTION_PLAN_ID', LOCAL.get('MERCADO_PAGO_SUBSCRIPTION_PLAN_ID', ''))
+PLATFORM_MONTHLY_PRICE = os.environ.get('PLATFORM_MONTHLY_PRICE', LOCAL.get('PLATFORM_MONTHLY_PRICE', ''))

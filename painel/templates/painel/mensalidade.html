@@ -1,0 +1,35 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Mensalidade · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}">{% endblock %}
+{% block painel_content %}
+<span class="eyebrow">SEU ESTABELECIMENTO NA PLATAFORMA</span>
+<h1>Mensalidade</h1>
+<p class="billing-intro">O plano de {{ request.tenant.nome }} para usar o Tá Combinado.</p>
+<div class="billing-grid">
+<section class="billing-plan" aria-labelledby="plan-title">
+<span class="billing-label">PLANO DO ESTABELECIMENTO</span>
+<h2 id="plan-title">Tá Combinado</h2>
+{% if valor_mensal %}<p class="billing-price">R$ {{ valor_mensal|floatformat:2 }}<span>/mês</span></p>{% else %}<p class="billing-price billing-price-pending">{% if checkout_url %}Consulte o valor no Mercado Pago{% else %}Plano mensal{% endif %}</p>{% endif %}
+<div class="billing-countdown {% if prazo_expirado or expira_hoje %}billing-countdown-due{% endif %}" role="status"><strong>{{ dias_restantes }}</strong><span>{% if prazo_expirado %}Prazo expirado{% elif expira_hoje %}Expira hoje{% else %}dia{{ dias_restantes|pluralize }} para expirar{% endif %}</span></div>
+<p>Uma plataforma para organizar seus atendimentos e receber agendamentos online.</p>
+<ul class="billing-features"><li>Agenda e agendamentos online</li><li>Gestão de profissionais e serviços</li><li>Histórico de clientes pelo WhatsApp</li><li>Loja online e QR Code para divulgação</li></ul>
+<div class="billing-store"><span>Estabelecimento</span><strong>{{ request.tenant.nome }}</strong><small>{{ request.tenant.subdomain }}</small><span class="billing-expiration">Data de expiração</span><strong>{{ data_expiracao|date:"d/m/Y" }}</strong></div>
+</section>
+<section class="billing-payment" aria-labelledby="payment-title">
+<div class="billing-provider">Mercado Pago</div>
+<h2 id="payment-title">Pagamento da mensalidade</h2>
+{% if checkout_url %}
+<span class="billing-status">Checkout disponível</span>
+<p>Continue no Mercado Pago para conferir o valor, a frequência de cobrança e as condições do plano antes de assinar.</p>
+<a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>
+<p class="billing-note">Se você já possui uma assinatura, consulte-a no Mercado Pago antes de contratar novamente.</p>
+{% else %}
+<span class="billing-status billing-pending">Em configuração</span>
+<p>O pagamento pelo Mercado Pago estará disponível assim que o plano mensal da plataforma for configurado.</p>
+<button type="button" class="billing-pay" disabled>Pagamento ainda indisponível</button>
+<p class="billing-note">Nenhuma cobrança é realizada nesta página.</p>
+{% endif %}
+<div class="billing-details"><h3>Confirmação e comprovantes</h3><p>Os dados de pagamento são preenchidos no Mercado Pago. A consulta automática do status e do histórico de cobranças ainda não está disponível neste painel.</p></div>
+</section>
+</div>
+{% endblock %}

@@ -1,3 +1,7 @@
+from datetime import timedelta
+from django.utils import timezone
+from zoneinfo import ZoneInfo
+
 from django.test import TestCase, override_settings
 from django.core import mail
 from django.contrib.auth.tokens import default_token_generator
@@ -13,11 +17,12 @@ class RegistroTests(TestCase):
         return dict(subdomain='meusalao', email='dono@example.test', password1='Segura!Cadastro2026', password2='Segura!Cadastro2026', **changes)
 
     def test_create_tenant_and_only_tenant_admin(self):
-        data=self.data();data.update(tipo='CLIENTE', is_superuser='true', is_staff='true')
+        data=self.data();data.update(tipo='CLIENTE', is_superuser='true', is_staff='true', expira_em='2099-12-31')
         response=self.client.post('/registro', data, HTTP_HOST='127.0.0.1:8000')
         self.assertRedirects(response, '/registro/concluido/', fetch_redirect_response=False)
         tenant=Tenant.objects.get(subdomain='meusalao');user=User.objects.get(email=data['email'])
         self.assertEqual(user.tenant,tenant)
+        self.assertEqual(tenant.expira_em, timezone.localtime(tenant.criado_em, ZoneInfo(tenant.timezone)).date() + timedelta(days=30))
         self.assertEqual(user.tipo,User.Tipo.ADMIN)
         self.assertFalse(user.is_staff or user.is_superuser)
         self.assertTrue(user.check_password(data['password1']))

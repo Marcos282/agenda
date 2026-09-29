@@ -110,9 +110,8 @@ class BookingTests(BookingFixture, TestCase):
 
     def test_http_confirmation_private_history_and_csrf(self):
         anon=self.client.get(self.slots_url(),HTTP_HOST='marcos.localhost')
-        self.assertContains(anon,'Entrar para agendar')
-        self.assertEqual(self.client.post(self.slots_url(),self.payload(),HTTP_HOST='marcos.localhost').status_code,302)
-        self.assertFalse(Agendamento.objects.exists())
+        self.assertContains(anon,'Confirmar agendamento')
+        self.assertNotContains(anon,'Entrar para agendar')
         self.client.force_login(self.user)
         response=self.client.post(self.slots_url(),self.payload(tenant_id=self.other.pk,cliente_id=self.foreign.pk,valor='0.01'),HTTP_HOST='marcos.localhost')
         self.assertEqual(response.status_code,302)

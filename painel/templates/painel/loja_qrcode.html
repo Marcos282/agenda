@@ -1,0 +1,19 @@
+{% extends 'painel/base.html' %}
+{% block title %}QR Code da loja · Painel{% endblock %}
+{% block extra_css %}{{ block.super }}
+.store-qr{text-align:center;max-width:520px;margin:28px auto;padding:24px;border:1px solid var(--line);border-radius:16px;background:white}
+.store-qr img{display:block;width:100%;max-width:360px;height:auto;margin:16px auto;image-rendering:pixelated}
+.store-qr h2{margin:0}.store-qr-url{overflow-wrap:anywhere}.store-qr-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:24px}
+{% endblock %}
+{% block painel_content %}
+<span class="eyebrow">COMPARTILHE SUA LOJA</span>
+<h1>QR Code da loja</h1>
+<p>O cliente aponta a câmera do celular para acessar sua loja e escolher um horário.</p>
+<section class="store-qr" aria-label="QR Code de {{ request.tenant.nome }}">
+<h2>{{ request.tenant.nome }}</h2>
+<img src="{% url 'painel:loja_qrcode_imagem' %}" alt="QR Code para acessar {{ endereco_loja }}" width="444" height="444">
+<p class="store-qr-url"><a href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">{{ endereco_loja }}</a></p>
+<div class="store-qr-actions"><a class="ui-button" href="{% url 'painel:loja_qrcode_imagem' %}?download=1" download>Baixar QR Code</a><a class="ui-button ui-button-secondary" href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">Abrir loja ↗</a></div>
+</section>
+<p>Baixe a imagem para imprimir ou compartilhar com seus clientes.</p>
+{% endblock %}

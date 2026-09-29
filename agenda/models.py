@@ -86,6 +86,7 @@ class Agendamento(models.Model):
     contato = models.ForeignKey('usuarios.ContatoCliente', on_delete=models.PROTECT, related_name='agendamentos', null=True, blank=True)
     oferta = models.ForeignKey('catalogo.ProfissionalServico', on_delete=models.PROTECT, related_name='agendamentos')
     profissional = models.ForeignKey('profissionais.Profissional', on_delete=models.PROTECT, related_name='agendamentos')
+    acesso_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
     cliente_nome = models.CharField(max_length=150)
     servico_nome = models.CharField(max_length=150)
     profissional_nome = models.CharField(max_length=150)

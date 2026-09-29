@@ -1,12 +1,13 @@
 # Agendamentos do cliente
 
-O cliente escolhe uma oferta (serviço + profissional), consulta a data, entra ou cria uma conta e confirma um horário. A confirmação é automática. Não há pagamento online, notificações externas ou aprovação manual nesta etapa.
+O cliente escolhe uma oferta (serviço + profissional), consulta a data, informa nome e WhatsApp e confirma um horário, sem e-mail ou senha. A confirmação é automática. Não há pagamento online, notificações externas ou aprovação manual nesta etapa.
 
 ## Rotas
 
 - `/agendamentos/servico/<oferta_id>/`: escolha da data.
 - `/agendamentos/servico/<oferta_id>/<AAAA-MM-DD>/`: horários e confirmação via POST com CSRF.
-- `/agendamentos/`: histórico do usuário conectado, com paginação.
+- `/agendamentos/`: reservas feitas neste navegador e histórico do usuário conectado, com paginação.
+- `/agendamentos/acompanhar/<uuid>/`: link pessoal para consultar status e cancelar uma reserva sem conta. Guarde o link mostrado na confirmação; ele não é enviado automaticamente pelo WhatsApp.
 - `/agendamentos/<id>/`: comprovante e cancelamento via POST pelo próprio cliente, antes do início.
 
 As rotas exigem o subdomínio do estabelecimento. O login e o cadastro preservam o destino selecionado, rejeitando redirecionamentos externos. O cadastro ainda é seguido de login.
@@ -17,7 +18,7 @@ As rotas exigem o subdomínio do estabelecimento. O login e o cadastro preservam
 
 Os horários sugeridos são calculados a partir dos intervalos livres, avançando pela duração real do serviço. Não há registros de slots, nem dependência da antiga grade de 15 minutos. O servidor aceita qualquer início em minuto inteiro que caiba integralmente em uma janela aberta, sem sobreposição. Períodos adjacentes formam uma janela contínua; intervalos fechados não podem ser atravessados.
 
-A confirmação revalida conta, tenant, oferta ativa, duração, preço, horário futuro e disponibilidade. Uma cotação assinada evita confirmar silenciosamente preço/duração diferentes dos apresentados. Horários locais inexistentes ou ambíguos por mudança de fuso são rejeitados.
+A confirmação revalida contato ou conta, tenant, oferta ativa, duração, preço, horário futuro e disponibilidade. Uma cotação assinada evita confirmar silenciosamente preço/duração diferentes dos apresentados. Horários locais inexistentes ou ambíguos por mudança de fuso são rejeitados.
 
 Confirmação, cancelamento e configuração de períodos usam a mesma trava transacional no profissional. Uma exclusion constraint PostgreSQL protege os intervalos confirmados com semântica `[início, fim)`, inclusive contra escritas simultâneas. FKs compostas asseguram que cliente, oferta, profissional e reserva pertençam ao tenant correto. Uma restrição no banco garante que a duração corresponda ao intervalo.
 
@@ -37,7 +38,7 @@ O teste de navegador usa banco de testes descartável. Não rode junto com `mana
 
 Administradores do tenant acessam **+ Agendamento** no menu ou **+ Novo agendamento** na agenda diária. A rota `/painel/agendamentos/novo/` exige nome do cliente em texto e WhatsApp, além de profissional/serviço, data e horário. O acesso pela agenda preenche o dia e uma oferta do profissional selecionado; os campos podem ser alterados antes da confirmação.
 
-O painel registra um contato sem conta de autenticação. Contatos do mesmo tenant com nome equivalente (sem diferença de maiúsculas ou espaços repetidos) e mesmo WhatsApp são reutilizados. A reserva aparece na agenda e na seção Clientes do painel. Nenhuma conta, e-mail ou senha é inventada. Um telefone informado pelo administrador não vincula automaticamente o atendimento a uma conta de login existente. Os agendamentos anteriores vinculados a contas continuam preservados.
+O painel registra um contato sem conta de autenticação. Contatos do mesmo tenant são reutilizados pelo WhatsApp normalizado. O nome informado é preservado em cada reserva; o nome do contato existente não é sobrescrito. Duplicatas antigas são preservadas e novas reservas usam o contato mais antigo do número. A reserva aparece na agenda e na seção Clientes do painel. Nenhuma conta, e-mail ou senha é inventada. Um telefone informado pelo administrador não vincula automaticamente o atendimento a uma conta de login existente. Os agendamentos anteriores vinculados a contas continuam preservados.
 
 A confirmação reutiliza as mesmas validações, cotação assinada e trava transacional do fluxo público. Contato e reserva são salvos na mesma transação: um conflito não deixa um contato sem reserva criado por essa tentativa. Não abre períodos automaticamente e não permite sobrepor reservas.
 
@@ -58,3 +59,13 @@ O botão **Clientes** abre `/painel/clientes/`, com contatos, estado da conta e 
 **Ver histórico** abre `/painel/clientes/<id>/`, com todos os estados, serviço, profissional, data, horário, valor, duração e datas de cancelamento/falta. Os nomes e valores dos atendimentos são os registrados na reserva. Somente administradores do mesmo tenant acessam essas páginas; contatos e históricos de outros estabelecimentos não aparecem.
 
 Os contatos sem login também aparecem na lista paginada de 10 clientes, com busca por nome/WhatsApp e histórico em `/painel/clientes/contatos/<id>/`. A reserva exige exatamente uma identidade: conta de usuário ou contato de painel, com FKs compostas de tenant para ambos.
+
+## Acesso sem senha
+
+O WhatsApp identifica o contato, mas não autentica o visitante. Informar o mesmo número em outro navegador não libera reservas anteriores. Cada nova reserva pública recebe um token UUID aleatório exclusivo; a sessão guarda somente reservas criadas ou abertas com esse link (até 100 por estabelecimento). O link permite consultar e cancelar apenas aquela reserva. As páginas privadas não são armazenadas em cache. Reservas de contas existentes continuam exigindo a conta; números coincidentes não vinculam essas contas automaticamente.
+
+### Identificação dos clientes pelo WhatsApp
+
+No painel, cada WhatsApp normalizado corresponde a uma única linha de cliente por estabelecimento. A listagem e o histórico somam reservas de todas as contas e contatos com aquele número, incluindo cadastros antigos duplicados ou com nomes diferentes. Exibem o total de agendamentos, confirmados, cancelamentos e ausências. Buscar qualquer nome ou e-mail associado encontra o grupo completo, sem reduzir os totais.
+
+O histórico usa `/painel/clientes/whatsapp/<numero>/`. Links antigos por ID também mostram o histórico completo do WhatsApp. Contas legadas sem número continuam separadas até o preenchimento do WhatsApp. A consolidação é de consulta: os registros e vínculos antigos são preservados. O total de agendamentos inclui todos os estados; cancelamentos e ausências são partes desse total.

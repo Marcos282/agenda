@@ -1,3 +1,6 @@
+from datetime import timedelta
+from django.utils import timezone as django_timezone
+
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.core.exceptions import ValidationError
@@ -25,6 +28,8 @@ class Tenant(models.Model):
     # Legacy setting retained for compatibility; not used by the daily agenda.
     intervalo_grade_minutos = models.PositiveIntegerField(default=15, validators=[MinValueValidator(1)])
     ativo = models.BooleanField(default=True)
+    expira_em = models.DateField('Data de expiração', null=True, blank=True,
+        help_text='Validade do acesso. Quando não informada, será definida como 30 dias após o cadastro.')
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
@@ -34,7 +39,24 @@ class Tenant(models.Model):
             models.CheckConstraint(condition=models.Q(subdomain__regex=r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"), name="tenant_subdomain_valid"),
         ]
 
+    @property
+    def data_expiracao(self):
+        if self.expira_em:
+            return self.expira_em
+        cadastro = self.criado_em or django_timezone.now()
+        return django_timezone.localtime(cadastro, ZoneInfo(self.timezone)).date() + timedelta(days=30)
+
+    @property
+    def dias_para_expirar(self):
+        hoje = django_timezone.localdate(timezone=ZoneInfo(self.timezone))
+        return (self.data_expiracao - hoje).days
+
     def save(self, *args, **kwargs):
+        validate_timezone(self.timezone)
+        if self.expira_em is None:
+            self.expira_em = self.data_expiracao
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = set(kwargs['update_fields']) | {'expira_em'}
         self.subdomain = self.subdomain.strip().lower()
         self.full_clean()
         return super().save(*args, **kwargs)

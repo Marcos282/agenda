@@ -33,3 +33,7 @@ A configuração específica do Resend está em [resend.md](resend.md). Com `RES
 O botão **Já sou cliente** abre `/login/` na raiz. O e-mail (único no sistema) identifica o estabelecimento. Após validar a senha, a plataforma encaminha o navegador ao subdomínio e abre o painel do administrador ou a conta do cliente, sem pedir a senha novamente.
 
 A transferência usa um ticket opaco de uso único, com duração de 60 segundos, armazenado na tabela de sessões do Django e enviado por POST. A senha não é repassada ao subdomínio. O recebimento exige a origem exata da plataforma, revalida usuário/tenant/hash da senha e consome o ticket em transação. Cookies de autenticação continuam restritos ao host. Em produção o acesso entre domínios usa HTTPS; em desenvolvimento aceita os hosts locais. Links de login específicos de cada estabelecimento continuam funcionando.
+
+## Data de expiração
+
+O cadastro do estabelecimento inclui `expira_em`, editável somente pela administração global e visível em Mensalidade. Novos cadastros expiram 30 dias após a data local do cadastro. Mensalidade mostra a contagem regressiva diária. O visitante não escolhe o prazo, e a data não bloqueia o acesso automaticamente nesta etapa.
