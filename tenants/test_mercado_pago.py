@@ -1,9 +1,11 @@
 import hashlib
 import hmac
 import json
+from io import BytesIO
 from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
+from urllib.error import HTTPError
 from uuid import uuid4
 
 from django.test import TestCase, override_settings
@@ -65,6 +67,28 @@ class MercadoPagoBillingTests(TestCase):
         self.assertEqual(self.tenant.mercado_pago_assinatura_id, '123')
         self.assertEqual(self.tenant.mercado_pago_checkout_url, response_url)
         self.assertEqual(self.tenant.mercado_pago_assinatura_status, 'pending')
+
+    def test_provider_validation_error_is_reported_without_exposing_credentials(self):
+        from tenants.mercado_pago import MercadoPagoError, _request
+
+        error = HTTPError(
+            'https://api.mercadopago.com/preapproval',
+            400,
+            'Bad Request',
+            {},
+            BytesIO(json.dumps({
+                'error': 'bad_request',
+                'message': 'payer_email is invalid',
+                'cause': [{'code': 'payer_email_invalid'}],
+            }).encode()),
+        )
+        with patch('tenants.mercado_pago.urlopen', side_effect=error):
+            with self.assertRaises(MercadoPagoError) as raised:
+                _request('POST', '/preapproval', payload={})
+        self.assertIn('HTTP 400', str(raised.exception))
+        self.assertIn('payer_email is invalid', str(raised.exception))
+        self.assertIn('payer_email_invalid', str(raised.exception))
+        self.assertNotIn('test-access-token', str(raised.exception))
 
     def _signed_webhook(self, data_id, event_type):
         request_id = 'request-test-123'

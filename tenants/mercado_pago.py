@@ -46,8 +46,32 @@ def _request(method, path, *, payload=None, idempotency_key=None):
         with urlopen(request, timeout=15) as response:
             result = json.loads(response.read())
     except HTTPError as exc:
-        logger.warning('Mercado Pago API returned HTTP %s for %s', exc.code, path)
-        raise MercadoPagoError('Não foi possível confirmar a operação no Mercado Pago. Tente novamente.') from exc
+        try:
+            error_response = json.loads(exc.read())
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            error_response = {}
+        error_name = error_response.get('error', '') if isinstance(error_response, dict) else ''
+        message = error_response.get('message', '') if isinstance(error_response, dict) else ''
+        causes = error_response.get('cause', []) if isinstance(error_response, dict) else []
+        cause_codes = [
+            str(cause.get('code', ''))
+            for cause in causes
+            if isinstance(cause, dict) and cause.get('code')
+        ] if isinstance(causes, list) else []
+        logger.warning(
+            'Mercado Pago API rejected %s: HTTP %s, error=%s, message=%s, cause_codes=%s',
+            path, exc.code, error_name, message, cause_codes,
+        )
+        if exc.code < 500 and message:
+            detail = f' O Mercado Pago informou: {message}'
+            if cause_codes:
+                detail += f' (código {", ".join(cause_codes)}).'
+            raise MercadoPagoError(
+                f'O Mercado Pago recusou a solicitação (HTTP {exc.code}).{detail}'
+            ) from exc
+        raise MercadoPagoError(
+            f'Não foi possível confirmar a operação no Mercado Pago (HTTP {exc.code}). Tente novamente.'
+        ) from exc
     except (URLError, TimeoutError) as exc:
         logger.warning('Mercado Pago API is unavailable for %s', path)
         raise MercadoPagoError('O Mercado Pago não respondeu. Tente novamente em alguns instantes.') from exc
