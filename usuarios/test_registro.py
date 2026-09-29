@@ -22,7 +22,7 @@ class RegistroTests(TestCase):
         self.assertFalse(user.is_staff or user.is_superuser)
         self.assertTrue(user.check_password(data['password1']))
         page=self.client.get(response.url,HTTP_HOST='127.0.0.1:8000')
-        self.assertContains(page,'http://meusalao.localhost:8000/login/?next=/painel/')
+        self.assertContains(page,'href="/login/"')
         login=self.client.post('/login/',{'email':user.email,'password':data['password1']},HTTP_HOST='meusalao.localhost')
         self.assertEqual(login.status_code,302)
         self.assertEqual(self.client.get('/painel/',HTTP_HOST='meusalao.localhost').status_code,200)

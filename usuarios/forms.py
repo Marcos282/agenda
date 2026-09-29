@@ -57,7 +57,14 @@ class LoginForm(forms.Form):
     def clean(self):
         data = super().clean()
         if data.get('email') and data.get('password'):
-            self.user = authenticate(self.request, email=data['email'], password=data['password'])
+            auth_request = self.request
+            if self.request.tenant is None:
+                from copy import copy
+                candidate = User.objects.select_related('tenant').filter(email__iexact=data['email'].strip()).first()
+                if candidate and candidate.tenant_id:
+                    auth_request = copy(self.request)
+                    auth_request.tenant = candidate.tenant
+            self.user = authenticate(auth_request, email=data['email'], password=data['password'])
             if self.user is None:
                 raise forms.ValidationError("E-mail ou senha inválidos para este estabelecimento.")
         return data

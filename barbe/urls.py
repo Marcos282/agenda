@@ -1,6 +1,6 @@
 from barbe.admin import site
 from django.urls import path, include
-from usuarios import views, registro
+from usuarios import views, registro, login_transfer
 from django.views.generic import TemplateView
 
 urlpatterns = [
@@ -19,6 +19,7 @@ urlpatterns = [
     path('loja/', views.loja, name='loja'),
     path('loja/<int:item_id>/', views.loja, name='loja_item'),
     path('cadastro/', views.cadastro, name='cadastro'),
+    path('login/continuar/', login_transfer.concluir, name='login_continuar'),
     path('login/', views.entrar, name='login'),
     path('logout/', views.sair, name='logout'),
     path('conta/', views.conta, name='conta'),

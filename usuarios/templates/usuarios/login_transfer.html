@@ -1,0 +1,3 @@
+{% extends 'usuarios/base.html' %}
+{% block content %}<h1>Entrando no seu estabelecimento…</h1><p>Seu acesso foi validado. Estamos abrindo sua conta.</p><form id="login-transfer" action="{{ target }}" method="post"><input type="hidden" name="ticket" value="{{ ticket }}"><button type="submit">Continuar</button></form>{% endblock %}
+{% block scripts %}<script>document.getElementById('login-transfer').submit();</script>{% endblock %}

@@ -58,7 +58,7 @@ def prepare_no_show(tenant_id, offer_id):
         return pool.submit(create).result()
 
 
-runner = DiscoverRunner(interactive=False, verbosity=0)
+runner = DiscoverRunner(interactive=False, verbosity=0, debug_mode=True)
 runner.setup_test_environment()
 db_config = runner.setup_databases()
 server = None
@@ -112,7 +112,12 @@ try:
         page.locator('[name=password2]').fill('FlorAzul!9274Rosa')
         page.get_by_role('button', name='Criar meu estabelecimento').click()
         expect(page.get_by_role('heading', name='Cadastro concluído!')).to_be_visible()
-        expect(page.get_by_role('link', name='Acessar meu painel')).to_have_attribute('href', f'http://novoestudioqa.localhost:{server.port}/login/?next=/painel/')
+        expect(page.get_by_role('link', name='Acessar meu painel')).to_have_attribute('href', '/login/')
+        page.get_by_role('link', name='Acessar meu painel').click()
+        page.locator('input[name=email]').fill('novoestudioqa@example.test')
+        page.locator('input[name=password]').fill('FlorAzul!9274Rosa')
+        page.get_by_role('button', name='Entrar', exact=True).click()
+        page.wait_for_url(f'http://novoestudioqa.localhost:{server.port}/painel/')
         page.goto(f'http://localhost:{server.port}/lembrar-senha/')
         expect(page.get_by_role('button', name='Enviar link de recuperação')).to_be_visible()
         page.screenshot(path=str(folder / 'recuperar-mobile.png'), full_page=True)

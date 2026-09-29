@@ -27,3 +27,9 @@ TLS e SSL não devem ser ativados simultaneamente. O remetente precisa estar aut
 ### Provedor escolhido: Resend
 
 A configuração específica do Resend está em [resend.md](resend.md). Com `RESEND_API_KEY` configurada, ele é selecionado automaticamente, sem precisar preencher EMAIL_HOST ou EMAIL_PORT.
+
+## Login pela plataforma
+
+O botão **Já sou cliente** abre `/login/` na raiz. O e-mail (único no sistema) identifica o estabelecimento. Após validar a senha, a plataforma encaminha o navegador ao subdomínio e abre o painel do administrador ou a conta do cliente, sem pedir a senha novamente.
+
+A transferência usa um ticket opaco de uso único, com duração de 60 segundos, armazenado na tabela de sessões do Django e enviado por POST. A senha não é repassada ao subdomínio. O recebimento exige a origem exata da plataforma, revalida usuário/tenant/hash da senha e consome o ticket em transação. Cookies de autenticação continuam restritos ao host. Em produção o acesso entre domínios usa HTTPS; em desenvolvimento aceita os hosts locais. Links de login específicos de cada estabelecimento continuam funcionando.

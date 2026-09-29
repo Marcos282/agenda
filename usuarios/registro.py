@@ -79,7 +79,7 @@ def registro_concluido(request):
     tenant = Tenant.objects.filter(pk=request.session.get('registro_tenant'), ativo=True).first()
     if not tenant:
         return redirect('registro')
-    return render(request, 'usuarios/registro_concluido.html', {'estabelecimento':tenant, 'acesso_url':tenant_login_url(request, tenant)})
+    return render(request, 'usuarios/registro_concluido.html', {'estabelecimento':tenant, 'acesso_url':reverse('login')})
 
 
 def can_reset(user, request):

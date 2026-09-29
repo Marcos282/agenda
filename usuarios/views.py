@@ -106,14 +106,18 @@ def cadastro(request):
     return render(request, 'usuarios/form.html', {'form': form, 'titulo': 'Criar conta', 'botao': 'Cadastrar'})
 
 
-@tenant_required
 @require_http_methods(["GET", "POST"])
 def entrar(request):
     if request.user.is_authenticated:
-        return redirect(destino_apos_login(request) or 'conta')
+        return redirect('admin:index' if request.tenant is None else (destino_apos_login(request) or 'conta'))
     form = LoginForm(request.POST if request.method == 'POST' else None, request=request)
     if request.method == 'POST' and form.is_valid():
+        if request.tenant is None and form.user.tenant_id:
+            from .login_transfer import iniciar
+            return iniciar(request, form.user)
         login(request, form.user)
+        if request.tenant is None:
+            return redirect('admin:index')
         if form.user.tipo == 'CLIENTE' and not form.user.whatsapp:
             from django.urls import reverse
             from urllib.parse import urlencode

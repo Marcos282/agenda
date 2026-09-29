@@ -40,7 +40,7 @@ class FoundationTests(TestCase):
     def test_root_has_no_tenant_and_no_registration(self):
         response = self.client.get('/', HTTP_HOST='localhost')
         self.assertIsNone(response.wsgi_request.tenant)
-        for path in ['/cadastro/', '/login/', '/conta/']:
+        for path in ['/cadastro/', '/conta/']:
             self.assertEqual(self.client.get(path, HTTP_HOST='localhost').status_code, 404)
 
     def test_registration_uses_host_and_ignores_privilege_injection(self):

@@ -1,2 +1,2 @@
 {% extends 'usuarios/base.html' %}
-{% block content %}<h1>Cadastro concluído!</h1><p>Seu estabelecimento <strong>{{ estabelecimento.subdomain }}.tacombinado.net</strong> foi cadastrado.</p><p>Entre com o e-mail e a senha que você acabou de escolher para configurar sua equipe e seus serviços.</p><a class="ui-button" href="{{ acesso_url }}">Acessar meu painel</a>{% endblock %}
+{% block content %}<h1>Cadastro concluído!</h1><p>Seu estabelecimento <strong>{{ estabelecimento.subdomain }}.tacombinado.net</strong> foi cadastrado.</p><p>Para acessar seu painel, informe somente o e-mail e a senha que você acabou de cadastrar. Não é necessário informar o subdomínio.</p><a class="ui-button" href="{{ acesso_url }}">Acessar meu painel</a>{% endblock %}
