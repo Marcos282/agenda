@@ -45,8 +45,9 @@ def prepare_no_show(tenant_id, offer_id):
             tenant = Tenant.objects.get(pk=tenant_id)
             offer = ProfissionalServico.objects.get(pk=offer_id)
             day = timezone.localdate() - timedelta(days=1)
-            Disponibilidade.objects.create(tenant=tenant, profissional=offer.profissional, data=day,
-                hora_inicio=time(9), hora_fim=time(12))
+            with patch('django.utils.timezone.now', return_value=instante_local(day, time(8), tenant)):
+                Disponibilidade.objects.create(tenant=tenant, profissional=offer.profissional, data=day,
+                    hora_inicio=time(9), hora_fim=time(12))
             with patch('django.utils.timezone.now', return_value=instante_local(day, time(8), tenant)):
                 reservar_por_whatsapp(tenant=tenant, whatsapp='11999991234', oferta_id=offer_id, dia=day, hora=time(9),
                     nome='Cliente ausente', valor_exibido='40.00', duracao_exibida=40)

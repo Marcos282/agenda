@@ -47,6 +47,13 @@ class Disponibilidade(TenantOwnedModel):
             if self.hora_inicio >= self.hora_fim:
                 raise ValidationError({'hora_fim': 'O fim deve ser posterior ao início, no mesmo dia.'})
         if self.ativo and all([self.tenant_id, self.profissional_id, self.data, self.hora_inicio, self.hora_fim]):
+            unchanged = self.pk and type(self).objects.filter(
+                pk=self.pk, tenant_id=self.tenant_id, profissional_id=self.profissional_id,
+                data=self.data, hora_inicio=self.hora_inicio, hora_fim=self.hora_fim, ativo=True,
+            ).exists()
+            if not unchanged:
+                from .validation import validar_inicio_abertura
+                validar_inicio_abertura(tenant=self.tenant, data=self.data)
             overlaps = type(self).objects.filter(
                 tenant_id=self.tenant_id, profissional_id=self.profissional_id,
                 data=self.data, ativo=True, hora_inicio__lt=self.hora_fim, hora_fim__gt=self.hora_inicio,
@@ -62,6 +69,16 @@ class Disponibilidade(TenantOwnedModel):
         with transaction.atomic():
             # Also protect the legacy period editor, which does not use configurar_dia.
             old = type(self).objects.filter(pk=self.pk).first() if self.pk else None
+            unchanged = old and old.ativo and all((
+                old.tenant_id == self.tenant_id,
+                old.profissional_id == self.profissional_id,
+                old.data == self.data,
+                old.hora_inicio == self.hora_inicio,
+                old.hora_fim == self.hora_fim,
+            ))
+            if self.ativo and not unchanged:
+                from .validation import validar_inicio_abertura
+                validar_inicio_abertura(tenant=self.tenant, data=self.data)
             ids = sorted({self.profissional_id} | ({old.profissional_id} if old else set()))
             list(Profissional.objects.select_for_update().filter(pk__in=ids).order_by('pk'))
             if old:

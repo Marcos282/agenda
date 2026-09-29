@@ -79,6 +79,11 @@ class DisponibilidadeForm(TenantForm):
     def __init__(self, *args, profissional, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance.profissional = profissional
+        self.fields['data'].help_text = 'Não é possível abrir períodos em uma data passada.'
+        if not self.instance.pk:
+            from django.utils import timezone
+            from zoneinfo import ZoneInfo
+            self.fields['data'].widget.attrs['min'] = timezone.localdate(timezone=ZoneInfo(self.instance.tenant.timezone)).isoformat()
 
     class Meta:
         model = Disponibilidade
@@ -89,4 +94,3 @@ class DisponibilidadeForm(TenantForm):
             'hora_inicio': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
             'hora_fim': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
         }
-

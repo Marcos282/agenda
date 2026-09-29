@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -23,7 +24,8 @@ def agenda_url(profissional_id, dia):
 
 
 def selected_day(request):
-    value = request.GET.get('data', timezone.localdate().isoformat())
+    today = timezone.localdate(timezone=ZoneInfo(request.tenant.timezone))
+    value = request.GET.get('data', today.isoformat())
     form = DiaForm({'data': value})
     return form.cleaned_data['data'] if form.is_valid() else None
 
@@ -77,12 +79,13 @@ def agenda(request, profissional_id=None):
     elif request.method == 'POST':
         status = 400
     aberta = bool(profissional and profissional.ativo and periodos)
-    hoje = timezone.localdate()
+    hoje = timezone.localdate(timezone=ZoneInfo(request.tenant.timezone))
     context = {
         'profissionais': profissionais, 'profissional': profissional,
         'dia': dia, 'data_iso': dia.isoformat(), 'hoje': hoje.isoformat(),
         'anterior': (dia - timedelta(days=1)).isoformat() if dia > date.min else None,
         'proximo': (dia + timedelta(days=1)).isoformat() if dia < date.max else None,
+        'dia_passado': dia < hoje,
         'aberta': aberta, 'periodos': periodos, 'formset': formset, 'erro_agenda': erro,
         'revisao': request.POST.get('revisao', '') if request.method == 'POST' else revisao,
         'configurando': request.method == 'POST' or request.GET.get('configurar') == '1',

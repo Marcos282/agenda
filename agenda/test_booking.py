@@ -92,15 +92,33 @@ class BookingTests(BookingFixture, TestCase):
     def test_calendar_edits_preserve_bookings_in_both_editors(self):
         self.book()
         periods = list(Disponibilidade.objects.filter(profissional=self.prof,ativo=True))
-        with self.assertRaises(ValidationError):
-            configurar_dia(tenant=self.tenant, profissional_id=self.prof.pk, data=self.day,periodos=[],revisao=revisao_dia(periods))
+        configurar_dia(tenant=self.tenant, profissional_id=self.prof.pk, data=self.day,periodos=[],revisao=revisao_dia(periods))
+        active = list(Disponibilidade.objects.filter(profissional=self.prof, data=self.day, ativo=True))
+        self.assertEqual([(p.hora_inicio, p.hora_fim) for p in active], [(time(9,7), time(12,2))])
         self.window.hora_inicio=time(10)
         with self.assertRaises(ValidationError): self.window.save()
         self.window.refresh_from_db()
         self.assertEqual(self.window.hora_inicio,time(9,7))
+        periods = list(Disponibilidade.objects.filter(profissional=self.prof, data=self.day, ativo=True))
         configurar_dia(tenant=self.tenant, profissional_id=self.prof.pk, data=self.day,
             periodos=[(time(9),time(12)),(time(13),time(18))],revisao=revisao_dia(periods))
         self.assertEqual(Disponibilidade.objects.filter(ativo=True).count(),2)
+
+    def test_adding_period_keeps_existing_windows_needed_by_bookings(self):
+        booking = self.book()
+        periods = list(Disponibilidade.objects.filter(profissional=self.prof, data=self.day, ativo=True))
+        configurar_dia(
+            tenant=self.tenant, profissional_id=self.prof.pk, data=self.day,
+            periodos=[(time(18, 23), time(20))], revisao=revisao_dia(periods),
+        )
+        active = list(Disponibilidade.objects.filter(profissional=self.prof, data=self.day, ativo=True))
+        self.assertEqual(
+            [(period.hora_inicio, period.hora_fim) for period in active],
+            [(time(9, 7), time(12, 2)), (time(18, 23), time(20))],
+        )
+        self.assertTrue(any(period.hora_inicio <= booking.inicio.astimezone(ZoneInfo(self.tenant.timezone)).time()
+                            and period.hora_fim >= booking.fim.astimezone(ZoneInfo(self.tenant.timezone)).time()
+                            for period in active))
 
     def test_adjacent_windows_allow_a_service_to_fit(self):
         self.window.hora_fim=time(9,27); self.window.save()

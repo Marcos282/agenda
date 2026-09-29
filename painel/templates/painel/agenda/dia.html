@@ -39,7 +39,7 @@
 {% else %}
 <div class="closed-day"><span class="closed-icon" aria-hidden="true">☾</span><h3>{% if profissional.ativo %}Este dia ainda está fechado{% else %}Profissional inativo{% endif %}</h3>
 <p>{% if profissional.ativo %}Nenhum período foi aberto para atendimento neste dia.<br>Defina os horários para abrir a agenda de {{ profissional.nome }}.{% else %}Ative o profissional para disponibilizar seus períodos de atendimento.{% endif %}</p>
-{% if profissional.ativo %}<a class="agenda-button" data-open-schedule href="{{ agenda_url }}&amp;configurar=1#schedule-editor">+ Abrir agenda</a>{% else %}<a class="agenda-button secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar profissional</a>{% endif %}
+{% if profissional.ativo and not dia_passado %}<a class="agenda-button" data-open-schedule href="{{ agenda_url }}&amp;configurar=1#schedule-editor">+ Abrir agenda</a>{% elif dia_passado %}<p>Não é possível abrir a agenda em uma data passada.</p>{% else %}<a class="agenda-button secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar profissional</a>{% endif %}
 </div>
 {% endif %}
 {% if timeline.appointments %}<section class="booked-summary"><h3>Agendamentos do dia</h3><ul>{% for item in timeline.appointments %}<li><strong>{{ item.cliente }}</strong> · {{ item.servico }} · {{ item.inicio_label }} → {{ item.fim_label }} · R$ {{ item.valor }} · <strong>{{ item.statusLabel }}</strong> {% if item.noShowUrl %}<a class="ui-button ui-button-secondary" href="{{ item.noShowUrl }}">Marcar falta</a>{% endif %} {% if item.cancelUrl %}<a class="ui-button ui-button-secondary" href="{{ item.cancelUrl }}">Cancelar agendamento</a>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
@@ -47,7 +47,7 @@
 <section id="schedule-editor" class="schedule-editor {% if not configurando %}editor-collapsed{% endif %}" aria-labelledby="editor-title" data-editor data-show="{{ configurando|yesno:'true,false' }}">
 <div class="editor-surface"><header class="editor-heading"><div><span class="agenda-kicker">PERÍODOS DE ATENDIMENTO</span><h2 id="editor-title">{% if aberta %}Configurar horários{% else %}Abrir agenda{% endif %}</h2></div><a href="{{ agenda_url }}" class="icon-button" data-close-schedule aria-label="Fechar configuração">×</a></header>
 <div class="editor-context"><strong>{{ profissional.nome }}</strong><span>{{ dia|date:'d/m/Y' }}</span></div>
-<p class="editor-help">Adicione os períodos em que haverá atendimento. O tempo entre eles fica fechado.</p>
+<p class="editor-help">Adicione os períodos em que haverá atendimento. Ao adicionar outro período, os horários necessários para preservar reservas confirmadas são mantidos automaticamente. O tempo entre eles fica fechado.</p>
 {% if erro_agenda %}<p class="agenda-error" role="alert">{{ erro_agenda }} <a href="{{ agenda_url }}&amp;configurar=1">Recarregar configuração</a></p>{% endif %}
 <form method="post" action="{{ agenda_url }}" data-period-form>{% csrf_token %}<input type="hidden" name="revisao" value="{{ revisao }}">
 {{ formset.management_form }}{{ formset.non_form_errors }}

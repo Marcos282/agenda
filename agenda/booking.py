@@ -92,6 +92,29 @@ def validar_cobertura(*, tenant, profissional_id, data, periodos):
             raise ValidationError('Há agendamentos confirmados nesse período. Preserve os horários reservados antes de alterar a agenda.')
 
 
+def periodos_com_reservas(*, tenant, profissional_id, data, existentes, desejados):
+    zone = ZoneInfo(tenant.timezone)
+    janelas_desejadas = [
+        (instante_local(data, start, tenant), instante_local(data, end, tenant))
+        for start, end in desejados
+    ]
+    bookings = Agendamento.objects.for_tenant(tenant).filter(
+        profissional_id=profissional_id, status__in=['CONFIRMADO', 'NAO_COMPARECEU'],
+    )
+    from django.db.models.functions import TruncDate
+    protegidos = set()
+    for booking in bookings.annotate(dia_local=TruncDate('inicio', tzinfo=zone)).filter(dia_local=data):
+        if booking.inicio.astimezone(zone).date() != data:
+            continue
+        if any(left <= booking.inicio and booking.fim <= right for left, right in janelas_desejadas):
+            continue
+        for start, end in existentes:
+            left, right = instante_local(data, start, tenant), instante_local(data, end, tenant)
+            if left < booking.fim and right > booking.inicio:
+                protegidos.add((start, end))
+    return protegidos
+
+
 @transaction.atomic
 def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, duracao_exibida, contato=None):
     from usuarios.validators import normalizar_whatsapp

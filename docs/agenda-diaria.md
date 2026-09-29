@@ -104,3 +104,9 @@ O estilo compartilhado de autenticação, painel, cadastros e agenda fica em `us
 ```
 
 Os tons suaves, bordas, foco e hover são derivados dessa variável via `color-mix`. Uma futura configuração por tenant poderá sobrescrever `--brand-color` no elemento raiz, sem reescrever os componentes. Use uma cor suficientemente escura para manter a leitura dos botões com texto branco. Cores semânticas de erro, cancelamento e ocupação permanecem independentes.
+
+## Abertura somente em datas atuais ou futuras
+
+Não é permitido criar, reativar ou alterar um período ativo em uma data passada. A comparação usa a data local do estabelecimento, tanto no editor diário quanto no formulário individual. No dia atual, horários anteriores ao momento atual podem ser preservados ou configurados; as reservas confirmadas continuam protegidas.
+
+É possível consultar dias anteriores e preservar seu histórico; o botão de abrir uma agenda fechada não aparece em datas passadas. Ao adicionar períodos a um dia com reservas, os períodos ativos necessários para cobrir essas reservas são mantidos automaticamente. As regras de proteção dos agendamentos continuam valendo ao remover ou alterar períodos.
