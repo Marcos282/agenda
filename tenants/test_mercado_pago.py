@@ -18,6 +18,7 @@ from usuarios.models import User
 class FakeResponse:
     def __init__(self, payload):
         self.payload = json.dumps(payload).encode()
+        self.status = 201
 
     def __enter__(self):
         return self
@@ -47,9 +48,11 @@ class MercadoPagoBillingTests(TestCase):
             'status': 'pending',
             'init_point': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=123',
         })
+        diagnostics = {}
         with patch('tenants.mercado_pago.urlopen', return_value=response) as send:
             checkout = create_subscription(
                 tenant_id=self.tenant.pk, payer_email='owner@example.test', amount=30,
+                diagnostics=diagnostics,
             )
         self.assertEqual(checkout, response_url := 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=123')
         self.tenant.refresh_from_db()
@@ -63,6 +66,20 @@ class MercadoPagoBillingTests(TestCase):
             'frequency': 30, 'frequency_type': 'days',
             'transaction_amount': 30.0, 'currency_id': 'BRL',
         })
+        self.assertEqual(diagnostics['request']['payload']['payer_email'], 'o***@example.test')
+        self.assertEqual(
+            diagnostics['request']['payload']['back_url'],
+            'https://marcos.tacombinado.net/painel/mensalidade/',
+        )
+        self.assertEqual(
+            diagnostics['request']['payload']['notification_url'],
+            'https://marcos.tacombinado.net/integracoes/mercado-pago/webhook/',
+        )
+        self.assertEqual(diagnostics['response']['body']['id'], '…123')
+        self.assertEqual(
+            diagnostics['response']['body']['init_point'],
+            'https://www.mercadopago.com.br/subscriptions/checkout',
+        )
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.mercado_pago_assinatura_id, '123')
         self.assertEqual(self.tenant.mercado_pago_checkout_url, response_url)

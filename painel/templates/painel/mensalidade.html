@@ -29,7 +29,9 @@
 {% elif checkout_configurado %}
 <span class="billing-status">{% if prazo_expirado %}Acesso bloqueado até a confirmação do pagamento{% else %}30 dias grátis desde o cadastro{% endif %}</span>
 <p>Assine por R$ {{ valor_mensal|floatformat:2 }} por mês. Se pagar antes do vencimento, os 30 novos dias serão somados ao prazo atual.</p>
-<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="assinar"><button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="assinar"><button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button>
+<details class="billing-debug-toggle"><summary>Diagnóstico técnico (opcional)</summary><p>Mostra um resumo do envio e da resposta. Credenciais, e-mail completo, identificadores e parâmetros do checkout são ocultados.</p><label><input type="checkbox" name="debug_mp" value="1"> Exibir diagnóstico nesta página</label></details>
+</form>
 {% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Você pode iniciar uma nova assinatura.</p>{% endif %}
 {% else %}
 <span class="billing-status billing-pending">Em configuração</span>
@@ -40,4 +42,14 @@
 <div class="billing-details"><h3>Confirmação e comprovantes</h3><p>A confirmação chega pelo Mercado Pago. O sistema registra cada cobrança aprovada uma única vez e atualiza a data de expiração automaticamente.</p></div>
 </section>
 </div>
+{% if payment_debug %}
+<section class="billing-details" aria-labelledby="debug-title">
+<h2 id="debug-title">Diagnóstico do Mercado Pago</h2>
+{% if payment_error %}<p role="alert">{{ payment_error }}</p>{% endif %}
+{% if checkout_url %}<p>Solicitação aceita pelo provedor. Abra o checkout para concluir a autorização:</p><a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>{% endif %}
+<p>Valores sensíveis foram mascarados; o conteúdo abaixo é um resumo, não inclui credenciais.</p>
+<h3>Enviado</h3><pre>{{ debug_info.request|pprint }}</pre>
+<h3>Devolvido</h3><pre>{{ debug_info.response|pprint }}</pre>
+</section>
+{% endif %}
 {% endblock %}

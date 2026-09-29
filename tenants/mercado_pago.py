@@ -23,17 +23,96 @@ API_BASE = 'https://api.mercadopago.com'
 
 
 class MercadoPagoError(Exception):
-    pass
+    def __init__(self, message, *, diagnostics=None):
+        super().__init__(message)
+        self.diagnostics = diagnostics or {}
+
+
+def _mask_email(value):
+    if not isinstance(value, str) or '@' not in value:
+        return '[ausente]'
+    local, domain = value.rsplit('@', 1)
+    return f'{local[:1]}***@{domain}'
+
+
+def _safe_url(value):
+    parsed = urlparse(value if isinstance(value, str) else '')
+    if not parsed.scheme or not parsed.hostname:
+        return '[inválida]'
+    return f'{parsed.scheme}://{parsed.hostname}{parsed.path}'
+
+
+def _masked_id(value):
+    value = str(value or '')
+    return f'…{value[-4:]}' if value else '[ausente]'
+
+
+def _safe_text(value, limit=300):
+    text = str(value or '')[:limit]
+    text = re.sub(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}', '[e-mail redigido]', text)
+    text = re.sub(r'\b(?:APP_USR|TEST)-[A-Za-z0-9_-]{10,}\b', '[credencial redigida]', text)
+    return text
+
+
+def _request_summary(method, path, payload, idempotency_key):
+    summary = {
+        'method': method,
+        'path': path,
+        'authorization': '[redigido]',
+        'idempotency_key': '[configurada]' if idempotency_key else '[ausente]',
+    }
+    if payload is not None:
+        recurring = payload.get('auto_recurring')
+        summary['payload'] = {
+            'reason': payload.get('reason'),
+            'external_reference': '[redigida]' if payload.get('external_reference') else '[ausente]',
+            'payer_email': _mask_email(payload.get('payer_email')),
+            'back_url': _safe_url(payload.get('back_url')),
+            'notification_url': _safe_url(payload.get('notification_url')),
+            'auto_recurring': {
+                key: recurring.get(key)
+                for key in ('frequency', 'frequency_type', 'transaction_amount', 'currency_id')
+                if isinstance(recurring, dict) and key in recurring
+            },
+        }
+    return summary
+
+
+def _response_summary(result, *, status_code, error=None):
+    summary = {'http_status': status_code}
+    if error:
+        summary.update({
+            'error': str(error.get('error', ''))[:100],
+            'message': _safe_text(error.get('message', '')),
+            'cause_codes': [
+                str(cause.get('code', ''))[:100]
+                for cause in error.get('cause', [])
+                if isinstance(cause, dict) and cause.get('code')
+            ][:10] if isinstance(error.get('cause', []), list) else [],
+        })
+        return summary
+    summary['body'] = {
+        'id': _masked_id(result.get('id')),
+        'status': str(result.get('status', ''))[:50],
+        'init_point': _safe_url(result.get('init_point')) if result.get('init_point') else '[ausente]',
+    }
+    return summary
 
 
 def configured():
     return bool(settings.MERCADO_PAGO_ACCESS_TOKEN.strip() and settings.MERCADO_PAGO_WEBHOOK_SECRET.strip())
 
 
-def _request(method, path, *, payload=None, idempotency_key=None):
+def _request(method, path, *, payload=None, idempotency_key=None, diagnostics=None):
+    request_info = _request_summary(method, path, payload, idempotency_key)
     token = settings.MERCADO_PAGO_ACCESS_TOKEN.strip()
     if not token:
-        raise MercadoPagoError('A integração com Mercado Pago não está configurada.')
+        if diagnostics is not None:
+            diagnostics.update({'request': request_info, 'response': {'error': 'Credencial não configurada'}})
+        raise MercadoPagoError(
+            'A integração com Mercado Pago não está configurada.',
+            diagnostics={'request': request_info},
+        )
     headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
     body = None
     if payload is not None:
@@ -45,6 +124,7 @@ def _request(method, path, *, payload=None, idempotency_key=None):
     try:
         with urlopen(request, timeout=15) as response:
             result = json.loads(response.read())
+            status_code = response.status
     except HTTPError as exc:
         try:
             error_response = json.loads(exc.read())
@@ -62,23 +142,56 @@ def _request(method, path, *, payload=None, idempotency_key=None):
             'Mercado Pago API rejected %s: HTTP %s, error=%s, message=%s, cause_codes=%s',
             path, exc.code, error_name, message, cause_codes,
         )
-        if exc.code < 500 and message:
-            detail = f' O Mercado Pago informou: {message}'
+        response_info = _response_summary(
+            error_response if isinstance(error_response, dict) else {},
+            status_code=exc.code,
+            error=error_response if isinstance(error_response, dict) else {},
+        )
+        if diagnostics is not None:
+            diagnostics.update({'request': request_info, 'response': response_info})
+        safe_message = _safe_text(message)
+        if exc.code < 500 and safe_message:
+            detail = f' O Mercado Pago informou: {safe_message}'
             if cause_codes:
                 detail += f' (código {", ".join(cause_codes)}).'
             raise MercadoPagoError(
-                f'O Mercado Pago recusou a solicitação (HTTP {exc.code}).{detail}'
+                f'O Mercado Pago recusou a solicitação (HTTP {exc.code}).{detail}',
+                diagnostics={'request': request_info, 'response': response_info},
             ) from exc
         raise MercadoPagoError(
-            f'Não foi possível confirmar a operação no Mercado Pago (HTTP {exc.code}). Tente novamente.'
+            f'Não foi possível confirmar a operação no Mercado Pago (HTTP {exc.code}). Tente novamente.',
+            diagnostics={'request': request_info, 'response': response_info},
         ) from exc
     except (URLError, TimeoutError) as exc:
         logger.warning('Mercado Pago API is unavailable for %s', path)
-        raise MercadoPagoError('O Mercado Pago não respondeu. Tente novamente em alguns instantes.') from exc
+        response_info = {'error': 'Falha de rede ou timeout'}
+        if diagnostics is not None:
+            diagnostics.update({'request': request_info, 'response': response_info})
+        raise MercadoPagoError(
+            'O Mercado Pago não respondeu. Tente novamente em alguns instantes.',
+            diagnostics={'request': request_info, 'response': response_info},
+        ) from exc
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise MercadoPagoError('O Mercado Pago retornou uma resposta inválida.') from exc
+        response_info = {'error': 'Resposta JSON inválida'}
+        if diagnostics is not None:
+            diagnostics.update({'request': request_info, 'response': response_info})
+        raise MercadoPagoError(
+            'O Mercado Pago retornou uma resposta inválida.',
+            diagnostics={'request': request_info, 'response': response_info},
+        ) from exc
     if not isinstance(result, dict):
-        raise MercadoPagoError('O Mercado Pago retornou uma resposta inválida.')
+        response_info = {'error': 'Formato de resposta inválido'}
+        if diagnostics is not None:
+            diagnostics.update({'request': request_info, 'response': response_info})
+        raise MercadoPagoError(
+            'O Mercado Pago retornou uma resposta inválida.',
+            diagnostics={'request': request_info, 'response': response_info},
+        )
+    if diagnostics is not None:
+        diagnostics.update({
+            'request': request_info,
+            'response': _response_summary(result, status_code=status_code),
+        })
     return result
 
 
@@ -87,7 +200,7 @@ def _public_url(tenant, path):
     return f'https://{tenant.subdomain}.{base_domain}{path}'
 
 
-def create_subscription(*, tenant_id, payer_email, amount):
+def create_subscription(*, tenant_id, payer_email, amount, diagnostics=None):
     with transaction.atomic():
         tenant = Tenant.objects.select_for_update().get(pk=tenant_id)
         if tenant.mercado_pago_assinatura_status in {'pending', 'authorized'}:
@@ -124,7 +237,7 @@ def create_subscription(*, tenant_id, payer_email, amount):
             'transaction_amount': float(amount),
             'currency_id': 'BRL',
         },
-    })
+    }, diagnostics=diagnostics)
     checkout_url = result.get('init_point')
     if not isinstance(checkout_url, str):
         raise MercadoPagoError('O Mercado Pago não retornou um link de assinatura válido.')

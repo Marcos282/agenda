@@ -61,7 +61,35 @@ class MensalidadeTests(TestCase):
             tenant_id=self.tenant.pk,
             payer_email=self.admin.email,
             amount=Decimal('30.00'),
+            diagnostics=None,
         )
+
+    @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
+    def test_debug_opt_in_renders_only_sanitized_provider_diagnostics(self):
+        from tenants.mercado_pago import MercadoPagoError
+
+        safe_debug = {
+            'request': {
+                'method': 'POST',
+                'path': '/preapproval',
+                'authorization': '[redigido]',
+                'payload': {'payer_email': 'o***@example.test'},
+            },
+            'response': {'http_status': 400, 'message': 'payer_email inválido'},
+        }
+        with patch(
+            'painel.mensalidade_views.create_subscription',
+            side_effect=MercadoPagoError('HTTP 400', diagnostics=safe_debug),
+        ):
+            response = self.client.post(
+                self.url, {'acao': 'assinar', 'debug_mp': '1'}, **self.host,
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Diagnóstico do Mercado Pago')
+        self.assertContains(response, 'payer_email inválido')
+        self.assertNotContains(response, 'test-token')
+        self.assertNotContains(response, 'test-secret')
+        self.assertNotContains(response, self.admin.email)
 
     @override_settings(PLATFORM_MONTHLY_PRICE='NaN')
     def test_invalid_config_does_not_enable_checkout(self):
