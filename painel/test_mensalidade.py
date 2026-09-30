@@ -53,14 +53,13 @@ class MensalidadeTests(TestCase):
     @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
     def test_post_starts_subscription_and_displays_checkout_and_debug(self):
         checkout = 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=123'
-        with patch('painel.mensalidade_views.create_subscription', return_value=checkout) as start:
-            response = self.client.post(self.url, {'acao': 'assinar'}, **self.host)
+        with patch('painel.mensalidade_views.create_checkout', return_value=checkout) as start:
+            response = self.client.post(self.url, {'acao': 'pagar'}, **self.host)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, checkout)
         self.assertContains(response, 'Diagnóstico do Mercado Pago')
         start.assert_called_once_with(
             tenant_id=self.tenant.pk,
-            payer_email=self.admin.email,
             amount=Decimal('30.00'),
             diagnostics=start.call_args.kwargs['diagnostics'],
         )
@@ -72,13 +71,13 @@ class MensalidadeTests(TestCase):
         MERCADO_PAGO_WEBHOOK_SECRET='test-secret',
         PLATFORM_MONTHLY_PRICE='30.00',
     )
-    def test_local_sandbox_uses_configured_test_payer(self):
+    def test_checkout_does_not_send_test_payer(self):
         with patch(
-            'painel.mensalidade_views.create_subscription',
+            'painel.mensalidade_views.create_checkout',
             return_value='https://www.mercadopago.com.br/subscriptions/checkout',
         ) as start:
-            self.client.post(self.url, {'acao': 'assinar'}, **self.host)
-        self.assertEqual(start.call_args.kwargs['payer_email'], 'sandbox-buyer@example.test')
+            self.client.post(self.url, {'acao': 'pagar'}, **self.host)
+        self.assertNotIn('payer_email', start.call_args.kwargs)
 
     @override_settings(
         DEBUG=False,
@@ -87,16 +86,16 @@ class MensalidadeTests(TestCase):
         MERCADO_PAGO_WEBHOOK_SECRET='test-secret',
         PLATFORM_MONTHLY_PRICE='30.00',
     )
-    def test_production_ignores_local_sandbox_payer_override(self):
+    def test_checkout_does_not_send_admin_email(self):
         with patch(
-            'painel.mensalidade_views.create_subscription',
+            'painel.mensalidade_views.create_checkout',
             return_value='https://www.mercadopago.com.br/subscriptions/checkout',
         ) as start:
-            self.client.post(self.url, {'acao': 'assinar'}, **self.host)
-        self.assertEqual(start.call_args.kwargs['payer_email'], self.admin.email)
+            self.client.post(self.url, {'acao': 'pagar'}, **self.host)
+        self.assertNotIn('payer_email', start.call_args.kwargs)
 
     @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
-    def test_debug_opt_in_renders_only_sanitized_provider_diagnostics(self):
+    def test_debug_renders_only_sanitized_provider_diagnostics(self):
         from tenants.mercado_pago import MercadoPagoError
 
         safe_debug = {
@@ -109,11 +108,11 @@ class MensalidadeTests(TestCase):
             'response': {'http_status': 400, 'message': 'payer_email inválido'},
         }
         with patch(
-            'painel.mensalidade_views.create_subscription',
+            'painel.mensalidade_views.create_checkout',
             side_effect=MercadoPagoError('HTTP 400', diagnostics=safe_debug),
         ):
             response = self.client.post(
-                self.url, {'acao': 'assinar', 'debug_mp': '1'}, **self.host,
+                self.url, {'acao': 'pagar', 'debug_mp': '1'}, **self.host,
             )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Diagnóstico do Mercado Pago')

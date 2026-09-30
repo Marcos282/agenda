@@ -38,30 +38,30 @@
 
     <section class="billing-card billing-payment" aria-labelledby="payment-title">
       <div class="billing-card-heading">
-        <div><span class="billing-eyebrow">PAGAMENTO</span><h2 id="payment-title">Sua assinatura</h2></div>
+        <div><span class="billing-eyebrow">PAGAMENTO</span><h2 id="payment-title">Renovar acesso</h2></div>
         <span class="billing-provider">Mercado Pago</span>
       </div>
 
       {% if assinatura_ativa %}
-        <span class="billing-status-label">Assinatura ativa</span>
-        <p class="billing-payment-copy">Seu plano está ativo. A validade é renovada por 30 dias após cada cobrança aprovada.</p>
+        <span class="billing-status-label">Assinatura automática anterior ativa</span>
+        <p class="billing-payment-copy">Existe uma assinatura automática anterior. Cancele-a no Mercado Pago antes de iniciar pagamentos avulsos.</p>
         <p class="billing-payment-amount">R$ {{ valor_mensal|floatformat:2 }}<span> / mês</span></p>
         <a class="ui-button billing-pay" href="https://www.mercadopago.com.br/subscriptions" target="_blank" rel="noopener noreferrer">Gerenciar assinatura ↗</a>
-      {% elif checkout_url and assinatura_status == 'pending' %}
+      {% elif checkout_url %}
         <span class="billing-status-label billing-status-pending">Aguardando confirmação</span>
-        <p class="billing-payment-copy">Conclua a autorização da cobrança no Mercado Pago. O acesso será renovado após a confirmação.</p>
+        <p class="billing-payment-copy">Conclua o pagamento no Mercado Pago. Cada pagamento aprovado libera mais 30 dias de acesso.</p>
         <a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>
       {% elif checkout_configurado %}
         <span class="billing-status-label">{% if prazo_expirado %}Acesso pausado{% else %}30 dias grátis desde o cadastro{% endif %}</span>
-        <p class="billing-payment-copy">Assine por R$ {{ valor_mensal|floatformat:2 }} por mês. Se renovar antes do vencimento, os próximos 30 dias serão somados ao prazo atual.</p>
-        <div class="billing-checkout-note"><strong>Pagamento protegido</strong><span>Você continuará no checkout do Mercado Pago para revisar a assinatura e informar os dados necessários. O sistema não armazena dados de pagamento.</span></div>
+        <p class="billing-payment-copy">Renove por R$ {{ valor_mensal|floatformat:2 }} por 30 dias, sem cobrança automática. Se renovar antes do vencimento, os próximos 30 dias serão somados ao prazo atual.</p>
+        <div class="billing-checkout-note"><strong>Pagamento protegido</strong><span>Você continuará no checkout do Mercado Pago para revisar o pagamento e informar os dados necessários. O sistema não armazena dados de pagamento.</span></div>
         <form method="post" class="billing-payment-form">
           {% csrf_token %}
-          <input type="hidden" name="acao" value="assinar">
-          <button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button>
+          <input type="hidden" name="acao" value="pagar">
+          <button class="ui-button billing-pay" type="submit">Pagar 30 dias com Mercado Pago ↗</button>
 
         </form>
-        {% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Você pode iniciar uma nova assinatura.</p>{% endif %}
+        {% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Agora você pode renovar com pagamento avulso.</p>{% endif %}
       {% else %}
         <span class="billing-status-label billing-status-pending">Em configuração</span>
         <p class="billing-payment-copy">O pagamento estará disponível assim que a integração do Mercado Pago for configurada.</p>
@@ -76,8 +76,8 @@
       <div><span class="billing-eyebrow">COMO FUNCIONA</span><h2 id="billing-how-title">Ativação simples e segura</h2></div>
     </div>
     <ol class="billing-steps">
-      <li><strong>1. Inicie a assinatura</strong><span>Abra o checkout oficial do Mercado Pago.</span></li>
-      <li><strong>2. Revise e autorize</strong><span>Confira as condições e conclua o pagamento.</span></li>
+      <li><strong>1. Inicie o pagamento</strong><span>Abra o checkout oficial do Mercado Pago.</span></li>
+      <li><strong>2. Revise e pague</strong><span>Confira as condições e conclua o pagamento.</span></li>
       <li><strong>3. Continue usando</strong><span>A confirmação atualiza o acesso automaticamente.</span></li>
     </ol>
     <p class="billing-footnote">Cada cobrança aprovada é registrada uma única vez. A data de expiração é atualizada automaticamente após a confirmação do Mercado Pago.</p>
@@ -87,7 +87,7 @@
     <section class="billing-card billing-details" aria-labelledby="debug-title">
       <h2 id="debug-title">Diagnóstico do Mercado Pago</h2>
       {% if payment_error %}<p role="alert">{{ payment_error }}</p>{% endif %}
-      {% if checkout_url %}<p>Solicitação aceita pelo provedor. Abra o checkout para concluir a autorização:</p><a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>{% endif %}
+      {% if checkout_url %}<p>Solicitação aceita pelo provedor. Abra o checkout para concluir o pagamento:</p><a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>{% endif %}
       <p>Valores sensíveis foram mascarados; o conteúdo abaixo é um resumo, não inclui credenciais.</p>
       <p>Última solicitação: {{ debug_info.at|default:"Nenhuma solicitação registrada" }}</p>
       <h3>Enviado</h3><pre>{{ debug_info.request|pprint }}</pre>

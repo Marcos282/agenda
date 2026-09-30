@@ -2,6 +2,7 @@ import json
 import re
 from django.utils import timezone
 from .models import Tenant
+from .checkout_pro import approve_payment
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
@@ -29,7 +30,7 @@ def mercado_pago_webhook(request):
         data = data if isinstance(data, dict) else {}
         identifier = str(request.GET.get('data.id') or data.get('id') or '')
         safe_identifier = _masked_id(identifier) if valid_subscription_id(identifier) else '[ausente ou inválido]'
-        known = event in ("subscription_preapproval", "subscription_authorized_payment")
+        known = event in ("payment", "subscription_preapproval", "subscription_authorized_payment")
         Tenant.objects.filter(pk=tenant.pk).update(mercado_pago_ultimo_webhook={
             "received_at": timezone.now().isoformat(),
             "type": event if known else "outro ou ausente",
@@ -57,7 +58,7 @@ def _handle_webhook(request):
         return HttpResponse(status=400)
     data_id = str(request.GET.get('data.id') or data.get('id') or '')
     event_type = str(request.GET.get('type') or payload.get('type') or request.GET.get('topic') or '')
-    if event_type not in {'subscription_preapproval', 'subscription_authorized_payment'}:
+    if event_type not in {'payment', 'subscription_preapproval', 'subscription_authorized_payment'}:
         return JsonResponse({'received': True})
     valid_id = valid_subscription_id(data_id) if event_type == 'subscription_preapproval' else re.fullmatch(r'[0-9]{1,100}', data_id)
     if not valid_id:
@@ -70,7 +71,11 @@ def _handle_webhook(request):
     ):
         return HttpResponse(status=401)
     try:
-        process_webhook(event_type=event_type, data_id=data_id)
+        if event_type == 'payment':
+            tenant = getattr(request, 'tenant', None)
+            approve_payment(data_id, tenant_id=tenant.pk if tenant else None)
+        else:
+            process_webhook(event_type=event_type, data_id=data_id)
     except MercadoPagoError:
         return HttpResponse(status=503)
     return JsonResponse({'received': True})

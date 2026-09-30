@@ -75,6 +75,16 @@ def _request_summary(method, path, payload, idempotency_key):
                 if isinstance(recurring, dict) and key in recurring
             },
         }
+    if payload is not None and path == '/checkout/preferences':
+        summary['payload'] = {
+            'items': payload.get('items'),
+            'external_reference': '[redigida]',
+            'back_urls': {key: _safe_url(value) for key, value in payload.get('back_urls', {}).items()},
+            'notification_url': _safe_url(payload.get('notification_url')),
+            'auto_return': payload.get('auto_return'),
+            'expires': payload.get('expires'),
+            'expiration_date_to': payload.get('expiration_date_to'),
+        }
     return summary
 
 
@@ -94,7 +104,7 @@ def _response_summary(result, *, status_code, error=None):
     summary['body'] = {
         'id': _masked_id(result.get('id')),
         'id_type': type(result.get('id')).__name__,
-        'id_valid': valid_subscription_id(result.get('id')),
+        'id_valid': isinstance(result.get('id'), str) and bool(re.fullmatch(r'[A-Za-z0-9_-]{1,200}', result['id'])),
         'status': str(result.get('status', ''))[:50],
         'init_point': _safe_url(result.get('init_point')) if result.get('init_point') else '[ausente]',
     }

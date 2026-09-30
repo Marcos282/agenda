@@ -1,55 +1,49 @@
-# Mensalidade e assinatura Mercado Pago
+# Mensalidade — Checkout Pro
 
-O botão **Mensalidade** fica disponível ao administrador do estabelecimento em `/painel/mensalidade/`. A integração cria uma assinatura recorrente a cada 30 dias por R$ 30,00 por tenant, usando o checkout hospedado do Mercado Pago. A aplicação não recebe nem armazena dados de cartão.
+O administrador paga em `/painel/mensalidade/` pelo botão **Pagar 30 dias com Mercado Pago**. Cada pagamento aprovado acrescenta 30 dias; não há nova assinatura nem cobrança automática. O preço continua vindo de `PLATFORM_MONTHLY_PRICE` (padrão R$ 30,00).
 
-## Credenciais
+## Configuração
 
-Configure as variáveis abaixo no `.env` da raiz do projeto em desenvolvimento local. O arquivo é carregado pelo Django e ignorado pelo Git. Em produção, defina os mesmos nomes no ambiente do processo:
+No `.env` do servidor:
 
 ```dotenv
 PLATFORM_MONTHLY_PRICE=30.00
-MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
-MERCADO_PAGO_WEBHOOK_SECRET=segredo-de-assinatura-do-webhook
+MERCADO_PAGO_ACCESS_TOKEN=credencial-da-conta-vendedora
+MERCADO_PAGO_WEBHOOK_SECRET=segredo-da-aplicacao
+TENANT_BASE_DOMAIN=tacombinado.net
+STORE_BASE_DOMAIN=tacombinado.net
 ```
 
-Obtenha o Access Token nas credenciais da aplicação Mercado Pago. Para cobranças reais, use a aplicação da conta recebedora real; para testar Assinaturas, siga a configuração específica abaixo. Obtenha o segredo de assinatura em **Suas integrações → Webhooks**. Nunca coloque essas credenciais no HTML, JavaScript, repositório ou mensagens de suporte. O preço padrão é `30.00`; ele também precisa corresponder ao valor configurado no Mercado Pago.
+Para cobranças reais, use as credenciais de produção da conta vendedora real. A troca para Checkout Pro não converte credenciais de teste em reais. O comprador se identifica no Mercado Pago: a aplicação não envia `payer` nem `payer_email`, e `MERCADO_PAGO_TEST_PAYER_EMAIL` não é usado nesse fluxo.
 
-### Teste local em sandbox
+A preferência é criada por `POST /checkout/preferences`. O redirecionamento usa `init_point`, inclusive no teste com contas de teste, conforme as [orientações oficiais](https://www.mercadopago.com.br/developers/pt/news/2023/11/16/Questions-on-how-to-test-your-integration--). O prefixo do token não determina sozinho se a conta vendedora é real. O comprador deve ser diferente do vendedor.
 
-Para Assinaturas, crie duas contas de teste no Mercado Pago: vendedor e comprador. Entre com o vendedor de teste, crie sua aplicação e use o Access Token das **credenciais de produção dessa conta de teste**, conforme a documentação do provedor. Um token com prefixo `APP_USR-` também pode pertencer a uma conta de teste; o prefixo sozinho não identifica o tipo da conta. Configure no `.env` local o token do vendedor de teste, o segredo do webhook da aplicação e o e-mail exato da conta compradora de teste:
+Habilite o evento **Pagamentos (payment)** nos Webhooks da mesma aplicação. Cada preferência informa a URL HTTPS do estabelecimento: `https://<subdomínio>.tacombinado.net/integracoes/mercado-pago/webhook/`. Configure o segredo de assinatura correspondente. Nunca envie tokens por mensagem nem os adicione ao Git.
 
-```dotenv
-MERCADO_PAGO_ACCESS_TOKEN=token-da-aplicacao-do-vendedor-de-teste
-MERCADO_PAGO_WEBHOOK_SECRET=segredo-de-teste-do-webhook
-MERCADO_PAGO_TEST_PAYER_EMAIL=email-da-conta-compradora-de-teste
-```
+## Confirmação e prazo
 
-O erro `Both payer and collector must be real or test users` indica mistura de contas reais e de teste. Confira também se o navegador está conectado ao comprador de teste ao concluir o checkout. Não use o e-mail do vendedor como comprador. Referência: [orientações oficiais para testar Assinaturas](https://www.mercadopago.com.br/developers/pt/news/2023/11/16/Questions-on-how-to-test-your-integration--).
+- Cada tentativa guarda sua referência UUID, valor, recebedor e preferência no banco. Um checkout pendente é reaproveitado por até 24 horas. Depois, pode ser criado outro; notificações tardias de pagamentos válidos continuam sendo processadas.
+- O webhook exige assinatura válida e consulta `/v1/payments/{id}` com a credencial do servidor. A volta do checkout também faz essa consulta, limitada ao estabelecimento autenticado.
+- Parâmetros como `status=approved` na URL não liberam acesso. A aplicação verifica ID, status aprovado, BRL, valor, recebedor e referência da tentativa.
+- O ID de pagamento é único no banco. Retorno e webhook repetidos não acrescentam dias novamente.
+- O prazo passa a ser `max(vencimento atual, data local do pagamento) + 30 dias`.
+- Após vencer, o administrador ainda pode acessar Mensalidade; novos agendamentos permanecem bloqueados até renovar.
 
-`MERCADO_PAGO_TEST_PAYER_EMAIL` só é aplicado com `DEBUG=true`; fora do modo de desenvolvimento o sistema continua usando o e-mail do administrador autenticado. Não use credenciais ou contas reais para esse teste. O endpoint local não recebe webhooks diretamente da internet; validar a confirmação de pagamento exige expor o ambiente local por um túnel HTTPS e configurar a URL de webhook correspondente.
+O painel conserva o diagnóstico mascarado do envio/resposta e do último webhook. **Atualizar diagnóstico** consulta novamente os dados salvos. Nenhum dado de cartão é recebido pelo sistema.
 
-O domínio público precisa estar acessível por HTTPS. O checkout envia `notification_url` para `https://<subdomínio>.tacombinado.net/integracoes/mercado-pago/webhook/`. Em produção, configure `TENANT_BASE_DOMAIN=tacombinado.net` e mantenha `STORE_BASE_DOMAIN=tacombinado.net` (ou o domínio público efetivo) para que os webhooks cheguem ao tenant correto.
+## Transição das assinaturas anteriores
 
-## Configuração de webhooks no Mercado Pago
+Novos pagamentos não usam `/preapproval`. Links pendentes de assinaturas antigas não aparecem no novo botão. Os dados e webhooks legados permanecem para reconciliar cobranças já existentes. Uma assinatura anterior com status `authorized` bloqueia o pagamento avulso e exibe o link de gerenciamento; cancele-a no Mercado Pago antes de renovar por Checkout Pro. Esta atualização não cancela contratos remotamente.
 
-Na aplicação do Mercado Pago, habilite notificações de **Assinaturas (preapproval)** e **Pagamentos autorizados de assinatura**. Use o segredo de assinatura da mesma aplicação em `MERCADO_PAGO_WEBHOOK_SECRET`. O endpoint valida `x-signature` com HMAC-SHA256 e consulta os dados do evento pela API autenticada antes de alterar qualquer prazo. Respostas não disponíveis são retornadas como erro temporário para permitir nova tentativa do provedor.
+## Publicação
 
-## Ciclo de acesso
-
-- O cadastro inicia 30 dias grátis, contabilizados pela data local do estabelecimento.
-- O painel mostra os dias restantes. No dia da expiração ele indica “Expira hoje”; o bloqueio começa no dia seguinte.
-- Após o vencimento, o administrador pode entrar somente na tela **Mensalidade** do painel. As demais rotas administrativas redirecionam para lá.
-- A loja pública pode continuar exibindo o catálogo, mas novos agendamentos são temporariamente bloqueados. Consultas e cancelamentos de reservas já existentes continuam acessíveis.
-- Uma cobrança só renova o acesso depois de confirmada como aprovada pela API do Mercado Pago. Cada pagamento é registrado por ID único, portanto webhooks repetidos não duplicam a renovação.
-- Cada cobrança aprovada acrescenta 30 dias à data de expiração atual quando o pagamento ocorre antes do vencimento. Se o prazo já venceu, os 30 dias começam a contar da data local do pagamento.
-- A assinatura fica vinculada ao tenant por referência externa, e seu status é atualizado por webhook. O administrador pode continuar ou gerenciar a assinatura no Mercado Pago.
-
-É necessária a migration `tenants.0006_mercado_pago_subscription`; aplique as migrations antes de iniciar a versão atualizada:
+Envie os arquivos, incluindo `tenants/migrations/0008_plataformacheckout.py`, ao GitHub. No servidor:
 
 ```bash
-myenv/bin/python manage.py migrate
+cd /var/www/html/combinado
+git pull
+venv/bin/python manage.py migrate
+sudo systemctl restart combinado
 ```
 
-## Limites e operação
-
-A aprovação depende de Access Token válido, preço configurado, webhook público HTTPS e segredo correspondente à aplicação do Mercado Pago. Sem essas configurações, o painel mantém o botão indisponível e não estende o prazo. Testes automatizados usam respostas simuladas e não iniciam cobranças reais.
+Aplique a migração antes de reiniciar. Testes automatizados usam respostas simuladas; não cobram cartões nem verificam as credenciais reais do servidor.

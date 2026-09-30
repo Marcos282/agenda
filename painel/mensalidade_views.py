@@ -8,7 +8,8 @@ from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from tenants.mercado_pago import MercadoPagoError, configured, create_subscription
+from tenants.mercado_pago import MercadoPagoError, configured
+from tenants.checkout_pro import create_checkout, pending_checkout, approve_payment
 from .decorators import admin_tenant_required
 
 
@@ -22,11 +23,12 @@ def valor_mensal():
     return None
 
 
-def _context(request, amount, debug_info=None, payment_error=None, debug_enabled=False, checkout_url=None):
+def _context(request, amount, debug_info=None, payment_error=None, checkout_url=None):
     dias = request.tenant.dias_para_expirar
+    pending = pending_checkout(request.tenant)
     return {
         'checkout_configurado': configured() and amount is not None,
-        'checkout_url': checkout_url or request.tenant.mercado_pago_checkout_url,
+        'checkout_url': checkout_url or (pending.checkout_url if pending else ''),
         'assinatura_status': request.tenant.mercado_pago_assinatura_status,
         'assinatura_ativa': request.tenant.mercado_pago_assinatura_status == 'authorized',
         'valor_mensal': amount,
@@ -46,20 +48,23 @@ def _context(request, amount, debug_info=None, payment_error=None, debug_enabled
 @require_http_methods(['GET', 'POST'])
 def mensalidade(request):
     amount = valor_mensal()
+    if request.method == 'GET' and request.GET.get('payment_id'):
+        try:
+            approve_payment(request.GET['payment_id'], tenant_id=request.tenant.pk)
+            request.tenant.refresh_from_db()
+        except MercadoPagoError:
+            messages.info(request, 'A confirmação está pendente. Atualize a página em alguns instantes.')
     if request.method == 'POST':
-        if request.POST.get('acao') != 'assinar':
+        if request.POST.get('acao') != 'pagar':
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
         if amount is None or not configured():
             messages.error(request, 'O pagamento online ainda não está configurado.')
             return redirect('painel:mensalidade')
-        debug_enabled = True
         diagnostics = {}
-        test_payer_email = settings.MERCADO_PAGO_TEST_PAYER_EMAIL.strip() if settings.DEBUG else ''
         try:
-            checkout_url = create_subscription(
+            checkout_url = create_checkout(
                 tenant_id=request.tenant.pk,
-                payer_email=test_payer_email or request.user.email,
                 amount=amount,
                 diagnostics=diagnostics,
             )
@@ -67,21 +72,14 @@ def mensalidade(request):
             diagnostics = exc.diagnostics or diagnostics
             diagnostics['at'] = timezone.now().isoformat()
             Tenant.objects.filter(pk=request.tenant.pk).update(mercado_pago_diagnostico=diagnostics)
-            if debug_enabled:
-                return render(request, 'painel/mensalidade.html', _context(
-                    request, amount, debug_info=exc.diagnostics or diagnostics,
-                    payment_error=str(exc), debug_enabled=True,
-                ))
-            messages.error(request, str(exc))
-            return redirect('painel:mensalidade')
+            return render(request, 'painel/mensalidade.html', _context(
+                request, amount, debug_info=diagnostics, payment_error=str(exc),
+            ))
         diagnostics['at'] = timezone.now().isoformat()
         Tenant.objects.filter(pk=request.tenant.pk).update(mercado_pago_diagnostico=diagnostics)
         request.tenant.refresh_from_db()
-        if debug_enabled:
-            return render(request, 'painel/mensalidade.html', _context(
-                request, amount, debug_info=diagnostics, debug_enabled=True,
-                checkout_url=checkout_url,
-            ))
-        return redirect(checkout_url)
+        return render(request, 'painel/mensalidade.html', _context(
+            request, amount, debug_info=diagnostics, checkout_url=checkout_url,
+        ))
 
     return render(request, 'painel/mensalidade.html', _context(request, amount))
