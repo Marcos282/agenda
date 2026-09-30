@@ -1,13 +1,51 @@
-{% extends 'painel/base.html' %}
+{% extends 'painel/base.html' %}{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/inicio.css' %}">{% endblock %}
 {% block painel_content %}
-<h1>Organize seu estabelecimento</h1>
-<p>Cadastre os profissionais e os serviços. Depois, defina o valor, a duração e os períodos de atendimento de cada profissional.</p>
-<div class="toolbar"><a class="ui-button" href="{% url 'painel:agendamento_novo' %}">+ Novo agendamento</a></div>
-<div class="cards">
-<section class="card"><h2>Clientes</h2><p>Busque contatos e consulte o histórico de agendamentos, cancelamentos e faltas.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}">Ver clientes →</a></section>
-<section class="card"><h2>Profissionais</h2><p>Equipe, serviços e disponibilidade individual.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:profissionais' %}">Gerenciar profissionais →</a></section>
-<section class="card"><h2>Serviços</h2><p>Catálogo de atendimentos do estabelecimento.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:servicos' %}">Gerenciar serviços →</a></section>
-<section class="card"><h2>Agenda diária</h2><p>Escolha um profissional e abra os períodos de atendimento do dia.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}">Abrir agenda →</a></section>
-<section class="card"><h2>Meu cadastro</h2><p>Confira e atualize os dados do responsável e o endereço do estabelecimento.</p><a class="ui-button ui-button-secondary" href="{% url 'painel:meu_cadastro' %}">Editar cadastro →</a></section>
+<div class="dashboard">
+  <header class="dashboard-hero">
+    <div>
+      <span class="dashboard-kicker">SEU DIA, BEM ORGANIZADO</span>
+      <h1>Vamos cuidar da sua agenda?</h1>
+      <p>Gerencie sua equipe, acompanhe os clientes e deixe tudo pronto para o próximo atendimento.</p>
+      <div class="dashboard-actions">
+        <a class="ui-button dashboard-primary" href="{% url 'painel:agendamento_novo' %}">＋ Novo agendamento</a>
+        <a class="ui-button dashboard-secondary" href="{% url 'painel:agenda' %}">Ver agenda <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="dashboard-hero-art" aria-hidden="true"><svg viewBox="0 0 160 160" fill="none"><rect x="24" y="32" width="114" height="105" rx="18" fill="white" fill-opacity=".12" stroke="white" stroke-opacity=".4" stroke-width="2"/><path d="M24 64h114M53 22v22m57-22v22" stroke="#a7e8d5" stroke-width="7" stroke-linecap="round"/><rect x="43" y="81" width="18" height="18" rx="5" fill="#a7e8d5"/><rect x="72" y="81" width="18" height="18" rx="5" fill="white" fill-opacity=".25"/><rect x="101" y="81" width="18" height="18" rx="5" fill="white" fill-opacity=".25"/><path d="m70 115 10 10 22-23" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </header>
+  <div class="dashboard-section-heading"><h2>Seu estabelecimento</h2><span>O que vamos organizar agora?</span></div>
+  <div class="dashboard-grid">
+    <section class="dashboard-card dashboard-blue">
+      <span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m3 10v-3a6 6 0 0 0-2-4"/></svg></span>
+      <h3>Clientes</h3><p>Contatos e histórico de atendimentos em um só lugar.</p>
+      <a class="ui-button dashboard-card-button" href="{% url 'painel:clientes' %}">Ver clientes<span aria-hidden="true">→</span></a>
+    </section>
+    <section class="dashboard-card dashboard-purple">
+      <span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V4h8v3M3 12h18M10 12v3h4v-3"/></svg></span>
+      <h3>Profissionais</h3><p>Organize sua equipe, os serviços e a disponibilidade.</p>
+      <a class="ui-button dashboard-card-button" href="{% url 'painel:profissionais' %}">Gerenciar equipe<span aria-hidden="true">→</span></a>
+    </section>
+    <section class="dashboard-card dashboard-orange">
+      <span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg></span>
+      <h3>Serviços</h3><p>Seu catálogo de atendimentos, pronto para agendar.</p>
+      <a class="ui-button dashboard-card-button" href="{% url 'painel:servicos' %}">Gerenciar serviços<span aria-hidden="true">→</span></a>
+    </section>
+    <section class="dashboard-card dashboard-teal">
+      <span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-14 4h3m4 0h3"/></svg></span>
+      <h3>Agenda diária</h3><p>Veja os horários e organize os atendimentos do dia.</p>
+      <a class="ui-button dashboard-card-button" href="{% url 'painel:agenda' %}">Abrir agenda<span aria-hidden="true">→</span></a>
+    </section>
+    <section class="dashboard-card dashboard-rose">
+      <span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v11H3V10Z"/><path d="M9 21v-8h6v8"/></svg></span>
+      <h3>Meu cadastro</h3><p>Mantenha os dados e o endereço da sua loja atualizados.</p>
+      <a class="ui-button dashboard-card-button" href="{% url 'painel:meu_cadastro' %}">Editar cadastro<span aria-hidden="true">→</span></a>
+    </section>
+    <section class="dashboard-card dashboard-green">
+      <span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5A9 9 0 1 1 21 11Z"/><path d="M8 8c0 4 2 6 6 6l2-2-3-1-1 1-2-2 1-1-1-3-2 2Z"/></svg></span>
+      <h3>WhatsApp</h3><p>Conecte sua conta e acompanhe os lembretes da agenda.</p>
+      <a class="ui-button dashboard-card-button" href="{% url 'painel:whatsapp' %}">Abrir WhatsApp<span aria-hidden="true">→</span></a>
+    </section>
+  </div>
 </div>
 {% endblock %}
