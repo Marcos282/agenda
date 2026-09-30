@@ -6,8 +6,8 @@
 {% else %}<p class="notice">Profissional inativo. Estes períodos não estão disponíveis para novos atendimentos.</p>{% endif %}
 <div class="cards">{% for periodo in page_obj %}<article class="card">
 <h2>{{ periodo.data|date:'d/m/Y' }}</h2><p>{{ periodo.hora_inicio|time:'H:i' }} → {{ periodo.hora_fim|time:'H:i' }}</p>
-<span class="badge {% if not periodo.ativo %}inactive{% endif %}">{{ periodo.ativo|yesno:'Ativo,Inativo' }}</span>
-<p><a class="ui-button ui-button-secondary" href="{% url 'painel:disponibilidade_editar' profissional.pk periodo.pk %}">Editar</a></p>
+{% include 'painel/status_ativo.html' with ativo=periodo.ativo %}
+<div class="card-actions"><a class="ui-button ui-button-secondary" href="{% url 'painel:disponibilidade_editar' profissional.pk periodo.pk %}">Editar</a></div>
 </article>{% empty %}<p>Agenda fechada. Nenhum período foi aberto para este profissional.</p>{% endfor %}</div>
 {% include 'painel/paginacao.html' %}
 {% endblock %}

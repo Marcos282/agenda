@@ -6,8 +6,8 @@
 {% for profissional in page_obj %}<article class="card">
 {% if profissional.foto %}<img class="photo" src="{% url 'painel:profissional_foto' profissional.pk %}" alt="Foto de {{ profissional.nome }}">{% endif %}
 <h2>{{ profissional.nome }}</h2>
-<span class="badge {% if not profissional.ativo %}inactive{% endif %}">{{ profissional.ativo|yesno:'Ativo,Inativo' }}</span>
-<div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar</a><a class="ui-button ui-button-secondary" href="{% url 'painel:vinculos' profissional.pk %}">Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:disponibilidades' profissional.pk %}">Agenda</a></div>
+{% include 'painel/status_ativo.html' with ativo=profissional.ativo %}
+<div class="card-actions"><a class="ui-button ui-button-secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar</a><a class="ui-button ui-button-secondary" href="{% url 'painel:vinculos' profissional.pk %}">Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:disponibilidades' profissional.pk %}">Agenda</a></div>
 </article>{% empty %}<p>Nenhum profissional cadastrado. A agenda de cada novo profissional começa fechada.</p>{% endfor %}
 </div>{% include 'painel/paginacao.html' %}
 {% endblock %}

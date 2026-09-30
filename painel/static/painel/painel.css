@@ -1,0 +1,21 @@
+/* Shared presentation for every administrative route. */
+body{background:#f0f4f8}
+body>main{max-width:1080px;margin:32px auto;padding:30px;background:#fff;border-color:#dfe7ee;box-shadow:0 12px 40px #2439540a}
+body>main a,body>main a:hover{text-decoration:none}
+body>main :where(.ui-button,button,.agenda-button,.icon-button){min-height:44px;border-radius:10px;text-align:center;box-sizing:border-box}
+.panel-nav,.account-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:stretch}
+.panel-nav .ui-button,.account-nav .ui-button{width:100%;height:100%;min-height:44px;background:#f1f5f9;border:1px solid #e1e8f0;color:#41546b;justify-content:center}
+.panel-nav .ui-button:hover,.account-nav .ui-button:hover{background:#e4edf8;border-color:#b8cce4;color:#224c80}
+.panel-nav .ui-button[aria-current=page]{background:#245dab;color:#fff;border-color:#245dab}
+.account-nav form{height:100%;margin:0}
+.ui-button-secondary{background:#f1f5f9;border-color:#e1e8f0;color:#41546b}
+.ui-button-secondary:hover{background:#e4edf8;border-color:#b8cce4;color:#224c80}
+.toolbar,.owner-profile-actions,.store-qr-actions,.booking-actions{display:flex;align-items:stretch;flex-wrap:wrap;gap:10px}
+.toolbar>:is(a,button),.owner-profile-actions>:is(a,button),.store-qr-actions>:is(a,button),.booking-actions>:is(a,button){flex:1 1 140px;min-height:44px;margin:0;justify-content:center}
+.toolbar>form,.booking-actions>form{flex:1 1 140px;margin:0}
+.toolbar>form>button,.booking-actions>form>button{width:100%;height:100%}
+.card-actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;width:100%;margin-top:auto;padding-top:20px}
+.card-actions .ui-button{width:100%;min-height:44px;margin:0;justify-content:center}
+.store-qr-url .ui-button{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+@media(max-width:1140px){body>main{margin:24px 16px}}
+@media(max-width:600px){body>main{margin:12px;padding:18px}.panel-nav,.account-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar>:is(a,button),.owner-profile-actions>:is(a,button),.store-qr-actions>:is(a,button),.booking-actions>:is(a,button){flex-basis:120px}}

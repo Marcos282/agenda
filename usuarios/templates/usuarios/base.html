@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}">
   <style>{% block extra_css %}{% endblock %}</style>
 {% block extra_head %}{% endblock %}
+{% block layout_head %}{% endblock %}
 </head>
 <body><main>
   <div class="eyebrow">{{ request.tenant.nome|default:"Plataforma de agendamento" }}</div>
@@ -25,7 +26,7 @@
       {% if user.tipo == "ADMIN" %}<a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}">Painel</a>{% endif %}
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="ui-button ui-button-quiet">Sair</button></form>
     {% else %}
-      <a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a><a class="ui-button ui-button-secondary" href="{% url 'login' %}">Acesso com conta</a>
+      <a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a><a class="ui-button ui-button-secondary" href="{% url 'login' %}">Área do estabelecimento</a>
     {% endif %}
   </nav>{% endif %}
 </main>{% block scripts %}{% endblock %}</body></html>

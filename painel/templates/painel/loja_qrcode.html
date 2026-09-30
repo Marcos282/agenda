@@ -12,7 +12,7 @@
 <section class="store-qr" aria-label="QR Code de {{ request.tenant.nome }}">
 <h2>{{ request.tenant.nome }}</h2>
 <img src="{% url 'painel:loja_qrcode_imagem' %}" alt="QR Code para acessar {{ endereco_loja }}" width="444" height="444">
-<p class="store-qr-url"><a href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">{{ endereco_loja }}</a></p>
+<p class="store-qr-url"><a class="ui-button ui-button-secondary" href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">{{ endereco_loja }}</a></p>
 <div class="store-qr-actions"><a class="ui-button" href="{% url 'painel:loja_qrcode_imagem' %}?download=1" download>Baixar QR Code</a><a class="ui-button ui-button-secondary" href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">Abrir loja ↗</a></div>
 </section>
 <p>Baixe a imagem para imprimir ou compartilhar com seus clientes.</p>
