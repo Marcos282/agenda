@@ -1,12 +1,26 @@
 {% extends 'usuarios/base.html' %}
 {% block title %}{{ titulo }}{% endblock %}
+{% block extra_css %}
+.login-form button[type="submit"],.login-actions .ui-button{width:100%;min-height:44px}
+.login-actions{display:grid;gap:12px;margin-top:12px}
+.login-register{display:grid;gap:12px;margin-top:8px;padding-top:20px;border-top:1px solid var(--line)}
+.login-register p{margin:0;text-align:center;color:var(--muted);font-size:13px}
+{% endblock %}
 {% block content %}
 <h1>{{ titulo }}</h1>
 {% if login_form and not request.tenant %}<p>Entre com seu e-mail e senha para acessar sua conta.</p>{% endif %}
-<form method="post">
+<form method="post"{% if login_form %} class="login-form"{% endif %}>
   {% csrf_token %}
   {{ form.as_p }}
   <button type="submit">{{ botao }}</button>
 </form>
-{% if login_form %}<p><a href="{% url 'lembrar_senha' %}">Esqueci minha senha</a></p><p>Ainda não tem conta?</p><a class="ui-button ui-button-secondary" href="{% if request.tenant %}{% url 'cadastro' %}{% if destino %}?next={{ destino|urlencode }}{% endif %}{% else %}{% url 'registro' %}{% endif %}">Criar conta</a>{% endif %}
+{% if login_form %}
+<div class="login-actions">
+  <a class="ui-button ui-button-secondary" href="{% url 'lembrar_senha' %}">Esqueci minha senha</a>
+  <div class="login-register">
+    <p>Ainda não tem conta?</p>
+    <a class="ui-button ui-button-secondary" href="{% if request.tenant %}{% url 'cadastro' %}{% if destino %}?next={{ destino|urlencode }}{% endif %}{% else %}{% url 'registro' %}{% endif %}">Criar conta</a>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
