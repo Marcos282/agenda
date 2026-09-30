@@ -1,17 +1,47 @@
 import json
 import re
+from django.utils import timezone
+from .models import Tenant
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .mercado_pago import MercadoPagoError, process_webhook, verify_webhook_signature, valid_subscription_id
+from .mercado_pago import MercadoPagoError, process_webhook, verify_webhook_signature, valid_subscription_id, _masked_id
 
 
 @csrf_exempt
 @require_POST
 def mercado_pago_webhook(request):
+    response = _handle_webhook(request)
+    tenant = getattr(request, "tenant", None)
+    if tenant is not None:
+        # Store only bounded, selected metadata; never headers or raw bodies.
+        try:
+            payload = json.loads(request.body or b"{}")
+        except (ValueError, UnicodeDecodeError):
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        event = request.GET.get("type") or payload.get("type") or request.GET.get("topic")
+        data = payload.get('data')
+        data = data if isinstance(data, dict) else {}
+        identifier = str(request.GET.get('data.id') or data.get('id') or '')
+        safe_identifier = _masked_id(identifier) if valid_subscription_id(identifier) else '[ausente ou inválido]'
+        known = event in ("subscription_preapproval", "subscription_authorized_payment")
+        Tenant.objects.filter(pk=tenant.pk).update(mercado_pago_ultimo_webhook={
+            "received_at": timezone.now().isoformat(),
+            "type": event if known else "outro ou ausente",
+            "data": {"id": safe_identifier},
+            "live_mode": payload.get("live_mode") if isinstance(payload.get("live_mode"), bool) else None,
+            "http_status": response.status_code,
+            "result": ("Processado" if known else "Evento ignorado") if response.status_code == 200 else "Rejeitado ou falha no processamento",
+        })
+    return response
+
+
+def _handle_webhook(request):
     secret = settings.MERCADO_PAGO_WEBHOOK_SECRET.strip()
     if not secret:
         return HttpResponse(status=503)

@@ -50,3 +50,5 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
 .billing-details pre{overflow:auto;padding:12px;border-radius:8px;background:#f4f6f5;font-size:11px}
 @media(max-width:700px){body>main{margin:20px 16px;padding:22px}.billing-grid{grid-template-columns:1fr}.billing-steps{grid-template-columns:1fr;gap:12px}}
 @media(max-width:480px){body>main{margin:12px;padding:18px}.billing-card{padding:19px}.billing-header h1{font-size:27px}.billing-card-heading{gap:8px}.billing-card h2{font-size:18px}.billing-status-label,.billing-provider{font-size:10px}}
+
+.billing-details pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }

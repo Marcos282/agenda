@@ -93,6 +93,8 @@ def _response_summary(result, *, status_code, error=None):
         return summary
     summary['body'] = {
         'id': _masked_id(result.get('id')),
+        'id_type': type(result.get('id')).__name__,
+        'id_valid': valid_subscription_id(result.get('id')),
         'status': str(result.get('status', ''))[:50],
         'init_point': _safe_url(result.get('init_point')) if result.get('init_point') else '[ausente]',
     }

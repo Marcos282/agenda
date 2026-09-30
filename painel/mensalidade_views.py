@@ -1,6 +1,8 @@
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.utils import timezone
+from tenants.models import Tenant
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
@@ -32,9 +34,10 @@ def _context(request, amount, debug_info=None, payment_error=None, debug_enabled
         'expira_hoje': dias == 0,
         'prazo_expirado': dias < 0,
         'data_expiracao': request.tenant.data_expiracao,
-        'debug_info': debug_info or {},
+        'debug_info': debug_info or request.tenant.mercado_pago_diagnostico,
+        'webhook_info': request.tenant.mercado_pago_ultimo_webhook,
         'payment_error': payment_error,
-        'payment_debug': debug_enabled,
+        'payment_debug': True,
     }
 
 
@@ -50,8 +53,8 @@ def mensalidade(request):
         if amount is None or not configured():
             messages.error(request, 'O pagamento online ainda não está configurado.')
             return redirect('painel:mensalidade')
-        debug_enabled = request.POST.get('debug_mp') == '1'
-        diagnostics = {} if debug_enabled else None
+        debug_enabled = True
+        diagnostics = {}
         test_payer_email = settings.MERCADO_PAGO_TEST_PAYER_EMAIL.strip() if settings.DEBUG else ''
         try:
             checkout_url = create_subscription(
@@ -61,6 +64,9 @@ def mensalidade(request):
                 diagnostics=diagnostics,
             )
         except MercadoPagoError as exc:
+            diagnostics = exc.diagnostics or diagnostics
+            diagnostics['at'] = timezone.now().isoformat()
+            Tenant.objects.filter(pk=request.tenant.pk).update(mercado_pago_diagnostico=diagnostics)
             if debug_enabled:
                 return render(request, 'painel/mensalidade.html', _context(
                     request, amount, debug_info=exc.diagnostics or diagnostics,
@@ -68,6 +74,9 @@ def mensalidade(request):
                 ))
             messages.error(request, str(exc))
             return redirect('painel:mensalidade')
+        diagnostics['at'] = timezone.now().isoformat()
+        Tenant.objects.filter(pk=request.tenant.pk).update(mercado_pago_diagnostico=diagnostics)
+        request.tenant.refresh_from_db()
         if debug_enabled:
             return render(request, 'painel/mensalidade.html', _context(
                 request, amount, debug_info=diagnostics, debug_enabled=True,

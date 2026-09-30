@@ -59,11 +59,7 @@
           {% csrf_token %}
           <input type="hidden" name="acao" value="assinar">
           <button class="ui-button billing-pay" type="submit">Assinar com Mercado Pago ↗</button>
-          <details class="billing-debug-toggle">
-            <summary>Diagnóstico técnico (opcional)</summary>
-            <p>Mostra um resumo do envio e da resposta. Credenciais, e-mail completo, identificadores e parâmetros do checkout são ocultados.</p>
-            <label><input type="checkbox" name="debug_mp" value="1"> Exibir diagnóstico nesta página</label>
-          </details>
+
         </form>
         {% if assinatura_status == 'cancelled' or assinatura_status == 'paused' %}<p class="billing-note">A assinatura anterior está {{ assinatura_status }}. Você pode iniciar uma nova assinatura.</p>{% endif %}
       {% else %}
@@ -93,8 +89,13 @@
       {% if payment_error %}<p role="alert">{{ payment_error }}</p>{% endif %}
       {% if checkout_url %}<p>Solicitação aceita pelo provedor. Abra o checkout para concluir a autorização:</p><a class="ui-button billing-pay" href="{{ checkout_url }}" target="_blank" rel="noopener noreferrer">Continuar no Mercado Pago ↗</a>{% endif %}
       <p>Valores sensíveis foram mascarados; o conteúdo abaixo é um resumo, não inclui credenciais.</p>
+      <p>Última solicitação: {{ debug_info.at|default:"Nenhuma solicitação registrada" }}</p>
       <h3>Enviado</h3><pre>{{ debug_info.request|pprint }}</pre>
       <h3>Devolvido</h3><pre>{{ debug_info.response|pprint }}</pre>
+      <h3>Último webhook recebido</h3>
+      {% if webhook_info %}<pre>{{ webhook_info|pprint }}</pre>{% else %}<p>Nenhum webhook recebido neste estabelecimento desde a atualização.</p>{% endif %}
+      <a class="ui-button" href="{% url 'painel:mensalidade' %}">Atualizar diagnóstico</a>
+      <p>Atualize esta página para consultar novas notificações.</p>
     </section>
   {% endif %}
 </div>

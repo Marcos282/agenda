@@ -35,6 +35,8 @@ class Tenant(models.Model):
     mercado_pago_checkout_url = models.URLField(max_length=500, blank=True, default='')
     mercado_pago_idempotency_key = models.UUIDField(null=True, blank=True)
     mercado_pago_valor_assinatura = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    mercado_pago_diagnostico = models.JSONField(default=dict, blank=True, editable=False)
+    mercado_pago_ultimo_webhook = models.JSONField(default=dict, blank=True, editable=False)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
