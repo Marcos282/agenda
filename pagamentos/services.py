@@ -69,7 +69,7 @@ def sdk():
                           request_options=RequestOptions(connection_timeout=5.0, max_retries=0))
 
 
-def api_call(method, *args):
+def api_call(method, *args, diagnostico=None):
     try:
         result = method(*args)
     except (MercadoPagoError, RequestException) as exc:
@@ -82,6 +82,8 @@ def api_call(method, *args):
     if (not isinstance(result, dict) or result.get('status') not in (200, 201)
             or not isinstance(result.get('response'), dict)):
         raise CheckoutError('O Mercado Pago não retornou uma resposta válida. Tente novamente.')
+    if diagnostico is not None:
+        diagnostico['status_http'] = result['status']
     return result['response']
 
 
@@ -102,7 +104,7 @@ def valid_checkout_url(value):
         return False
 
 
-def criar_checkout(*, tenant_id, retorno_url):
+def criar_checkout(*, tenant_id, retorno_url, diagnostico=None):
     if not configurado():
         raise CheckoutError('O pagamento online ainda não está configurado.')
     amount = preco_acesso()
@@ -114,6 +116,15 @@ def criar_checkout(*, tenant_id, retorno_url):
             retorno_url=retorno_url, expira_em__gt=timezone.now(),
         ).exclude(pagamentos__creditado_em__isnull=False).first()
         if checkout and valid_checkout_url(checkout.checkout_url):
+            if diagnostico is not None:
+                diagnostico.update({
+                    'resultado': 'checkout_existente_reutilizado',
+                    'requisicao': None,
+                    'resposta': {
+                        'id': checkout.preferencia_id,
+                        'checkout_host': urlsplit(checkout.checkout_url).hostname,
+                    },
+                })
             return checkout
         checkout = CheckoutAcesso.objects.create(
             tenant_id=tenant_id, valor=amount, retorno_url=retorno_url,
@@ -132,7 +143,29 @@ def criar_checkout(*, tenant_id, retorno_url):
         }
         options = RequestOptions(connection_timeout=5.0, max_retries=0,
                                  custom_headers={'x-idempotency-key': str(checkout.pk)})
-        result = api_call(sdk().preference().create, payload, options)
+        if diagnostico is not None:
+            diagnostico.update({
+                'resultado': 'preferencia_criada',
+                'requisicao': {
+                    'metodo': 'POST',
+                    'endpoint': 'https://api.mercadopago.com/checkout/preferences',
+                    'cabecalhos': {'x-idempotency-key': str(checkout.pk)},
+                    'corpo': payload,
+                },
+            })
+        result = api_call(sdk().preference().create, payload, options, diagnostico=diagnostico)
+        if diagnostico is not None:
+            init_point = result.get('init_point')
+            sandbox_init_point = result.get('sandbox_init_point')
+            diagnostico['resposta'] = {
+                'status_http': diagnostico.get('status_http'),
+                'id': str(result.get('id', ''))[:200],
+                'collector_id': str(result.get('collector_id', ''))[:100],
+                'init_point_host': urlsplit(init_point).hostname if isinstance(init_point, str) else None,
+                'sandbox_init_point_host': (
+                    urlsplit(sandbox_init_point).hostname if isinstance(sandbox_init_point, str) else None
+                ),
+            }
         url = result.get('init_point')
         preference_id = result.get('id')
         collector = str(result.get('collector_id', ''))

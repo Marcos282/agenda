@@ -33,3 +33,27 @@ class PagamentoAcesso(models.Model):
 
     class Meta:
         ordering = ['-atualizado_em']
+
+
+class NotificacaoMercadoPago(models.Model):
+    class Estado(models.TextChoices):
+        RECEBIDA = 'recebida', 'Recebida'
+        PROCESSADA = 'processada', 'Processada'
+        AGUARDANDO_REENVIO = 'aguardando_reenvio', 'Aguardando reenvio'
+        SEM_CORRESPONDENCIA = 'sem_correspondencia', 'Sem correspondência'
+        IGNORADA = 'ignorada', 'Ignorada'
+
+    pagamento = models.ForeignKey(
+        PagamentoAcesso, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='notificacoes_mercado_pago',
+    )
+    payment_id = models.CharField(max_length=100, db_index=True)
+    tipo = models.CharField(max_length=80, blank=True)
+    evento = models.CharField(max_length=100, blank=True)
+    request_id = models.CharField(max_length=200, blank=True)
+    estado = models.CharField(max_length=24, choices=Estado.choices, default=Estado.RECEBIDA)
+    dado_bruto = models.TextField()
+    recebido_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-recebido_em']

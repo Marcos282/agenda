@@ -61,7 +61,9 @@ Para produção, configure a URL pública definitiva, as credenciais de produç�
 
 O webhook valida a assinatura com o SDK e consulta o pagamento autenticado na API. Confere referência, valor, BRL, recebedor, ambiente e a preferência da ordem antes de conceder acesso. Os parâmetros de retorno do navegador, como `status=approved`, nunca são prova de pagamento. O histórico mostra as últimas dez cobranças do estabelecimento, e o Django Admin permite consultar os registros sem alterá-los.
 
-Notificações duplicadas são idempotentes. Falhas temporárias da API respondem HTTP 503 para permitir nova tentativa do provedor; atualizar a página de retorno também tenta confirmar novamente. Se for necessária uma reconciliação manual:
+Quando a API confirma o pagamento como aprovado, a página mostra **PAGAMENTO RECEBIDO** e inclui o pagamento no seletor abaixo dos cards. O seletor é baseado em `PagamentoAcesso` e mostra apenas pagamentos do estabelecimento autenticado. Webhooks com assinatura válida são armazenados em `NotificacaoMercadoPago`, incluindo o corpo recebido em `dado_bruto` (limite de 64 KiB); apenas webhooks associados a um pagamento confirmado são exibidos na página do estabelecimento. O Django Admin lista metadados das notificações em modo somente leitura.
+
+Notificações duplicadas são idempotentes quanto à concessão de acesso, embora cada entrega válida do webhook seja preservada para diagnóstico. Falhas temporárias da API respondem HTTP 503 para permitir nova tentativa do provedor; atualizar a página de retorno também tenta confirmar novamente. Se for necessária uma reconciliação manual:
 
 ```bash
 myenv/bin/python manage.py reconciliar_pagamento ID_DO_PAGAMENTO

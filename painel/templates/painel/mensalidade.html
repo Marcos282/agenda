@@ -42,18 +42,20 @@
       </div>
       {% if payment_status == 'approved' %}
         <p class="billing-payment-copy" role="status">Pagamento aprovado. Seu prazo de acesso foi atualizado.</p>
+        <button type="button" class="ui-button billing-payment-received" disabled>PAGAMENTO RECEBIDO</button>
       {% elif payment_status == 'pending' or payment_status == 'in_process' or payment_status == 'authorized' %}
         <p class="billing-payment-copy" role="status">Aguardando confirmação do pagamento. O acesso será atualizado após a aprovação.</p>
-        <a class="ui-button ui-button-secondary" href="">Atualizar situação</a>
       {% elif payment_status %}
         <p class="billing-payment-copy" role="status">Este pagamento não está aprovado. Confira a situação no Mercado Pago.</p>
       {% endif %}
       {% if checkout_configurado %}
         {% if modo_teste %}<span class="billing-status-label billing-status-pending">Ambiente de teste</span>{% endif %}
+        {% if diagnostico_ativo %}<p class="billing-payment-copy">Diagnóstico temporário ativado. A próxima tentativa exibirá uma versão segura dos dados enviados e recebidos.</p>{% endif %}
         <p class="billing-payment-copy">Pague R$ {{ valor_acesso|floatformat:2 }} uma única vez para adicionar 30 dias ao seu acesso. Se ainda houver dias disponíveis, eles serão preservados.</p>
         <form method="post">
           {% csrf_token %}
           <input type="hidden" name="acao" value="pagar">
+          {% if diagnostico_ativo %}<input type="hidden" name="diagnostico" value="checkout">{% endif %}
           <button type="submit" class="ui-button billing-pay">Comprar 30 dias de acesso ↗</button>
         </form>
         <p class="billing-payment-copy">Você concluirá o pagamento no Checkout Pro do Mercado Pago.</p>
@@ -64,6 +66,46 @@
       {% endif %}
     </section>
   </div>
+  <section class="billing-card billing-receipts" aria-labelledby="receipts-title">
+    <h2 id="receipts-title">Pagamentos recebidos</h2>
+    <p class="billing-payment-copy">Os pagamentos aparecem aqui depois que o Mercado Pago confirma o recebimento.</p>
+    {% if pagamentos_registrados %}
+    <form method="get" class="billing-receipt-form">
+      <label for="payment-select">Pagamento registrado</label>
+      <select id="payment-select" name="pagamento">
+        {% for pagamento in pagamentos_registrados %}
+        <option value="{{ pagamento.payment_id }}" {% if pagamento_selecionado.payment_id == pagamento.payment_id %}selected{% endif %}>
+          {{ pagamento.atualizado_em|date:"d/m/Y H:i:s" }} · {{ pagamento.payment_id }} · {{ pagamento.status }}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="ui-button ui-button-secondary">Exibir pagamento</button>
+    </form>
+    {% else %}
+    <p class="billing-payment-copy">Ainda não há pagamentos confirmados para este estabelecimento.</p>
+    {% endif %}
+    {% if pagamento_selecionado %}
+    <dl class="billing-details-list billing-receipt-details">
+      <div><dt>Pagamento</dt><dd>{{ pagamento_selecionado.payment_id }}</dd></div>
+      <div><dt>Situação</dt><dd>{{ pagamento_selecionado.status }}</dd></div>
+      <div><dt>Valor</dt><dd>R$ {{ pagamento_selecionado.checkout.valor|floatformat:2 }}</dd></div>
+      <div><dt>Registrado em</dt><dd>{{ pagamento_selecionado.atualizado_em|date:"d/m/Y H:i:s" }}</dd></div>
+    </dl>
+    {% for notificacao in notificacoes_recebimento %}
+    <h3 class="billing-receipt-raw-title">Dado bruto do webhook · {{ notificacao.recebido_em|date:"d/m/Y H:i:s" }}</h3>
+    <pre class="billing-receipt-raw">{{ notificacao.dado_bruto }}</pre>
+    {% empty %}
+    <p class="billing-payment-copy">Ainda não há webhook armazenado para este pagamento.</p>
+    {% endfor %}
+    {% endif %}
+  </section>
+  {% if diagnostico_json %}
+  <section class="billing-card billing-diagnostic" aria-labelledby="diagnostic-title">
+    <h2 id="diagnostic-title">Diagnóstico temporário do Checkout Pro</h2>
+    <p class="billing-payment-copy">Dados sensíveis, como Access Token e URL completa de checkout, são omitidos. Este painel é visível apenas ao administrador autenticado deste estabelecimento.</p>
+    <pre>{{ diagnostico_json }}</pre>
+  </section>
+  {% endif %}
   {% if pagamentos %}
   <section class="billing-card billing-history" aria-labelledby="history-title">
     <h2 id="history-title">Pagamentos recentes</h2>

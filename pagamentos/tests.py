@@ -2,6 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 import hashlib
 import hmac
+import json
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -14,7 +15,7 @@ from requests.exceptions import Timeout
 
 from tenants.models import Tenant
 from usuarios.models import User
-from .models import CheckoutAcesso, PagamentoAcesso
+from .models import CheckoutAcesso, NotificacaoMercadoPago, PagamentoAcesso
 from .services import CheckoutError, confirmar_pagamento, criar_checkout, preco_acesso
 
 
@@ -88,6 +89,27 @@ class CheckoutProTests(TestCase):
         self.assertEqual(options.connection_timeout, 5.0)
         self.assertEqual(options.max_retries, 0)
 
+    def test_opt_in_checkout_diagnostic_is_admin_only_and_redacted(self):
+        self.sdk.preference.return_value.create.return_value['response'].update({
+            'payer_email': 'buyer@example.test',
+            'access_token': 'must-not-be-rendered',
+            'sandbox_init_point': 'https://sandbox.mercadopago.com/checkout?secret=value',
+        })
+        response = self.client.post(
+            self.url, {'acao': 'pagar', 'diagnostico': 'checkout'}, **self.host,
+        )
+        self.assertRedirects(response, f'{self.url}?diagnostico=checkout', fetch_redirect_response=False)
+
+        page = self.client.get(response.url, **self.host)
+        self.assertContains(page, 'Diagnóstico temporário do Checkout Pro')
+        self.assertContains(page, 'preferencia_criada')
+        self.assertContains(page, 'status_http')
+        self.assertContains(page, 'sandbox.mercadopago.com')
+        self.assertNotContains(page, 'buyer@example.test')
+        self.assertNotContains(page, 'must-not-be-rendered')
+        self.assertNotContains(page, 'Authorization')
+        self.assertNotContains(page, '?secret=value')
+
     def test_repeated_click_reuses_checkout_but_paid_or_expired_creates_another(self):
         first = self.checkout()
         self.assertEqual(self.checkout().pk, first.pk)
@@ -105,7 +127,12 @@ class CheckoutProTests(TestCase):
         self.payment(checkout)
         self.assertEqual(self.webhook().status_code, 200)
         self.assertEqual(self.webhook().status_code, 200)
-        self.client.get(self.url, {'checkout': checkout.pk, 'payment_id': '789', 'status': 'approved'}, **self.host)
+        page = self.client.get(
+            self.url, {'checkout': checkout.pk, 'payment_id': '789', 'status': 'approved'}, **self.host,
+        )
+        self.assertContains(page, 'PAGAMENTO RECEBIDO')
+        self.assertContains(page, 'name="pagamento"')
+        self.assertContains(page, 'value="789"')
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, original + timedelta(days=30))
         self.assertEqual(PagamentoAcesso.objects.count(), 1)
@@ -149,7 +176,10 @@ class CheckoutProTests(TestCase):
         self.sdk.payment.return_value.get.assert_not_called()
         self.assertNotContains(page, 'Pagamento aprovado')
         own_checkout = self.checkout()
-        self.client.get(self.url, {'checkout': own_checkout.pk, 'payment_id': '789'}, **self.host)
+        unverified_page = self.client.get(
+            self.url, {'checkout': own_checkout.pk, 'payment_id': '789', 'status': 'approved'}, **self.host,
+        )
+        self.assertNotContains(unverified_page, 'PAGAMENTO RECEBIDO')
         self.assertFalse(PagamentoAcesso.objects.exists())
         self.client.get(self.url, {'status': 'approved'}, **self.host)
         self.tenant.refresh_from_db()
@@ -174,14 +204,40 @@ class CheckoutProTests(TestCase):
     def test_signature_body_and_api_errors(self):
         self.payment(self.checkout())
         self.assertEqual(self.webhook(signature=False).status_code, 401)
+        self.assertFalse(NotificacaoMercadoPago.objects.exists())
         self.assertEqual(self.webhook(body_id='790').status_code, 400)
         self.assertEqual(self.webhook(body_type='subscription_preapproval').status_code, 200)
         self.sdk.payment.return_value.get.assert_not_called()
+        ignored = NotificacaoMercadoPago.objects.get()
+        self.assertEqual(ignored.estado, NotificacaoMercadoPago.Estado.IGNORADA)
         self.sdk.payment.return_value.get.side_effect = Timeout('do-not-expose')
         response = self.webhook()
         self.assertEqual(response.status_code, 503)
         self.assertNotIn(b'do-not-expose', response.content)
         self.assertFalse(PagamentoAcesso.objects.exists())
+        retry = NotificacaoMercadoPago.objects.latest('recebido_em')
+        self.assertEqual(retry.estado, NotificacaoMercadoPago.Estado.AGUARDANDO_REENVIO)
+
+    def test_valid_webhook_is_stored_and_visible_only_to_its_tenant(self):
+        checkout = self.checkout()
+        self.payment(checkout)
+        response = self.webhook()
+        self.assertEqual(response.status_code, 200)
+        notification = NotificacaoMercadoPago.objects.get()
+        self.assertEqual(notification.payment_id, '789')
+        self.assertEqual(notification.estado, NotificacaoMercadoPago.Estado.PROCESSADA)
+        self.assertEqual(notification.pagamento_id, '789')
+        self.assertEqual(json.loads(notification.dado_bruto)['data']['id'], '789')
+        self.assertNotIn('x-signature', notification.dado_bruto)
+
+        page = self.client.get(self.url, {'pagamento': notification.payment_id}, **self.host)
+        self.assertContains(page, 'Dado bruto do webhook')
+        self.assertContains(page, '&quot;type&quot;: &quot;payment&quot;')
+        self.client.force_login(self.customer)
+        self.assertEqual(
+            self.client.get(self.url, {'recebimento': notification.pk}, **self.host).status_code,
+            403,
+        )
 
     def test_malformed_webhook_is_rejected(self):
         response = Client().post(reverse('mercado_pago_webhook'), data='[]', content_type='application/json', HTTP_HOST='localhost')

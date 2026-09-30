@@ -1,6 +1,6 @@
 from django.contrib import admin
 from barbe.admin import site
-from .models import CheckoutAcesso, PagamentoAcesso
+from .models import CheckoutAcesso, NotificacaoMercadoPago, PagamentoAcesso
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -26,3 +26,10 @@ class PagamentoAcessoAdmin(ReadOnlyAdmin):
     list_display = ('payment_id', 'checkout', 'status', 'creditado_em', 'atualizado_em')
     list_filter = ('status',)
     search_fields = ('payment_id', 'checkout__tenant__subdomain')
+
+
+@admin.register(NotificacaoMercadoPago, site=site)
+class NotificacaoMercadoPagoAdmin(ReadOnlyAdmin):
+    list_display = ('id', 'payment_id', 'tipo', 'estado', 'recebido_em')
+    list_filter = ('estado', 'tipo')
+    search_fields = ('payment_id', 'request_id')

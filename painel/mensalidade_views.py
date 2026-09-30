@@ -1,3 +1,4 @@
+import json
 from uuid import UUID
 
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from tenants.domains import is_development_public_host
 
-from pagamentos.models import CheckoutAcesso, PagamentoAcesso
+from pagamentos.models import CheckoutAcesso, NotificacaoMercadoPago, PagamentoAcesso
 from pagamentos.services import (
     CheckoutError, confirmar_pagamento, configurado, criar_checkout, preco_acesso,
 )
@@ -23,6 +24,7 @@ def mensalidade(request):
         if request.POST.get('acao') != 'pagar':
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
+        diagnostico = {} if request.POST.get('diagnostico') == 'checkout' else None
         if (is_development_public_host(request.get_host()) or
                 (settings.DEBUG and settings.DEV_PUBLIC_HOST and settings.DEV_TENANT_SUBDOMAIN
                  == request.tenant.subdomain)):
@@ -31,12 +33,23 @@ def mensalidade(request):
             origin = f'https://{request.tenant.subdomain}.{settings.TENANT_BASE_DOMAIN}'
         try:
             checkout = criar_checkout(tenant_id=request.tenant.pk,
-                                      retorno_url=origin + reverse('painel:mensalidade'))
+                                      retorno_url=origin + reverse('painel:mensalidade'),
+                                      diagnostico=diagnostico)
         except CheckoutError as exc:
             messages.error(request, str(exc))
+            if diagnostico is not None:
+                diagnostico['erro'] = str(exc)
+                request.session['checkout_diagnostico'] = diagnostico
+                return redirect(f"{reverse('painel:mensalidade')}?diagnostico=checkout")
             return redirect('painel:mensalidade')
+        if diagnostico is not None:
+            request.session['checkout_diagnostico'] = diagnostico
+            return redirect(f"{reverse('painel:mensalidade')}?diagnostico=checkout")
         return redirect(checkout.checkout_url)
 
+    diagnostico = None
+    if request.GET.get('diagnostico') == 'checkout':
+        diagnostico = request.session.pop('checkout_diagnostico', None)
     payment_status = None
     checkout = None
     try:
@@ -61,6 +74,23 @@ def mensalidade(request):
         request.tenant.refresh_from_db()
     dias = request.tenant.dias_para_expirar
     expirado = request.tenant.acesso_expirado
+    pagamentos = PagamentoAcesso.objects.filter(
+        checkout__tenant=request.tenant,
+    ).select_related('checkout')[:30]
+    pagamento_selecionado = None
+    pagamento_id = request.GET.get('pagamento') or request.GET.get('payment_id', '')
+    if pagamento_id:
+        pagamento_selecionado = PagamentoAcesso.objects.filter(
+            payment_id=pagamento_id, checkout__tenant=request.tenant,
+        ).select_related('checkout').first()
+    if pagamento_selecionado is None:
+        pagamento_selecionado = pagamentos.first()
+    if payment_status is None and pagamento_selecionado is not None:
+        payment_status = pagamento_selecionado.status
+    notificacoes_recebimento = (
+        NotificacaoMercadoPago.objects.filter(pagamento=pagamento_selecionado)
+        if pagamento_selecionado else NotificacaoMercadoPago.objects.none()
+    )
     return render(request, 'painel/mensalidade.html', {
         'valor_acesso': preco_acesso(),
         'checkout_configurado': configurado(),
@@ -70,5 +100,10 @@ def mensalidade(request):
         'expira_hoje': dias == 0 and not expirado,
         'prazo_expirado': expirado,
         'data_expiracao': request.tenant.data_expiracao,
-        'pagamentos': PagamentoAcesso.objects.filter(checkout__tenant=request.tenant).select_related('checkout')[:10],
+        'pagamentos': pagamentos[:10],
+        'diagnostico_ativo': request.GET.get('diagnostico') == 'checkout',
+        'diagnostico_json': json.dumps(diagnostico, ensure_ascii=False, indent=2) if diagnostico else None,
+        'pagamentos_registrados': pagamentos,
+        'pagamento_selecionado': pagamento_selecionado,
+        'notificacoes_recebimento': notificacoes_recebimento,
     })

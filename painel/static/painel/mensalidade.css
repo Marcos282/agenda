@@ -26,7 +26,18 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
 .billing-payment-copy{margin:16px 0}
 .billing-pay{display:flex;width:100%;min-height:43px;align-items:center;justify-content:center;gap:7px;margin:9px 0 2px;border-radius:9px;text-align:center;font-size:13px}
 .billing-pay:disabled{background:#edf0ee;color:#69746e;cursor:not-allowed}
+.billing-payment-received,.billing-payment-received:disabled{width:100%;min-height:43px;margin:4px 0 10px;border-radius:9px;background:#e8f5ed;color:#17683a;font-size:13px;font-weight:700;opacity:1;cursor:default}
+.billing-diagnostic{margin-top:16px}
+.billing-diagnostic pre{max-height:480px;overflow:auto;margin:12px 0 0;padding:14px;border-radius:9px;background:#f5f7f6;color:var(--text);font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.billing-receipts{margin-top:16px}
+.billing-receipt-form{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:end;gap:10px}
+.billing-receipt-form label{grid-column:1/-1;color:var(--billing-muted);font-size:12px}
+.billing-receipt-form select{min-width:0;min-height:42px;padding:8px;border:1px solid var(--billing-line);border-radius:8px;background:var(--surface,#fff);color:var(--text);font:inherit}
+.billing-receipt-details{margin-top:20px;padding-top:16px;border-top:1px solid var(--billing-line)}
+.billing-receipt-raw-title{margin:18px 0 0;color:var(--billing-ink);font-size:14px}
+.billing-receipt-raw{max-height:480px;overflow:auto;margin:10px 0 0;padding:14px;border-radius:9px;background:#f5f7f6;color:var(--text);font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:700px){body>main{margin:20px 16px;padding:22px}.billing-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.billing-receipt-form{grid-template-columns:1fr}.billing-receipt-form label{grid-column:auto}.billing-receipt-form button{width:100%}}
 @media(max-width:480px){body>main{margin:12px;padding:18px}.billing-card{padding:19px}.billing-header h1{font-size:27px}.billing-card-heading{gap:8px}.billing-card h2{font-size:18px}.billing-status-label{font-size:10px}}
 .billing-history{margin-top:16px}
 .billing-history-list{list-style:none;padding:0;margin-bottom:0;display:grid;gap:12px}
