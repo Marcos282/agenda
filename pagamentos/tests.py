@@ -40,6 +40,11 @@ class CheckoutProTests(TestCase):
         self.patcher = patch('pagamentos.services.mercadopago.SDK')
         self.sdk_class = self.patcher.start()
         self.addCleanup(self.patcher.stop)
+        seller_patch = patch('pagamentos.services.consultar_recebedor', return_value={
+            'status': 200, 'response': {'id': 456, 'tags': []},
+        })
+        self.seller = seller_patch.start()
+        self.addCleanup(seller_patch.stop)
         self.sdk = self.sdk_class.return_value
         self.sdk.preference.return_value.create.return_value = {'status': 201, 'response': {
             'id': 'preference-123', 'collector_id': 456,
@@ -446,3 +451,42 @@ class CheckoutProTests(TestCase):
             page = self.client.post(self.url, {'acao': 'enviar'}, follow=True, **self.host)
         self.assertContains(page, 'Confira uma nova prévia')
         self.sdk_class.assert_not_called()
+
+    def test_test_seller_live_mode_true_credits_once_and_preserves_test_receipt(self):
+        checkout = self.checkout()
+        original = self.tenant.expira_em
+        self.payment(checkout, live_mode=True)
+        self.seller.return_value = {'status': 200, 'response': {'id': 456, 'tags': ['test_user']}}
+        diagnostic = {}
+        record = confirmar_pagamento('789', diagnostico=diagnostic)
+        confirmar_pagamento('789')
+        self.assertIsNotNone(record.creditado_em)
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.expira_em, original + timedelta(days=30))
+        self.assertFalse(record.checkout.producao)
+        self.assertTrue(diagnostic['verificacao_recebedor']['conta_de_teste'])
+
+    def test_live_mode_exception_rejects_unverified_seller_and_foreign_preference(self):
+        checkout = self.checkout()
+        self.payment(checkout, live_mode=True)
+        for seller in ({'id': 456, 'tags': []}, {'id': 999, 'tags': ['test_user']},
+                       {'id': 456, 'tags': 'test_user'}):
+            self.seller.return_value = {'status': 200, 'response': seller}
+            diagnostic = {}
+            self.assertIsNone(confirmar_pagamento('789', diagnostico=diagnostic))
+            self.assertIn('motivo_nao_validado', diagnostic)
+        self.seller.return_value = {'status': 403, 'response': {}}
+        with self.assertRaises(CheckoutError):
+            confirmar_pagamento('789')
+        self.seller.return_value = {'status': 200, 'response': {'id': 456, 'tags': ['test_user']}}
+        self.sdk.merchant_order.return_value.get.return_value['response']['preference_id'] = 'foreign'
+        self.assertIsNone(confirmar_pagamento('789'))
+        self.assertFalse(PagamentoAcesso.objects.exists())
+
+    def test_production_checkout_rejects_sandbox_payment(self):
+        checkout = self.checkout()
+        checkout.producao = True
+        checkout.save(update_fields=['producao'])
+        self.payment(checkout, live_mode=False)
+        self.assertIsNone(confirmar_pagamento('789'))
+        self.seller.assert_not_called()

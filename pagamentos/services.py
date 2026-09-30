@@ -8,6 +8,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import mercadopago
+import requests
 from mercadopago.config import RequestOptions
 from mercadopago.errors.exceptions import MercadoPagoError
 from requests.exceptions import RequestException
@@ -202,6 +203,43 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, 
         return checkout
 
 
+def consultar_recebedor():
+    """Fetch seller identity without exposing the authorization header."""
+    response = requests.get(
+        'https://api.mercadopago.com/users/me',
+        headers={'Authorization': f'Bearer {settings.MERCADO_PAGO_ACCESS_TOKEN}'},
+        timeout=5,
+    )
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+    return {'status': response.status_code, 'response': payload}
+
+
+def ambiente_compativel(payment, checkout, diagnostico=None):
+    live_mode = payment.get('live_mode')
+    if type(live_mode) is not bool:
+        return False
+    if live_mode is checkout.producao:
+        return True
+    # Checkout Pro test sellers may return live_mode=true. Only allow this
+    # exception for a test checkout after verifying the authenticated seller.
+    if checkout.producao or not live_mode:
+        return False
+    seller = api_call(consultar_recebedor)
+    tags = seller.get('tags')
+    is_test = isinstance(tags, list) and 'test_user' in tags
+    same_seller = str(seller.get('id')) == checkout.recebedor_id
+    if diagnostico is not None:
+        diagnostico['verificacao_recebedor'] = {
+            'id': str(seller.get('id', ''))[:100],
+            'conta_de_teste': is_test,
+            'corresponde_a_cobranca': same_seller,
+        }
+    return same_seller and is_test
+
+
 def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnostico=None):
     """Reconcile using authenticated provider data, never the browser's status."""
     if not valid_payment_id(payment_id):
@@ -214,13 +252,24 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
     except (ValueError, TypeError, InvalidOperation):
         return None
     checkout = CheckoutAcesso.objects.filter(pk=reference).first()
-    if (not checkout or (tenant_id is not None and checkout.tenant_id != tenant_id)
-            or (checkout_id is not None and str(checkout.pk) != str(checkout_id))
-            or str(payment.get('id')) != payment_id or not amount.is_finite()
-            or amount != checkout.valor or payment.get('currency_id') != 'BRL'
-            or str(payment.get('collector_id')) != checkout.recebedor_id
-            or payment.get('live_mode') is not checkout.producao):
+    def recusar(motivo):
+        if diagnostico is not None:
+            diagnostico['motivo_nao_validado'] = motivo
         return None
+
+    if not checkout:
+        return recusar('Checkout não encontrado neste banco de dados.')
+    if ((tenant_id is not None and checkout.tenant_id != tenant_id)
+            or (checkout_id is not None and str(checkout.pk) != str(checkout_id))):
+        return recusar('Pagamento não pertence ao estabelecimento ou checkout solicitado.')
+    if (str(payment.get('id')) != payment_id or not amount.is_finite()
+            or amount != checkout.valor or payment.get('currency_id') != 'BRL'
+            or str(payment.get('collector_id')) != checkout.recebedor_id):
+        return recusar('ID, valor, moeda ou recebedor diverge da cobrança.')
+    if diagnostico is not None:
+        diagnostico['ambiente_checkout'] = 'producao' if checkout.producao else 'teste'
+    if not ambiente_compativel(payment, checkout, diagnostico):
+        return recusar('Ambiente incompatível: conta vendedora não confirmada como teste para esta cobrança.')
     status = payment.get('status')
     if status not in {'approved', 'pending', 'in_process', 'authorized', 'in_mediation',
                       'rejected', 'cancelled', 'refunded', 'charged_back'}:
@@ -237,7 +286,7 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
             return None
         merchant_order = api_call(client.merchant_order().get, str(order['id']))
         if merchant_order.get('preference_id') != checkout.preferencia_id:
-            return None
+            return recusar('A ordem do Mercado Pago não corresponde à preferência da cobrança.')
     with transaction.atomic():
         tenant = Tenant.objects.select_for_update().get(pk=checkout.tenant_id)
         record, _ = PagamentoAcesso.objects.get_or_create(
