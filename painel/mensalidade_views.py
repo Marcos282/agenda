@@ -1,12 +1,15 @@
 import json
+from hashlib import sha256
 from uuid import UUID
 
 from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 from tenants.domains import is_development_public_host
 
 from pagamentos.models import CheckoutAcesso, NotificacaoMercadoPago, PagamentoAcesso
@@ -16,10 +19,20 @@ from pagamentos.services import (
 from .decorators import admin_tenant_required
 
 
+def versao_pagamentos(tenant):
+    registros = list(PagamentoAcesso.objects.filter(checkout__tenant=tenant).values_list(
+        'payment_id', 'status', 'creditado_em',
+    )[:30])
+    return sha256(repr((tenant.expira_em, registros)).encode()).hexdigest()
+
+
 @admin_tenant_required
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def mensalidade(request):
+    if request.method == 'GET' and request.GET.get('atualizar') == '1':
+        # Poll only our database; do not call the provider every few seconds.
+        return JsonResponse({'versao': versao_pagamentos(request.tenant)})
     if request.method == 'POST':
         if request.POST.get('acao') != 'pagar':
             messages.error(request, 'Solicitação de pagamento inválida.')
@@ -76,7 +89,8 @@ def mensalidade(request):
     expirado = request.tenant.acesso_expirado
     pagamentos = PagamentoAcesso.objects.filter(
         checkout__tenant=request.tenant,
-    ).select_related('checkout')[:30]
+    ).select_related('checkout')
+    comprovantes = pagamentos.filter(status='approved', creditado_em__isnull=False).order_by('-creditado_em')
     pagamento_selecionado = None
     pagamento_id = request.GET.get('pagamento') or request.GET.get('payment_id', '')
     if pagamento_id:
@@ -87,6 +101,10 @@ def mensalidade(request):
         pagamento_selecionado = pagamentos.first()
     if payment_status is None and pagamento_selecionado is not None:
         payment_status = pagamento_selecionado.status
+    comprovante_selecionado = (
+        comprovantes.filter(payment_id=pagamento_selecionado.pk).first()
+        if pagamento_selecionado else None
+    ) or comprovantes.first()
     notificacoes_recebimento = (
         NotificacaoMercadoPago.objects.filter(pagamento=pagamento_selecionado)
         if pagamento_selecionado else NotificacaoMercadoPago.objects.none()
@@ -103,7 +121,16 @@ def mensalidade(request):
         'pagamentos': pagamentos[:10],
         'diagnostico_ativo': request.GET.get('diagnostico') == 'checkout',
         'diagnostico_json': json.dumps(diagnostico, ensure_ascii=False, indent=2) if diagnostico else None,
-        'pagamentos_registrados': pagamentos,
+        'pagamentos_registrados': pagamentos[:30],
         'pagamento_selecionado': pagamento_selecionado,
         'notificacoes_recebimento': notificacoes_recebimento,
+        'pagamento_aceito': bool(payment_status == 'approved' and pagamento_selecionado
+                               and pagamento_selecionado.status == 'approved'
+                               and pagamento_selecionado.creditado_em),
+        'comprovantes': comprovantes,
+        'comprovante_selecionado': comprovante_selecionado,
+        'versao_pagamentos': versao_pagamentos(request.tenant),
+        'aguardar_pagamento': CheckoutAcesso.objects.filter(
+            tenant=request.tenant, expira_em__gt=timezone.now(),
+        ).exclude(pagamentos__creditado_em__isnull=False).exists(),
     })

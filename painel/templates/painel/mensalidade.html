@@ -2,7 +2,7 @@
 {% block title %}Acesso ao sistema · Painel{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}">{% endblock %}
 {% block painel_content %}
-<div class="billing-page">
+<div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
     <span class="billing-eyebrow">CONTA DO ESTABELECIMENTO</span>
     <h1>Acesso ao sistema</h1>
@@ -40,13 +40,25 @@
       <div class="billing-card-heading">
         <div><span class="billing-eyebrow">PAGAMENTO</span><h2 id="payment-title">Renovar acesso</h2></div>
       </div>
-      {% if payment_status == 'approved' %}
+      {% if pagamento_aceito %}
         <p class="billing-payment-copy" role="status">Pagamento aprovado. Seu prazo de acesso foi atualizado.</p>
-        <button type="button" class="ui-button billing-payment-received" disabled>PAGAMENTO RECEBIDO</button>
+        <a href="#comprovante" class="ui-button billing-payment-received">✓ Pagamento aceito</a>
       {% elif payment_status == 'pending' or payment_status == 'in_process' or payment_status == 'authorized' %}
         <p class="billing-payment-copy" role="status">Aguardando confirmação do pagamento. O acesso será atualizado após a aprovação.</p>
       {% elif payment_status %}
         <p class="billing-payment-copy" role="status">Este pagamento não está aprovado. Confira a situação no Mercado Pago.</p>
+      {% endif %}
+      {% if comprovantes %}
+      <form method="get" class="billing-receipt-form" id="receipt-selector">
+        <label for="payment-select">Comprovantes de pagamento</label>
+        <select id="payment-select" name="pagamento" aria-describedby="receipt-select-help">
+          {% for comprovante in comprovantes %}
+          <option value="{{ comprovante.payment_id }}" {% if comprovante_selecionado.payment_id == comprovante.payment_id %}selected{% endif %}>{{ comprovante.creditado_em|date:"d/m/Y H:i" }} · R$ {{ comprovante.checkout.valor|floatformat:2 }} · Nº {{ comprovante.payment_id }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="ui-button ui-button-secondary">Ver comprovante</button>
+        <p id="receipt-select-help" class="billing-receipt-help">Selecione um pagamento confirmado para consultar o comprovante abaixo.</p>
+      </form>
       {% endif %}
       {% if checkout_configurado %}
         {% if modo_teste %}<span class="billing-status-label billing-status-pending">Ambiente de teste</span>{% endif %}
@@ -66,39 +78,37 @@
       {% endif %}
     </section>
   </div>
-  <section class="billing-card billing-receipts" aria-labelledby="receipts-title">
-    <h2 id="receipts-title">Pagamentos recebidos</h2>
-    <p class="billing-payment-copy">Os pagamentos aparecem aqui depois que o Mercado Pago confirma o recebimento.</p>
-    {% if pagamentos_registrados %}
-    <form method="get" class="billing-receipt-form">
-      <label for="payment-select">Pagamento registrado</label>
-      <select id="payment-select" name="pagamento">
-        {% for pagamento in pagamentos_registrados %}
-        <option value="{{ pagamento.payment_id }}" {% if pagamento_selecionado.payment_id == pagamento.payment_id %}selected{% endif %}>
-          {{ pagamento.atualizado_em|date:"d/m/Y H:i:s" }} · {{ pagamento.payment_id }} · {{ pagamento.status }}
-        </option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="ui-button ui-button-secondary">Exibir pagamento</button>
-    </form>
-    {% else %}
-    <p class="billing-payment-copy">Ainda não há pagamentos confirmados para este estabelecimento.</p>
-    {% endif %}
-    {% if pagamento_selecionado %}
+  <section class="billing-card billing-receipts" id="comprovante" aria-labelledby="receipts-title">
+    <div class="billing-card-heading">
+      <div><span class="billing-eyebrow">SEU HISTÓRICO</span><h2 id="receipts-title">Comprovante de pagamento</h2></div>
+      {% if comprovante_selecionado %}<button type="button" class="ui-button ui-button-secondary billing-print" data-print-receipt>Imprimir</button>{% endif %}
+    </div>
+    {% if comprovante_selecionado %}
+    <p class="billing-receipt-approved">✓ Pagamento confirmado</p>
+    {% if not comprovante_selecionado.checkout.producao %}<p class="billing-payment-copy">Comprovante de teste — sem valor financeiro.</p>{% endif %}
     <dl class="billing-details-list billing-receipt-details">
-      <div><dt>Pagamento</dt><dd>{{ pagamento_selecionado.payment_id }}</dd></div>
-      <div><dt>Situação</dt><dd>{{ pagamento_selecionado.status }}</dd></div>
-      <div><dt>Valor</dt><dd>R$ {{ pagamento_selecionado.checkout.valor|floatformat:2 }}</dd></div>
-      <div><dt>Registrado em</dt><dd>{{ pagamento_selecionado.atualizado_em|date:"d/m/Y H:i:s" }}</dd></div>
+      <div><dt>Estabelecimento</dt><dd>{{ request.tenant.nome }}</dd></div>
+      <div><dt>Número do pagamento</dt><dd>{{ comprovante_selecionado.payment_id }}</dd></div>
+      <div><dt>Valor</dt><dd>R$ {{ comprovante_selecionado.checkout.valor|floatformat:2 }}</dd></div>
+      <div><dt>Confirmação no sistema</dt><dd>{{ comprovante_selecionado.creditado_em|date:"d/m/Y H:i" }}</dd></div>
+      <div><dt>Serviço</dt><dd>Acesso ao Tá Combinado</dd></div>
+      <div><dt>Período adicionado</dt><dd>{{ comprovante_selecionado.checkout.dias }} dias</dd></div>
+      <div><dt>Pagamento processado por</dt><dd>Mercado Pago</dd></div>
     </dl>
-    {% for notificacao in notificacoes_recebimento %}
-    <h3 class="billing-receipt-raw-title">Dado bruto do webhook · {{ notificacao.recebido_em|date:"d/m/Y H:i:s" }}</h3>
-    <pre class="billing-receipt-raw">{{ notificacao.dado_bruto }}</pre>
-    {% empty %}
-    <p class="billing-payment-copy">Ainda não há webhook armazenado para este pagamento.</p>
-    {% endfor %}
+    <p class="billing-payment-copy">Os dias foram somados ao prazo disponível na confirmação. Este comprovante registra a compra de acesso ao sistema.</p>
+    {% else %}
+    <p class="billing-payment-copy">Ainda não há pagamentos confirmados para este estabelecimento. O comprovante aparecerá aqui após a confirmação.</p>
+    <a class="ui-button ui-button-secondary" href="">Atualizar pagamentos</a>
     {% endif %}
   </section>
+  {% if diagnostico_ativo and notificacoes_recebimento %}
+  <section class="billing-card billing-diagnostic" aria-label="Diagnóstico de notificações">
+    {% for notificacao in notificacoes_recebimento %}
+    <h3>Dado bruto do webhook · {{ notificacao.recebido_em|date:"d/m/Y H:i:s" }}</h3>
+    <pre>{{ notificacao.dado_bruto }}</pre>
+    {% endfor %}
+  </section>
+  {% endif %}
   {% if diagnostico_json %}
   <section class="billing-card billing-diagnostic" aria-labelledby="diagnostic-title">
     <h2 id="diagnostic-title">Diagnóstico temporário do Checkout Pro</h2>
@@ -120,3 +130,5 @@
   {% endif %}
 </div>
 {% endblock %}
+
+{% block scripts %}<script src="{% static 'painel/mensalidade.js' %}" defer></script>{% endblock %}
