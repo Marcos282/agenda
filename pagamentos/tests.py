@@ -53,6 +53,12 @@ class CheckoutProTests(TestCase):
         tenant = tenant or self.tenant
         return criar_checkout(tenant_id=tenant.pk, retorno_url=f'https://{tenant.subdomain}.localhost{self.url}')
 
+    def enviar_checkout(self, data=None, follow=False):
+        data = data or {'acao': 'pagar'}
+        preview = self.client.post(self.url, data, **self.host)
+        self.assertEqual(preview.status_code, 200)
+        return self.client.post(self.url, {**data, 'acao': 'enviar'}, follow=follow, **self.host)
+
     def payment(self, checkout, **changes):
         data = {'id': 789, 'external_reference': str(checkout.pk), 'transaction_amount': 30,
                 'currency_id': 'BRL', 'collector_id': 456, 'live_mode': False,
@@ -73,7 +79,7 @@ class CheckoutProTests(TestCase):
         )
 
     def test_checkout_uses_server_price_and_one_off_preference(self):
-        response = self.client.post(self.url, {'acao': 'pagar', 'valor': '0.01', 'tenant': self.other.pk}, **self.host)
+        response = self.enviar_checkout({'acao': 'pagar', 'valor': '0.01', 'tenant': self.other.pk})
         checkout = CheckoutAcesso.objects.get()
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, checkout.checkout_url)
@@ -95,9 +101,7 @@ class CheckoutProTests(TestCase):
             'access_token': 'must-not-be-rendered',
             'sandbox_init_point': 'https://sandbox.mercadopago.com/checkout?secret=value',
         })
-        response = self.client.post(
-            self.url, {'acao': 'pagar', 'diagnostico': 'checkout'}, **self.host,
-        )
+        response = self.enviar_checkout({'acao': 'pagar', 'diagnostico': 'checkout'})
         self.assertRedirects(response, f'{self.url}?diagnostico=checkout', fetch_redirect_response=False)
 
         page = self.client.get(response.url, **self.host)
@@ -253,19 +257,19 @@ class CheckoutProTests(TestCase):
 
     def test_provider_failure_does_not_leave_checkout_or_leak_secrets(self):
         self.sdk.preference.return_value.create.side_effect = MPAuthenticationError(401, {'message': 'seller-token'})
-        response = self.client.post(self.url, {'acao': 'pagar'}, follow=True, **self.host)
+        response = self.enviar_checkout(follow=True)
         self.assertContains(response, 'O Mercado Pago não autorizou a operação')
         self.assertNotContains(response, 'seller-token')
-        self.assertFalse(CheckoutAcesso.objects.exists())
+        self.assertFalse(CheckoutAcesso.objects.exclude(preferencia_id='').exists())
 
     def test_provider_403_response_explains_configuration_without_exposing_payload(self):
         self.sdk.preference.return_value.create.return_value = {
             'status': 403, 'response': {'message': 'seller-token', 'error': 'unauthorized'},
         }
-        response = self.client.post(self.url, {'acao': 'pagar'}, follow=True, **self.host)
+        response = self.enviar_checkout(follow=True)
         self.assertContains(response, 'conferir o Access Token')
         self.assertNotContains(response, 'seller-token')
-        self.assertFalse(CheckoutAcesso.objects.exists())
+        self.assertFalse(CheckoutAcesso.objects.exclude(preferencia_id='').exists())
 
     def test_invalid_redirect_is_rejected(self):
         for value in ('https://mercadopago.com.br.evil.test/x', 'javascript:alert(1)', 'https://evil.test', None):
@@ -406,7 +410,7 @@ class CheckoutProTests(TestCase):
         self.assertEqual(self.tenant.expira_em, original)
 
     def test_normal_checkout_saves_diagnostic_and_still_redirects_to_provider(self):
-        response = self.client.post(self.url, {'acao': 'pagar'}, **self.host)
+        response = self.enviar_checkout()
         self.assertEqual(response.status_code, 302)
         self.assertIn('mercadopago', response.url)
         checkout = CheckoutAcesso.objects.get(tenant=self.tenant)
@@ -422,3 +426,23 @@ class CheckoutProTests(TestCase):
         page = self.client.get(self.url, {'payment_id': '999'}, **self.host)
         self.assertContains(page, 'Nenhum webhook vinculado')
         self.assertNotContains(page, 'PRIVATE_WEBHOOK')
+
+    def test_preview_sends_nothing_and_confirm_sends_exact_displayed_body(self):
+        page = self.client.post(self.url, {'acao': 'pagar'}, **self.host)
+        self.assertContains(page, 'Conferir JSON antes de enviar')
+        self.assertContains(page, 'Enviar ao Mercado Pago')
+        self.assertNotContains(page, 'seller-token')
+        self.sdk_class.assert_not_called()
+        shown = json.loads(page.context['previa_json'])['requisicao']['corpo']
+        self.client.post(self.url, {'acao': 'enviar', 'valor': '0.01'}, **self.host)
+        sent = self.sdk.preference.return_value.create.call_args.args[0]
+        self.assertEqual(shown, sent)
+
+    def test_send_requires_preview_and_rejects_changed_price(self):
+        self.client.post(self.url, {'acao': 'enviar'}, **self.host)
+        self.sdk_class.assert_not_called()
+        self.client.post(self.url, {'acao': 'pagar'}, **self.host)
+        with self.settings(PLATFORM_ACCESS_PRICE='40.00'):
+            page = self.client.post(self.url, {'acao': 'enviar'}, follow=True, **self.host)
+        self.assertContains(page, 'Confira uma nova prévia')
+        self.sdk_class.assert_not_called()

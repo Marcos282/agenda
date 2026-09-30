@@ -34,8 +34,13 @@ def mensalidade(request):
         # Poll only our database; do not call the provider every few seconds.
         return JsonResponse({'versao': versao_pagamentos(request.tenant)})
     if request.method == 'POST':
-        if request.POST.get('acao') != 'pagar':
+        if request.POST.get('acao') not in ('pagar', 'enviar'):
             messages.error(request, 'Solicitação de pagamento inválida.')
+            return redirect('painel:mensalidade')
+        preparar = request.POST.get('acao') == 'pagar'
+        previa = request.session.get('checkout_previa', {})
+        if not preparar and (previa.get('tenant_id') != request.tenant.pk or not previa.get('checkout_id')):
+            messages.error(request, 'Confira o JSON da cobrança antes de enviar.')
             return redirect('painel:mensalidade')
         diagnostico = {}
         interromper_checkout = request.POST.get('diagnostico') == 'checkout'
@@ -48,7 +53,8 @@ def mensalidade(request):
         try:
             checkout = criar_checkout(tenant_id=request.tenant.pk,
                                       retorno_url=origin + reverse('painel:mensalidade'),
-                                      diagnostico=diagnostico)
+                                      diagnostico=diagnostico, preparar=preparar,
+                                      checkout_id=None if preparar else previa['checkout_id'])
         except CheckoutError as exc:
             messages.error(request, str(exc))
             if diagnostico is not None:
@@ -56,6 +62,17 @@ def mensalidade(request):
                 request.session['checkout_diagnostico'] = diagnostico
                 return redirect(f"{reverse('painel:mensalidade')}?diagnostico=checkout")
             return redirect('painel:mensalidade')
+        if preparar:
+            request.session['checkout_previa'] = {
+                'tenant_id': request.tenant.pk, 'checkout_id': str(checkout.pk),
+            }
+            return render(request, 'painel/checkout_previa.html', {
+                'previa_json': json.dumps(diagnostico, ensure_ascii=False, indent=2),
+                'checkout_existente': bool(checkout.preferencia_id),
+                'token_configurado': bool(settings.MERCADO_PAGO_ACCESS_TOKEN),
+                'modo_teste': not settings.MERCADO_PAGO_LIVE_MODE,
+                'diagnostico_ativo': interromper_checkout,
+            })
         request.session['ultimo_checkout_diagnostico'] = {
             'tenant_id': request.tenant.pk, 'checkout_id': str(checkout.pk), 'dados': diagnostico,
         }

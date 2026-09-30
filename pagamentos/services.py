@@ -121,17 +121,20 @@ def valid_checkout_url(value):
         return False
 
 
-def criar_checkout(*, tenant_id, retorno_url, diagnostico=None):
+def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, checkout_id=None):
     if not configurado():
         raise CheckoutError('O pagamento online ainda não está configurado.')
     amount = preco_acesso()
     # Serialize repeated clicks for this tenant. A timeout never grants access.
     with transaction.atomic():
         Tenant.objects.select_for_update().get(pk=tenant_id, ativo=True)
-        checkout = CheckoutAcesso.objects.filter(
+        checkouts = CheckoutAcesso.objects.filter(
             tenant_id=tenant_id, valor=amount, producao=settings.MERCADO_PAGO_LIVE_MODE,
             retorno_url=retorno_url, expira_em__gt=timezone.now(),
-        ).exclude(pagamentos__creditado_em__isnull=False).first()
+        ).exclude(pagamentos__creditado_em__isnull=False)
+        checkout = checkouts.filter(pk=checkout_id).first() if checkout_id else checkouts.first()
+        if checkout_id and checkout is None:
+            raise CheckoutError('A prévia expirou ou foi alterada. Confira uma nova prévia antes de enviar.')
         if checkout and valid_checkout_url(checkout.checkout_url):
             if diagnostico is not None:
                 diagnostico.update({
@@ -143,10 +146,11 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None):
                     },
                 })
             return checkout
-        checkout = CheckoutAcesso.objects.create(
-            tenant_id=tenant_id, valor=amount, retorno_url=retorno_url,
-            producao=settings.MERCADO_PAGO_LIVE_MODE, expira_em=timezone.now() + timedelta(hours=24),
-        )
+        if checkout is None:
+            checkout = CheckoutAcesso.objects.create(
+                tenant_id=tenant_id, valor=amount, retorno_url=retorno_url,
+                producao=settings.MERCADO_PAGO_LIVE_MODE, expira_em=timezone.now() + timedelta(hours=24),
+            )
         return_url = f'{retorno_url}?checkout={checkout.pk}'
         payload = {
             'items': [{'id': 'acesso-30-dias', 'title': 'Tá Combinado — acesso por 30 dias',
@@ -162,7 +166,7 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None):
                                  custom_headers={'x-idempotency-key': str(checkout.pk)})
         if diagnostico is not None:
             diagnostico.update({
-                'resultado': 'preferencia_criada',
+                'resultado': 'aguardando_envio' if preparar else 'preferencia_criada',
                 'requisicao': {
                     'metodo': 'POST',
                     'endpoint': 'https://api.mercadopago.com/checkout/preferences',
@@ -170,6 +174,8 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None):
                     'corpo': payload,
                 },
             })
+        if preparar:
+            return checkout
         result = api_call(sdk().preference().create, payload, options, diagnostico=diagnostico)
         if diagnostico is not None:
             init_point = result.get('init_point')

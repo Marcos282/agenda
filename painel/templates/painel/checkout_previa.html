@@ -1,0 +1,25 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Conferir JSON do checkout · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}">{% endblock %}
+{% block painel_content %}
+<div class="billing-page">
+  <section class="billing-card billing-diagnostic">
+    <h1>Conferir JSON antes de enviar</h1>
+    {% if checkout_existente %}
+    <p>Esta cobrança já foi criada anteriormente. Ao continuar, você abrirá o checkout existente; nenhum novo JSON será enviado.</p>
+    {% else %}
+    <p>Nenhuma requisição foi enviada ao Mercado Pago nesta etapa. Confira abaixo o corpo JSON que será enviado.</p>
+    {% endif %}
+    <p>Ambiente: {% if modo_teste %}teste{% else %}produção{% endif %}. Access Token no servidor: {% if token_configurado %}configurado (valor oculto; validade ainda não verificada){% else %}ausente{% endif %}.</p>
+    <p>A autenticação é enviada no cabeçalho Authorization: Bearer [omitido], fora do corpo JSON.</p>
+    <pre id="checkout-request-preview">{{ previa_json }}</pre>
+    <form method="post" action="{% url 'painel:mensalidade' %}">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="enviar">
+      {% if diagnostico_ativo %}<input type="hidden" name="diagnostico" value="checkout">{% endif %}
+      <button type="submit" class="ui-button billing-pay">{% if checkout_existente %}Abrir checkout existente{% else %}Enviar ao Mercado Pago{% endif %}</button>
+    </form>
+    <a href="{% url 'painel:mensalidade' %}" class="ui-button ui-button-secondary">Voltar sem enviar</a>
+  </section>
+</div>
+{% endblock %}
