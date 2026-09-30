@@ -37,7 +37,8 @@ def mensalidade(request):
         if request.POST.get('acao') != 'pagar':
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
-        diagnostico = {} if request.POST.get('diagnostico') == 'checkout' else None
+        diagnostico = {}
+        interromper_checkout = request.POST.get('diagnostico') == 'checkout'
         if (is_development_public_host(request.get_host()) or
                 (settings.DEBUG and settings.DEV_PUBLIC_HOST and settings.DEV_TENANT_SUBDOMAIN
                  == request.tenant.subdomain)):
@@ -55,7 +56,10 @@ def mensalidade(request):
                 request.session['checkout_diagnostico'] = diagnostico
                 return redirect(f"{reverse('painel:mensalidade')}?diagnostico=checkout")
             return redirect('painel:mensalidade')
-        if diagnostico is not None:
+        request.session['ultimo_checkout_diagnostico'] = {
+            'tenant_id': request.tenant.pk, 'checkout_id': str(checkout.pk), 'dados': diagnostico,
+        }
+        if interromper_checkout:
             request.session['checkout_diagnostico'] = diagnostico
             return redirect(f"{reverse('painel:mensalidade')}?diagnostico=checkout")
         return redirect(checkout.checkout_url)
@@ -63,6 +67,15 @@ def mensalidade(request):
     diagnostico = None
     if request.GET.get('diagnostico') == 'checkout':
         diagnostico = request.session.pop('checkout_diagnostico', None)
+    retorno_campos = ('checkout', 'collection_id', 'collection_status', 'payment_id', 'status',
+                      'external_reference', 'payment_type', 'merchant_order_id', 'preference_id',
+                      'site_id', 'processing_mode', 'merchant_account_id')
+    retorno = {key: request.GET[key][:300] for key in retorno_campos if key in request.GET}
+    confirmacao = {}
+    ultimo = request.session.get('ultimo_checkout_diagnostico', {})
+    if not diagnostico and ultimo.get('tenant_id') == request.tenant.pk:
+        if not retorno or ultimo.get('checkout_id') == retorno.get('checkout'):
+            diagnostico = ultimo.get('dados')
     payment_status = None
     checkout = None
     try:
@@ -76,15 +89,23 @@ def mensalidade(request):
         payment_id = request.GET.get('payment_id', '')
         if payment_id and configurado():
             try:
-                record = confirmar_pagamento(payment_id, tenant_id=request.tenant.pk, checkout_id=checkout.pk)
+                record = confirmar_pagamento(payment_id, tenant_id=request.tenant.pk, checkout_id=checkout.pk,
+                                             diagnostico=confirmacao)
+                confirmacao['pagamento_validado'] = record is not None
+                confirmacao['dias_creditados'] = bool(record and record.creditado_em)
                 if record:
                     payment_status = record.status
-            except CheckoutError:
+            except CheckoutError as exc:
+                confirmacao['erro'] = str(exc)
                 messages.info(request, 'A confirmação está pendente. Atualize a página em alguns instantes.')
+        if not configurado():
+            confirmacao['erro'] = 'Configuração de pagamento incompleta neste servidor.'
         if not payment_status:
             latest = checkout.pagamentos.first()
             payment_status = latest.status if latest else 'pending'
         request.tenant.refresh_from_db()
+    if retorno and not checkout:
+        confirmacao['erro'] = 'Checkout não encontrado para este estabelecimento neste servidor.'
     dias = request.tenant.dias_para_expirar
     expirado = request.tenant.acesso_expirado
     pagamentos = PagamentoAcesso.objects.filter(
@@ -102,13 +123,19 @@ def mensalidade(request):
     if payment_status is None and pagamento_selecionado is not None:
         payment_status = pagamento_selecionado.status
     comprovante_selecionado = (
-        comprovantes.filter(payment_id=pagamento_selecionado.pk).first()
-        if pagamento_selecionado else None
-    ) or comprovantes.first()
-    notificacoes_recebimento = (
-        NotificacaoMercadoPago.objects.filter(pagamento=pagamento_selecionado)
-        if pagamento_selecionado else NotificacaoMercadoPago.objects.none()
+        comprovantes.filter(payment_id=request.GET.get('pagamento')).first()
+        if request.GET.get('pagamento') else None
     )
+    # Only expose notifications whose payment belongs to the authenticated tenant.
+    # Browser-supplied IDs alone cannot establish ownership of an unlinked webhook.
+    pagamentos_notificacoes = pagamentos
+    if pagamento_id:
+        pagamentos_notificacoes = pagamentos_notificacoes.filter(payment_id=pagamento_id)
+    elif checkout:
+        pagamentos_notificacoes = pagamentos_notificacoes.filter(checkout=checkout)
+    notificacoes_recebimento = NotificacaoMercadoPago.objects.filter(
+        payment_id__in=pagamentos_notificacoes.values('payment_id'),
+    )[:20]
     return render(request, 'painel/mensalidade.html', {
         'valor_acesso': preco_acesso(),
         'checkout_configurado': configurado(),
@@ -120,6 +147,8 @@ def mensalidade(request):
         'data_expiracao': request.tenant.data_expiracao,
         'pagamentos': pagamentos[:10],
         'diagnostico_ativo': request.GET.get('diagnostico') == 'checkout',
+        'retorno_json': json.dumps(retorno, ensure_ascii=False, indent=2) if retorno else None,
+        'confirmacao_json': json.dumps(confirmacao, ensure_ascii=False, indent=2) if confirmacao else None,
         'diagnostico_json': json.dumps(diagnostico, ensure_ascii=False, indent=2) if diagnostico else None,
         'pagamentos_registrados': pagamentos[:30],
         'pagamento_selecionado': pagamento_selecionado,

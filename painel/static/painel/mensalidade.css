@@ -55,3 +55,8 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
   #comprovante{margin:0;border:1px solid #ccd5df;break-inside:avoid}
   #comprovante .billing-print{display:none}
 }
+
+.billing-receipt-form{margin-top:18px}
+.billing-receipt-form select.billing-payment-received{background:#1769d2;color:#fff;border-color:#1769d2;cursor:pointer}
+.billing-receipt-form select.billing-payment-received option{background:#fff;color:#172b4d}
+@media print{#comprovante .billing-receipt-form{display:none}}

@@ -231,7 +231,7 @@ class CheckoutProTests(TestCase):
         self.assertNotIn('x-signature', notification.dado_bruto)
 
         page = self.client.get(self.url, {'pagamento': notification.payment_id}, **self.host)
-        self.assertNotContains(page, 'Dado bruto do webhook')
+        self.assertContains(page, 'Dado bruto do webhook')
         page = self.client.get(self.url, {'pagamento': notification.payment_id, 'diagnostico': 'checkout'}, **self.host)
         self.assertContains(page, 'Dado bruto do webhook')
         self.assertContains(page, '&quot;type&quot;: &quot;payment&quot;')
@@ -342,12 +342,16 @@ class CheckoutProTests(TestCase):
         self.assertContains(page, 'value="789"')
         self.assertContains(page, 'value="790"')
         self.assertNotContains(page, 'value="791"')
-        self.assertContains(page, 'Imprimir')
-        self.assertContains(page, 'sem valor financeiro')
+        self.assertNotContains(page, 'id="receipt-details"')
+        self.assertNotContains(page, 'Imprimir')
+        self.assertIsNone(page.context['comprovante_selecionado'])
         selected = self.client.get(self.url, {'pagamento': '789'}, **self.host)
         self.assertEqual(selected.context['comprovante_selecionado'].pk, '789')
+        self.assertContains(selected, 'id="receipt-details"')
+        self.assertContains(selected, 'Imprimir')
+        self.assertContains(selected, 'sem valor financeiro')
         foreign = self.client.get(self.url, {'pagamento': '791'}, **self.host)
-        self.assertNotEqual(foreign.context['comprovante_selecionado'].pk, '791')
+        self.assertIsNone(foreign.context['comprovante_selecionado'])
         self.assertNotContains(foreign, '>791<')
 
     def test_pending_and_refunded_payments_do_not_offer_receipts_or_accepted_button(self):
@@ -382,3 +386,39 @@ class CheckoutProTests(TestCase):
         self.sdk.payment.return_value.get.assert_not_called()
         self.client.force_login(self.customer)
         self.assertEqual(self.client.get(self.url, {'atualizar': '1'}, **self.host).status_code, 403)
+
+    def test_return_diagnostic_shows_api_failure_without_granting_days(self):
+        checkout = self.checkout()
+        original = self.tenant.expira_em
+        self.sdk.payment.return_value.get.return_value = {
+            'status': 401, 'response': {'status': 401, 'error': 'unauthorized',
+                                      'message': 'Unauthorized use of live credentials',
+                                      'access_token': 'seller-token'},
+        }
+        page = self.client.get(self.url, {'checkout': str(checkout.pk),
+                                         'payment_id': '789', 'status': 'approved'}, **self.host)
+        self.assertContains(page, 'Parâmetros recebidos no retorno (GET)')
+        self.assertContains(page, 'Resultado da consulta de confirmação')
+        self.assertContains(page, 'Unauthorized use of live credentials')
+        self.assertNotContains(page, 'seller-token')
+        self.assertNotContains(page, 'Seu prazo de acesso foi atualizado')
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.expira_em, original)
+
+    def test_normal_checkout_saves_diagnostic_and_still_redirects_to_provider(self):
+        response = self.client.post(self.url, {'acao': 'pagar'}, **self.host)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('mercadopago', response.url)
+        checkout = CheckoutAcesso.objects.get(tenant=self.tenant)
+        self.payment(checkout)
+        page = self.client.get(self.url, {'checkout': str(checkout.pk), 'payment_id': '789'}, **self.host)
+        self.assertContains(page, 'JSON enviado e resposta da criação do checkout')
+        self.assertContains(page, 'unit_price')
+        self.assertContains(page, 'dias_creditados')
+        self.assertNotContains(page, 'seller-token')
+
+    def test_webhook_diagnostic_does_not_expose_unverified_or_foreign_ids(self):
+        NotificacaoMercadoPago.objects.create(payment_id='999', dado_bruto='PRIVATE_WEBHOOK')
+        page = self.client.get(self.url, {'payment_id': '999'}, **self.host)
+        self.assertContains(page, 'Nenhum webhook vinculado')
+        self.assertNotContains(page, 'PRIVATE_WEBHOOK')

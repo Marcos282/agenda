@@ -42,23 +42,10 @@
       </div>
       {% if pagamento_aceito %}
         <p class="billing-payment-copy" role="status">Pagamento aprovado. Seu prazo de acesso foi atualizado.</p>
-        <a href="#comprovante" class="ui-button billing-payment-received">✓ Pagamento aceito</a>
       {% elif payment_status == 'pending' or payment_status == 'in_process' or payment_status == 'authorized' %}
         <p class="billing-payment-copy" role="status">Aguardando confirmação do pagamento. O acesso será atualizado após a aprovação.</p>
       {% elif payment_status %}
         <p class="billing-payment-copy" role="status">Este pagamento não está aprovado. Confira a situação no Mercado Pago.</p>
-      {% endif %}
-      {% if comprovantes %}
-      <form method="get" class="billing-receipt-form" id="receipt-selector">
-        <label for="payment-select">Comprovantes de pagamento</label>
-        <select id="payment-select" name="pagamento" aria-describedby="receipt-select-help">
-          {% for comprovante in comprovantes %}
-          <option value="{{ comprovante.payment_id }}" {% if comprovante_selecionado.payment_id == comprovante.payment_id %}selected{% endif %}>{{ comprovante.creditado_em|date:"d/m/Y H:i" }} · R$ {{ comprovante.checkout.valor|floatformat:2 }} · Nº {{ comprovante.payment_id }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="ui-button ui-button-secondary">Ver comprovante</button>
-        <p id="receipt-select-help" class="billing-receipt-help">Selecione um pagamento confirmado para consultar o comprovante abaixo.</p>
-      </form>
       {% endif %}
       {% if checkout_configurado %}
         {% if modo_teste %}<span class="billing-status-label billing-status-pending">Ambiente de teste</span>{% endif %}
@@ -83,7 +70,21 @@
       <div><span class="billing-eyebrow">SEU HISTÓRICO</span><h2 id="receipts-title">Comprovante de pagamento</h2></div>
       {% if comprovante_selecionado %}<button type="button" class="ui-button ui-button-secondary billing-print" data-print-receipt>Imprimir</button>{% endif %}
     </div>
+      {% if comprovantes %}
+      <form method="get" class="billing-receipt-form" id="receipt-selector" action="#comprovante">
+        <label for="payment-select">Comprovantes de pagamento</label>
+        <select id="payment-select" name="pagamento" class="billing-payment-received" aria-describedby="receipt-select-help">
+          <option value="">Selecione um pagamento reconhecido</option>
+          {% for comprovante in comprovantes %}
+          <option value="{{ comprovante.payment_id }}" {% if comprovante_selecionado.payment_id == comprovante.payment_id %}selected{% endif %}>{{ comprovante.creditado_em|date:"d/m/Y H:i" }} · R$ {{ comprovante.checkout.valor|floatformat:2 }} · Pagamento aceito · Nº {{ comprovante.payment_id }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="ui-button ui-button-secondary">Ver comprovante</button></noscript>
+        <p id="receipt-select-help" class="billing-receipt-help">Selecione um pagamento confirmado para consultar o comprovante abaixo.</p>
+      </form>
+      {% endif %}
     {% if comprovante_selecionado %}
+    <div id="receipt-details" aria-live="polite">
     <p class="billing-receipt-approved">✓ Pagamento confirmado</p>
     {% if not comprovante_selecionado.checkout.producao %}<p class="billing-payment-copy">Comprovante de teste — sem valor financeiro.</p>{% endif %}
     <dl class="billing-details-list billing-receipt-details">
@@ -96,24 +97,33 @@
       <div><dt>Pagamento processado por</dt><dd>Mercado Pago</dd></div>
     </dl>
     <p class="billing-payment-copy">Os dias foram somados ao prazo disponível na confirmação. Este comprovante registra a compra de acesso ao sistema.</p>
+    </div>
+    {% elif comprovantes %}
+    <p class="billing-receipt-help">Escolha um pagamento acima para abrir os dados do comprovante.</p>
     {% else %}
     <p class="billing-payment-copy">Ainda não há pagamentos confirmados para este estabelecimento. O comprovante aparecerá aqui após a confirmação.</p>
     <a class="ui-button ui-button-secondary" href="">Atualizar pagamentos</a>
     {% endif %}
   </section>
-  {% if diagnostico_ativo and notificacoes_recebimento %}
   <section class="billing-card billing-diagnostic" aria-label="Diagnóstico de notificações">
+    <h2>Webhook recebido do Mercado Pago</h2>
     {% for notificacao in notificacoes_recebimento %}
     <h3>Dado bruto do webhook · {{ notificacao.recebido_em|date:"d/m/Y H:i:s" }}</h3>
+    <p class="billing-payment-copy">Pagamento {{ notificacao.payment_id }} · {{ notificacao.get_estado_display }} · Evento: {{ notificacao.evento }}</p>
     <pre>{{ notificacao.dado_bruto }}</pre>
+    {% empty %}
+    <p class="billing-payment-copy">Nenhum webhook vinculado a esta consulta foi encontrado. Isso não confirma que o pagamento foi recusado. Notificações ainda sem vínculo podem ser consultadas pelo administrador da plataforma no Django Admin.</p>
     {% endfor %}
   </section>
-  {% endif %}
-  {% if diagnostico_json %}
+  {% if diagnostico_json or retorno_json %}
   <section class="billing-card billing-diagnostic" aria-labelledby="diagnostic-title">
     <h2 id="diagnostic-title">Diagnóstico temporário do Checkout Pro</h2>
     <p class="billing-payment-copy">Dados sensíveis, como Access Token e URL completa de checkout, são omitidos. Este painel é visível apenas ao administrador autenticado deste estabelecimento.</p>
-    <pre>{{ diagnostico_json }}</pre>
+    {% if diagnostico_json %}<h3>JSON enviado e resposta da criação do checkout</h3><pre>{{ diagnostico_json }}</pre>
+    {% else %}<p class="billing-payment-copy">O JSON enviado nesta compra não foi salvo nesta sessão. As próximas compras terão esse registro.</p>{% endif %}
+    {% if retorno_json %}<h3>Parâmetros recebidos no retorno (GET)</h3><pre>{{ retorno_json }}</pre>
+    <p class="billing-payment-copy">O retorno do navegador informa o resultado do checkout. A confirmação e o crédito dos dias dependem da consulta à API.</p>{% endif %}
+    {% if confirmacao_json %}<h3>Resultado da consulta de confirmação</h3><pre>{{ confirmacao_json }}</pre>{% endif %}
   </section>
   {% endif %}
   {% if pagamentos %}

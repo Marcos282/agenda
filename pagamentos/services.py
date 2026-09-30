@@ -76,6 +76,23 @@ def api_call(method, *args, diagnostico=None):
         # Do not persist provider payloads: they may contain credentials or payer data.
         logger.warning('Checkout Pro API unavailable (HTTP %s)', getattr(exc, 'status_code', 0))
         raise provider_error(getattr(exc, 'status_code', 0)) from None
+    if diagnostico is not None and isinstance(result, dict):
+        diagnostico['status_http'] = result.get('status')
+        response = result.get('response')
+        if isinstance(response, dict):
+            diagnostico['resposta_api'] = {
+                key: response[key] for key in (
+                    'id', 'status', 'status_detail', 'error', 'message',
+                    'external_reference', 'transaction_amount', 'currency_id',
+                    'collector_id', 'live_mode', 'date_approved',
+                ) if key in response and isinstance(response[key], (str, int, float, bool, type(None)))
+            }
+            for key, value in diagnostico['resposta_api'].items():
+                if isinstance(value, str):
+                    for secret in (settings.MERCADO_PAGO_ACCESS_TOKEN, settings.MERCADO_PAGO_WEBHOOK_SECRET):
+                        if secret:
+                            value = value.replace(secret, '[omitido]')
+                    diagnostico['resposta_api'][key] = value[:500]
     if isinstance(result, dict) and result.get('status') in (401, 403):
         logger.warning('Checkout Pro API unauthorized (HTTP %s)', result['status'])
         raise provider_error(result['status'])
@@ -179,12 +196,12 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None):
         return checkout
 
 
-def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None):
+def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnostico=None):
     """Reconcile using authenticated provider data, never the browser's status."""
     if not valid_payment_id(payment_id):
         return None
     client = sdk()
-    payment = api_call(client.payment().get, payment_id)
+    payment = api_call(client.payment().get, payment_id, diagnostico=diagnostico)
     try:
         reference = UUID(str(payment.get('external_reference', '')))
         amount = Decimal(str(payment.get('transaction_amount', '')))
