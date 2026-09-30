@@ -1,85 +1,74 @@
-from decimal import Decimal, InvalidOperation
+from uuid import UUID
 
 from django.conf import settings
-from django.utils import timezone
-from tenants.models import Tenant
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
+from tenants.domains import is_development_public_host
 
-from tenants.mercado_pago import MercadoPagoError, configured
-from tenants.checkout_pro import create_checkout, pending_checkout, approve_payment
+from pagamentos.models import CheckoutAcesso, PagamentoAcesso
+from pagamentos.services import (
+    CheckoutError, confirmar_pagamento, configurado, criar_checkout, preco_acesso,
+)
 from .decorators import admin_tenant_required
-
-
-def valor_mensal():
-    try:
-        value = Decimal(str(settings.PLATFORM_MONTHLY_PRICE))
-        if value.is_finite() and 0 < value <= Decimal('999999.99') and value == value.quantize(Decimal('0.01')):
-            return value
-    except (InvalidOperation, ValueError, TypeError):
-        pass
-    return None
-
-
-def _context(request, amount, debug_info=None, payment_error=None, checkout_url=None):
-    dias = request.tenant.dias_para_expirar
-    pending = pending_checkout(request.tenant)
-    return {
-        'checkout_configurado': configured() and amount is not None,
-        'checkout_url': checkout_url or (pending.checkout_url if pending else ''),
-        'assinatura_status': request.tenant.mercado_pago_assinatura_status,
-        'assinatura_ativa': request.tenant.mercado_pago_assinatura_status == 'authorized',
-        'valor_mensal': amount,
-        'dias_restantes': max(0, dias),
-        'expira_hoje': dias == 0,
-        'prazo_expirado': dias < 0,
-        'data_expiracao': request.tenant.data_expiracao,
-        'debug_info': debug_info or request.tenant.mercado_pago_diagnostico,
-        'webhook_info': request.tenant.mercado_pago_ultimo_webhook,
-        'payment_error': payment_error,
-        'payment_debug': True,
-    }
 
 
 @admin_tenant_required
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def mensalidade(request):
-    amount = valor_mensal()
-    if request.method == 'GET' and request.GET.get('payment_id'):
-        try:
-            approve_payment(request.GET['payment_id'], tenant_id=request.tenant.pk)
-            request.tenant.refresh_from_db()
-        except MercadoPagoError:
-            messages.info(request, 'A confirmação está pendente. Atualize a página em alguns instantes.')
     if request.method == 'POST':
         if request.POST.get('acao') != 'pagar':
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
-        if amount is None or not configured():
-            messages.error(request, 'O pagamento online ainda não está configurado.')
-            return redirect('painel:mensalidade')
-        diagnostics = {}
+        if (is_development_public_host(request.get_host()) or
+                (settings.DEBUG and settings.DEV_PUBLIC_HOST and settings.DEV_TENANT_SUBDOMAIN
+                 == request.tenant.subdomain)):
+            origin = f'https://{settings.DEV_PUBLIC_HOST}'
+        else:
+            origin = f'https://{request.tenant.subdomain}.{settings.TENANT_BASE_DOMAIN}'
         try:
-            checkout_url = create_checkout(
-                tenant_id=request.tenant.pk,
-                amount=amount,
-                diagnostics=diagnostics,
-            )
-        except MercadoPagoError as exc:
-            diagnostics = exc.diagnostics or diagnostics
-            diagnostics['at'] = timezone.now().isoformat()
-            Tenant.objects.filter(pk=request.tenant.pk).update(mercado_pago_diagnostico=diagnostics)
-            return render(request, 'painel/mensalidade.html', _context(
-                request, amount, debug_info=diagnostics, payment_error=str(exc),
-            ))
-        diagnostics['at'] = timezone.now().isoformat()
-        Tenant.objects.filter(pk=request.tenant.pk).update(mercado_pago_diagnostico=diagnostics)
-        request.tenant.refresh_from_db()
-        return render(request, 'painel/mensalidade.html', _context(
-            request, amount, debug_info=diagnostics, checkout_url=checkout_url,
-        ))
+            checkout = criar_checkout(tenant_id=request.tenant.pk,
+                                      retorno_url=origin + reverse('painel:mensalidade'))
+        except CheckoutError as exc:
+            messages.error(request, str(exc))
+            return redirect('painel:mensalidade')
+        return redirect(checkout.checkout_url)
 
-    return render(request, 'painel/mensalidade.html', _context(request, amount))
+    payment_status = None
+    checkout = None
+    try:
+        reference = UUID(request.GET.get('checkout', ''))
+    except (ValueError, TypeError):
+        reference = None
+    if reference:
+        checkout = CheckoutAcesso.objects.filter(pk=reference, tenant=request.tenant).first()
+    if checkout:
+        # The browser carries only identifiers. Its status=approved is never trusted.
+        payment_id = request.GET.get('payment_id', '')
+        if payment_id and configurado():
+            try:
+                record = confirmar_pagamento(payment_id, tenant_id=request.tenant.pk, checkout_id=checkout.pk)
+                if record:
+                    payment_status = record.status
+            except CheckoutError:
+                messages.info(request, 'A confirmação está pendente. Atualize a página em alguns instantes.')
+        if not payment_status:
+            latest = checkout.pagamentos.first()
+            payment_status = latest.status if latest else 'pending'
+        request.tenant.refresh_from_db()
+    dias = request.tenant.dias_para_expirar
+    expirado = request.tenant.acesso_expirado
+    return render(request, 'painel/mensalidade.html', {
+        'valor_acesso': preco_acesso(),
+        'checkout_configurado': configurado(),
+        'modo_teste': not settings.MERCADO_PAGO_LIVE_MODE,
+        'payment_status': payment_status,
+        'dias_restantes': dias,
+        'expira_hoje': dias == 0 and not expirado,
+        'prazo_expirado': expirado,
+        'data_expiracao': request.tenant.data_expiracao,
+        'pagamentos': PagamentoAcesso.objects.filter(checkout__tenant=request.tenant).select_related('checkout')[:10],
+    })

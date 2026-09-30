@@ -13,7 +13,7 @@
   {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
   {% if user.is_authenticated and user.tipo == 'CLIENTE' and not user.whatsapp and request.resolver_match.url_name != 'conta' %}<p class="notice">Cadastre seu WhatsApp para fazer novos agendamentos. <a class="ui-button ui-button-secondary" href="{% url 'conta' %}">Completar cadastro</a></p>{% endif %}
   {% block content %}{% endblock %}
-  {% if request.resolver_match.url_name != 'meu_cadastro' and request.tenant and user.is_authenticated and user.tipo == 'ADMIN' and request.tenant.dias_para_expirar < 0 %}
+  {% if request.resolver_match.url_name != 'meu_cadastro' and request.tenant and user.is_authenticated and user.tipo == 'ADMIN' and request.tenant.acesso_expirado %}
   <nav class="account-nav" aria-label="Conta do estabelecimento">
     <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="ui-button ui-button-quiet">Sair</button></form>
   </nav>

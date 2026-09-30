@@ -1,5 +1,4 @@
 from datetime import timedelta
-from uuid import uuid4
 from django.utils import timezone as django_timezone
 
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -31,13 +30,6 @@ class Tenant(models.Model):
     ativo = models.BooleanField(default=True)
     expira_em = models.DateField('Data de expiração', null=True, blank=True,
         help_text='Validade do acesso. Quando não informada, será definida como 30 dias após o cadastro.')
-    mercado_pago_assinatura_id = models.CharField(max_length=100, blank=True, default='')
-    mercado_pago_assinatura_status = models.CharField(max_length=30, blank=True, default='')
-    mercado_pago_checkout_url = models.URLField(max_length=500, blank=True, default='')
-    mercado_pago_idempotency_key = models.UUIDField(null=True, blank=True)
-    mercado_pago_valor_assinatura = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    mercado_pago_diagnostico = models.JSONField(default=dict, blank=True, editable=False)
-    mercado_pago_ultimo_webhook = models.JSONField(default=dict, blank=True, editable=False)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
@@ -57,7 +49,12 @@ class Tenant(models.Model):
     @property
     def dias_para_expirar(self):
         hoje = django_timezone.localdate(timezone=ZoneInfo(self.timezone))
-        return (self.data_expiracao - hoje).days
+        return max(0, (self.data_expiracao - hoje).days)
+
+    @property
+    def acesso_expirado(self):
+        hoje = django_timezone.localdate(timezone=ZoneInfo(self.timezone))
+        return self.data_expiracao < hoje
 
     def save(self, *args, **kwargs):
         validate_timezone(self.timezone)
@@ -71,25 +68,3 @@ class Tenant(models.Model):
 
     def __str__(self):
         return self.nome
-
-
-class PlataformaPagamento(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, related_name='pagamentos_plataforma')
-    mercado_pago_payment_id = models.CharField(max_length=100, unique=True)
-    mercado_pago_assinatura_id = models.CharField(max_length=100)
-    valor = models.DecimalField(max_digits=10, decimal_places=2)
-    aprovado_em = models.DateTimeField(null=True, blank=True)
-    criado_em = models.DateTimeField(auto_now_add=True)
-
-
-class PlataformaCheckout(models.Model):
-    """Tentativa de renovação avulsa; preserva valor e referência de cada checkout."""
-    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, related_name='checkouts_plataforma')
-    referencia = models.UUIDField(default=uuid4, unique=True, editable=False)
-    valor = models.DecimalField(max_digits=10, decimal_places=2)
-    preference_id = models.CharField(max_length=200, blank=True)
-    collector_id = models.CharField(max_length=100, blank=True)
-    checkout_url = models.URLField(max_length=1000, blank=True)
-    aprovado = models.BooleanField(default=False)
-    criado_em = models.DateTimeField(auto_now_add=True)
-    expira_em = models.DateTimeField()

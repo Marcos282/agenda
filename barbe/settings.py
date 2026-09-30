@@ -37,8 +37,14 @@ TENANT_BASE_DOMAIN = os.environ.get("TENANT_BASE_DOMAIN", "localhost").lower()
 # Public address used when sharing a store, including from local development.
 STORE_BASE_DOMAIN = os.environ.get("STORE_BASE_DOMAIN", "tacombinado.net").strip().lower()
 ALLOWED_HOSTS = [TENANT_BASE_DOMAIN, "." + TENANT_BASE_DOMAIN, "localhost", "127.0.0.1", "[::1]"]
+DEV_PUBLIC_HOST = os.environ.get('DEV_PUBLIC_HOST', LOCAL.get('DEV_PUBLIC_HOST', '')).strip().lower()
+DEV_TENANT_SUBDOMAIN = os.environ.get('DEV_TENANT_SUBDOMAIN', LOCAL.get('DEV_TENANT_SUBDOMAIN', '')).strip().lower()
+CSRF_TRUSTED_ORIGINS = []
 if DEBUG:
     ALLOWED_HOSTS.append(".localhost")
+    if DEV_PUBLIC_HOST:
+        ALLOWED_HOSTS.append(DEV_PUBLIC_HOST)
+        CSRF_TRUSTED_ORIGINS.append('https://' + DEV_PUBLIC_HOST)
 
 
 # Application definition
@@ -51,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tenants',
+    'pagamentos',
     'usuarios',
     'django.contrib.postgres',
     'profissionais',
@@ -215,8 +222,10 @@ elif os.environ.get('EMAIL_HOST'):
         },
     }
 
-# Mercado Pago subscription settings and server-side credentials.
+# Compatibility with the existing configured price; payments are one-off.
 PLATFORM_MONTHLY_PRICE = os.environ.get('PLATFORM_MONTHLY_PRICE', LOCAL.get('PLATFORM_MONTHLY_PRICE', '30.00'))
-MERCADO_PAGO_ACCESS_TOKEN = os.environ.get('MERCADO_PAGO_ACCESS_TOKEN', '')
-MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get('MERCADO_PAGO_WEBHOOK_SECRET', '')
-MERCADO_PAGO_TEST_PAYER_EMAIL = os.environ.get('MERCADO_PAGO_TEST_PAYER_EMAIL', '')
+PLATFORM_ACCESS_PRICE = os.environ.get('PLATFORM_ACCESS_PRICE', LOCAL.get('PLATFORM_ACCESS_PRICE', PLATFORM_MONTHLY_PRICE))
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get('MERCADO_PAGO_ACCESS_TOKEN', LOCAL.get('MERCADO_PAGO_ACCESS_TOKEN', '')).strip()
+MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get('MERCADO_PAGO_WEBHOOK_SECRET', LOCAL.get('MERCADO_PAGO_WEBHOOK_SECRET', '')).strip()
+MERCADO_PAGO_PUBLIC_URL = os.environ.get('MERCADO_PAGO_PUBLIC_URL', LOCAL.get('MERCADO_PAGO_PUBLIC_URL', '')).rstrip('/')
+MERCADO_PAGO_LIVE_MODE = str(os.environ.get('MERCADO_PAGO_LIVE_MODE', LOCAL.get('MERCADO_PAGO_LIVE_MODE', 'false'))).lower() == 'true'

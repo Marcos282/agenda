@@ -4,7 +4,7 @@ from django.contrib.auth.views import LogoutView
 from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
-from tenants.domains import tenant_base_domain_for_host
+from tenants.domains import is_development_public_host, tenant_base_domain_for_host
 from tenants.decorators import tenant_required
 from .forms import CadastroForm, LoginForm, WhatsAppForm
 
@@ -115,6 +115,9 @@ def entrar(request):
     form = LoginForm(request.POST if request.method == 'POST' else None, request=request)
     if request.method == 'POST' and form.is_valid():
         if request.tenant is None and form.user.tenant_id:
+            if is_development_public_host(request.get_host()):
+                login(request, form.user)
+                return redirect(destino_apos_login(request) or ('painel:inicio' if form.user.tipo == 'ADMIN' else 'conta'))
             from .login_transfer import iniciar
             return iniciar(request, form.user)
         login(request, form.user)

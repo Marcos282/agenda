@@ -125,6 +125,6 @@ O painel possui configuração por estabelecimento, conexão Evolution API por Q
 
 No painel, o botão **QR Code da loja**, ao lado de **WhatsApp**, mostra o QR Code do endereço público do estabelecimento (por exemplo, `https://marcos.tacombinado.net/`). É possível baixar a imagem PNG para compartilhar ou imprimir. O domínio público é configurado por `STORE_BASE_DOMAIN` (padrão: `tacombinado.net`), independente do endereço local usado para acessar o painel. A imagem é gerada no próprio servidor, sem serviços externos.
 
-### Mensalidade da plataforma
+### Acesso ao sistema por 30 dias
 
-O botão **Mensalidade**, ao lado do QR Code da loja, oferece assinatura recorrente de R$ 30,00/mês pelo Mercado Pago. Cada estabelecimento inicia com 30 dias grátis desde seu cadastro; após o vencimento, o administrador só pode acessar Mensalidade e os novos agendamentos ficam pausados. Uma cobrança aprovada soma 30 dias ao prazo atual, sem renovação dupla em notificações repetidas. Configure token e segredo do webhook no ambiente ou no `.local-settings.json` local. Consulte [configuração e operação](docs/mensalidade.md).
+O botão **Acesso ao sistema**, ao lado do QR Code da loja, permite comprar 30 dias pelo Checkout Pro do Mercado Pago, sem assinatura ou cobrança automática. O preço padrão é R$ 30,00. O acesso é renovado após a confirmação do pagamento, preservando os dias restantes. Cada estabelecimento começa com 30 dias grátis; após o vencimento, novos agendamentos ficam pausados e o administrador pode acessar a página de renovação. Consulte [configuração e testes](docs/mensalidade.md).

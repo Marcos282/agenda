@@ -9,7 +9,7 @@ from tenants.models import Tenant
 from usuarios.models import User
 
 
-@override_settings(MERCADO_PAGO_ACCESS_TOKEN='', MERCADO_PAGO_WEBHOOK_SECRET='', PLATFORM_MONTHLY_PRICE='')
+@override_settings(PLATFORM_ACCESS_PRICE='', MERCADO_PAGO_ACCESS_TOKEN='', MERCADO_PAGO_WEBHOOK_SECRET='')
 class MensalidadeTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -31,101 +31,26 @@ class MensalidadeTests(TestCase):
         self.assertContains(page, 'Em configuração')
         self.assertContains(page, 'Pagamento ainda indisponível')
         self.assertEqual(page.context['dias_restantes'], 30)
-        self.assertFalse(page.context['checkout_configurado'])
         self.assertIn('no-store', page['Cache-Control'])
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, self.tenant.data_expiracao)
 
-    @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
-    def test_subscription_configuration_and_expiration_read_only(self):
+    @override_settings(PLATFORM_ACCESS_PRICE='30.00')
+    def test_expiration_is_read_only_and_payment_is_disabled(self):
         self.tenant.expira_em = date(2026, 12, 31)
         self.tenant.save()
-        page = self.client.get(self.url, **self.host)
-        self.assertTrue(page.context['checkout_configurado'])
-        self.assertEqual(page.context['valor_mensal'], Decimal('30.00'))
+        page = self.client.get(self.url, {'payment_id': '123', 'status': 'approved'}, **self.host)
+        self.assertEqual(page.context['valor_acesso'], Decimal('30.00'))
         self.assertContains(page, '31/12/2026')
-        self.assertContains(page, '30 dias')
         self.assertNotContains(page, 'name="expira_em"')
-        self.assertEqual(self.client.post(self.url, {'expira_em': '2099-12-31'}, **self.host).status_code, 302)
+        self.assertEqual(self.client.post(self.url, {'acao': 'pagar'}, **self.host).status_code, 302)
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, date(2026, 12, 31))
 
-    @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
-    def test_post_starts_subscription_and_displays_checkout_and_debug(self):
-        checkout = 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=123'
-        with patch('painel.mensalidade_views.create_checkout', return_value=checkout) as start:
-            response = self.client.post(self.url, {'acao': 'pagar'}, **self.host)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, checkout)
-        self.assertContains(response, 'Diagnóstico do Mercado Pago')
-        start.assert_called_once_with(
-            tenant_id=self.tenant.pk,
-            amount=Decimal('30.00'),
-            diagnostics=start.call_args.kwargs['diagnostics'],
-        )
-
-    @override_settings(
-        DEBUG=True,
-        MERCADO_PAGO_TEST_PAYER_EMAIL='sandbox-buyer@example.test',
-        MERCADO_PAGO_ACCESS_TOKEN='test-token',
-        MERCADO_PAGO_WEBHOOK_SECRET='test-secret',
-        PLATFORM_MONTHLY_PRICE='30.00',
-    )
-    def test_checkout_does_not_send_test_payer(self):
-        with patch(
-            'painel.mensalidade_views.create_checkout',
-            return_value='https://www.mercadopago.com.br/subscriptions/checkout',
-        ) as start:
-            self.client.post(self.url, {'acao': 'pagar'}, **self.host)
-        self.assertNotIn('payer_email', start.call_args.kwargs)
-
-    @override_settings(
-        DEBUG=False,
-        MERCADO_PAGO_TEST_PAYER_EMAIL='sandbox-buyer@example.test',
-        MERCADO_PAGO_ACCESS_TOKEN='test-token',
-        MERCADO_PAGO_WEBHOOK_SECRET='test-secret',
-        PLATFORM_MONTHLY_PRICE='30.00',
-    )
-    def test_checkout_does_not_send_admin_email(self):
-        with patch(
-            'painel.mensalidade_views.create_checkout',
-            return_value='https://www.mercadopago.com.br/subscriptions/checkout',
-        ) as start:
-            self.client.post(self.url, {'acao': 'pagar'}, **self.host)
-        self.assertNotIn('payer_email', start.call_args.kwargs)
-
-    @override_settings(MERCADO_PAGO_ACCESS_TOKEN='test-token', MERCADO_PAGO_WEBHOOK_SECRET='test-secret', PLATFORM_MONTHLY_PRICE='30.00')
-    def test_debug_renders_only_sanitized_provider_diagnostics(self):
-        from tenants.mercado_pago import MercadoPagoError
-
-        safe_debug = {
-            'request': {
-                'method': 'POST',
-                'path': '/preapproval',
-                'authorization': '[redigido]',
-                'payload': {'payer_email': 'o***@example.test'},
-            },
-            'response': {'http_status': 400, 'message': 'payer_email inválido'},
-        }
-        with patch(
-            'painel.mensalidade_views.create_checkout',
-            side_effect=MercadoPagoError('HTTP 400', diagnostics=safe_debug),
-        ):
-            response = self.client.post(
-                self.url, {'acao': 'pagar', 'debug_mp': '1'}, **self.host,
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Diagnóstico do Mercado Pago')
-        self.assertContains(response, 'payer_email inválido')
-        self.assertNotContains(response, 'test-token')
-        self.assertNotContains(response, 'test-secret')
-        self.assertNotContains(response, self.admin.email)
-
-    @override_settings(PLATFORM_MONTHLY_PRICE='NaN')
+    @override_settings(PLATFORM_ACCESS_PRICE='NaN')
     def test_invalid_config_does_not_enable_checkout(self):
         page = self.client.get(self.url, **self.host)
-        self.assertEqual(page.context['checkout_url'], '')
-        self.assertIsNone(page.context['valor_mensal'])
+        self.assertIsNone(page.context['valor_acesso'])
 
     def test_permissions_and_tenant_scope(self):
         self.assertEqual(self.client.get(self.url, HTTP_HOST='wanessa.localhost').status_code, 403)
@@ -159,6 +84,19 @@ class MensalidadeTests(TestCase):
                 page = self.client.get(self.url, **self.host)
                 self.assertEqual(page.context['dias_restantes'], remaining)
                 self.assertContains(page, label)
+                self.assertEqual(self.tenant.dias_para_expirar, remaining)
+                self.assertEqual(self.tenant.acesso_expirado, today > self.tenant.expira_em)
+
+    def test_long_expired_access_stays_at_zero_and_panel_remains_blocked(self):
+        self.tenant.expira_em = date(2026, 1, 1)
+        self.tenant.save()
+        with patch('django.utils.timezone.localdate', return_value=date(2026, 10, 1)):
+            self.assertEqual(self.tenant.dias_para_expirar, 0)
+            self.assertTrue(self.tenant.acesso_expirado)
+            self.assertRedirects(self.client.get('/painel/', **self.host), self.url, fetch_redirect_response=False)
+            page = self.client.get(self.url, **self.host)
+            self.assertContains(page, 'Prazo expirado')
+            self.assertNotContains(page, 'Expira hoje')
 
     def test_registration_date_and_tenant_timezone(self):
         with patch('django.utils.timezone.now', return_value=datetime(2026, 10, 1, 1, tzinfo=timezone.utc)):
@@ -185,21 +123,3 @@ class MensalidadeTests(TestCase):
         self.other.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, date(2026, 9, 30))
         self.assertEqual(self.other.expira_em, date(2027, 1, 1))
-
-    def test_webhook_debug_is_persistent_and_scoped_to_tenant(self):
-        with override_settings(MERCADO_PAGO_WEBHOOK_SECRET='secret'):
-            response = self.client.post(
-                '/integracoes/mercado-pago/webhook/',
-                data='{"type":"subscription_preapproval","data":{"id":"abc12345678"},"secret":"must-not-store"}',
-                content_type='application/json', **self.host,
-            )
-        self.assertEqual(response.status_code, 401)
-        self.tenant.refresh_from_db()
-        self.other.refresh_from_db()
-        self.assertEqual(self.tenant.mercado_pago_ultimo_webhook['http_status'], 401)
-        self.assertNotIn('must-not-store', str(self.tenant.mercado_pago_ultimo_webhook))
-        self.assertEqual(self.other.mercado_pago_ultimo_webhook, {})
-        page = self.client.get(self.url, **self.host)
-        self.assertContains(page, 'subscription_preapproval')
-        self.assertContains(page, '401')
-        self.assertNotContains(page, 'abc12345678')
