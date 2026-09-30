@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .mercado_pago import MercadoPagoError, process_webhook, verify_webhook_signature
+from .mercado_pago import MercadoPagoError, process_webhook, verify_webhook_signature, valid_subscription_id
 
 
 @csrf_exempt
@@ -29,7 +29,8 @@ def mercado_pago_webhook(request):
     event_type = str(request.GET.get('type') or payload.get('type') or request.GET.get('topic') or '')
     if event_type not in {'subscription_preapproval', 'subscription_authorized_payment'}:
         return JsonResponse({'received': True})
-    if not re.fullmatch(r'[0-9]{1,100}', data_id):
+    valid_id = valid_subscription_id(data_id) if event_type == 'subscription_preapproval' else re.fullmatch(r'[0-9]{1,100}', data_id)
+    if not valid_id:
         return HttpResponse(status=400)
     if not verify_webhook_signature(
         signature=request.headers.get('x-signature', ''),

@@ -127,7 +127,7 @@ class MercadoPagoBillingTests(TestCase):
     def _signed_webhook(self, data_id, event_type):
         request_id = 'request-test-123'
         timestamp = '1790700000'
-        manifest = f'id:{data_id};request-id:{request_id};ts:{timestamp};'
+        manifest = f'id:{data_id.lower()};request-id:{request_id};ts:{timestamp};'
         signature = hmac.new(
             b'test-webhook-secret', manifest.encode(), hashlib.sha256,
         ).hexdigest()
@@ -142,7 +142,7 @@ class MercadoPagoBillingTests(TestCase):
 
     def test_approved_payment_extends_remaining_period_once(self):
         self.tenant.expira_em = date(2026, 10, 15)
-        self.tenant.mercado_pago_assinatura_id = '123'
+        self.tenant.mercado_pago_assinatura_id = '2c938084726fca480172750000000000'
         self.tenant.mercado_pago_assinatura_status = 'authorized'
         self.tenant.mercado_pago_idempotency_key = uuid4()
         self.tenant.mercado_pago_valor_assinatura = Decimal('30.00')
@@ -150,10 +150,10 @@ class MercadoPagoBillingTests(TestCase):
         external_reference = f'tacombinado-tenant-{self.tenant.pk}:{self.tenant.mercado_pago_idempotency_key}'
         provider_responses = {
             '/authorized_payments/789': {
-                'preapproval_id': '123', 'payment': {'id': '456'},
+                'preapproval_id': '2c938084726fca480172750000000000', 'payment': {'id': '456'},
             },
-            '/preapproval/123': {
-                'id': '123', 'external_reference': external_reference, 'status': 'authorized',
+            '/preapproval/2c938084726fca480172750000000000': {
+                'id': '2c938084726fca480172750000000000', 'external_reference': external_reference, 'status': 'authorized',
             },
             '/v1/payments/456': {
                 'id': '456', 'status': 'approved', 'currency_id': 'BRL',
@@ -205,3 +205,44 @@ class MercadoPagoBillingTests(TestCase):
         booking = self.client.get('/agendamentos/servico/1/', HTTP_HOST='marcos.localhost')
         self.assertEqual(booking.status_code, 503)
         self.assertContains(booking, 'Agendamentos temporariamente indisponíveis', status_code=503)
+
+    def test_alphanumeric_subscription_checkout_and_status_webhook(self):
+        from tenants.mercado_pago import create_subscription
+        subscription_id = '2c938084726fca480172750000000000'
+        checkout = 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=' + subscription_id
+        with patch('tenants.mercado_pago.urlopen', return_value=FakeResponse({
+            'id': subscription_id, 'status': 'pending', 'init_point': checkout,
+        })):
+            self.assertEqual(create_subscription(tenant_id=self.tenant.pk, payer_email='buyer@example.test', amount=30), checkout)
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.mercado_pago_assinatura_id, subscription_id)
+        expiration = self.tenant.expira_em
+        with patch('tenants.mercado_pago._request', return_value={
+            'id': subscription_id, 'status': 'authorized',
+            'external_reference': f'tacombinado-tenant-{self.tenant.pk}:{self.tenant.mercado_pago_idempotency_key}',
+        }) as fetch:
+            response = self._signed_webhook(subscription_id, 'subscription_preapproval')
+        self.assertEqual(response.status_code, 200)
+        fetch.assert_called_once_with('GET', '/preapproval/' + subscription_id)
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.mercado_pago_assinatura_status, 'authorized')
+        self.assertEqual(self.tenant.expira_em, expiration)  # Only an approved payment renews access.
+
+    def test_missing_or_unsafe_subscription_ids_are_rejected(self):
+        from tenants.mercado_pago import create_subscription, MercadoPagoError
+        for value in [None, '', 123, {}, [], '../payments/123', 'a?x=1', 'a' * 101]:
+            with self.subTest(value=value), patch('tenants.mercado_pago.urlopen', return_value=FakeResponse({
+                'id': value, 'status':'pending', 'init_point':'https://www.mercadopago.com.br/subscriptions/checkout',
+            })):
+                with self.assertRaises(MercadoPagoError):
+                    create_subscription(tenant_id=self.tenant.pk, payer_email='buyer@example.test', amount=30)
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.mercado_pago_assinatura_id, '')
+
+    def test_webhook_rejects_invalid_ids_and_keeps_payment_ids_numeric(self):
+        for value, event in [('../bad','subscription_preapproval'), ('a'*101,'subscription_preapproval'),
+                             ('abc123','subscription_authorized_payment')]:
+            with self.subTest(value=value), patch('tenants.mercado_pago._request') as fetch:
+                response = self._signed_webhook(value, event)
+                self.assertEqual(response.status_code, 400)
+                fetch.assert_not_called()

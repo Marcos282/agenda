@@ -99,6 +99,11 @@ def _response_summary(result, *, status_code, error=None):
     return summary
 
 
+def valid_subscription_id(value):
+    # Preapproval IDs are opaque alphanumeric strings, unlike numeric payment IDs.
+    return isinstance(value, str) and bool(re.fullmatch(r'[A-Za-z0-9]{1,100}', value))
+
+
 def configured():
     return bool(settings.MERCADO_PAGO_ACCESS_TOKEN.strip() and settings.MERCADO_PAGO_WEBHOOK_SECRET.strip())
 
@@ -256,8 +261,8 @@ def create_subscription(*, tenant_id, payer_email, amount, diagnostics=None):
         or (parsed.hostname or '').endswith('.mercadopago.com')
     ):
         raise MercadoPagoError('O Mercado Pago não retornou um link de assinatura válido.')
-    subscription_id = str(result.get('id', ''))
-    if not re.fullmatch(r'[0-9]{1,100}', subscription_id):
+    subscription_id = result.get('id')
+    if not valid_subscription_id(subscription_id):
         raise MercadoPagoError('O Mercado Pago não retornou o identificador da assinatura.')
     with transaction.atomic():
         tenant = Tenant.objects.select_for_update().get(pk=tenant_id)
@@ -308,10 +313,10 @@ def _matches_external_reference(tenant, value):
 
 
 def _save_subscription_status(subscription):
-    subscription_id = str(subscription.get('id', ''))
+    subscription_id = subscription.get('id')
     external_reference = subscription.get('external_reference')
     tenant = _tenant_from_external_reference(external_reference)
-    if not tenant or not re.fullmatch(r'[0-9]{1,100}', subscription_id):
+    if not tenant or not valid_subscription_id(subscription_id):
         return
     with transaction.atomic():
         locked = Tenant.objects.select_for_update().get(pk=tenant.pk)
@@ -331,9 +336,9 @@ def _approve_authorized_payment(authorized_payment_id):
     if not re.fullmatch(r'[0-9]{1,100}', authorized_payment_id):
         return
     authorized = _request('GET', f'/authorized_payments/{authorized_payment_id}')
-    subscription_id = str(authorized.get('preapproval_id', ''))
+    subscription_id = authorized.get('preapproval_id')
     payment_id = str((authorized.get('payment') or {}).get('id', ''))
-    if not re.fullmatch(r'[0-9]{1,100}', subscription_id) or not re.fullmatch(r'[0-9]{1,100}', payment_id):
+    if not valid_subscription_id(subscription_id) or not re.fullmatch(r'[0-9]{1,100}', payment_id):
         return
     subscription = _request('GET', f'/preapproval/{subscription_id}')
     external_reference = subscription.get('external_reference')
