@@ -19,3 +19,37 @@ main{max-width:1120px;background:#fff;margin:28px auto;padding:28px 34px;box-sha
 
 .legend-no-show{background:#fff4e4;border:1px solid #a56c16}
 .day-actions{flex-wrap:wrap}button.timeline-block{display:block;text-align:left;padding:4px 8px}button.timeline-block strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}button.timeline-block span{font-size:10px;line-height:13px;margin-top:3px}
+
+/* Agenda refresh: scoped to this page for easy rollback. */
+.agenda-header{margin:4px 0 20px;padding:26px 30px;border:1px solid #cee6dd;border-radius:18px;background:linear-gradient(120deg,#e9f5ef,#edf5fb);color:#1e5145}
+.agenda-header .agenda-kicker{color:#3d7566}.agenda-header h1{margin:8px 0;font-size:32px}.agenda-header p{color:#496c60}
+.agenda-header-mark{display:grid;place-items:center;width:68px;height:68px;border:1px solid #c5dfd8;border-radius:20px;background:#ffffffa6;color:#247768;flex-shrink:0}
+.agenda-header-mark svg{width:37px;height:37px}
+.day-navigation{padding:18px 20px;background:#f3f7fc;border:1px solid #dce6f2;border-radius:14px}
+.selected-date strong{color:#234e7c}.selected-date span{color:#526e8b}
+.day-arrows .icon-button{width:44px;height:44px;border-color:#d6e2ef;color:#245dab;background:#fff;font-size:20px}
+.date-controls .agenda-button.secondary{background:#fff;color:#245dab;border-color:#d6e2ef}
+.date-picker input{min-height:44px;background:#fff;border-color:#d6e2ef;border-radius:10px}
+.agenda-section-label{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:26px 2px 10px;font-size:10px;font-weight:700;letter-spacing:.1em;color:#5f7287}
+.agenda-section-label .timezone-label{letter-spacing:0;font-weight:400;max-width:none}
+.professional-tabs{margin:0 0 20px;padding:2px 2px 12px;gap:12px}
+.professional-tab{min-width:170px;background:#f9fbfd;border-color:#e0e7ef;transition:background .15s,border-color .15s,box-shadow .15s}
+.professional-tab.selected,.professional-tab.selected:hover{background:#eaf2ff;border-color:#8aafe2;box-shadow:inset 0 -3px #245dab}
+.professional-tab.selected strong{color:#214f89}.professional-tab.selected .initials{background:#245dab;color:#fff}
+.professional-tab strong{max-width:240px;overflow-wrap:anywhere}.professional-tab:hover{background:#f0f5fb;border-color:#b4cbe6}
+.day-card{border-color:#dce5ee;border-radius:18px;box-shadow:0 5px 20px #213b5510}
+.professional-heading{background:#f8fafc;padding:23px 24px}.professional-heading h2{color:#253f59;overflow-wrap:anywhere}.professional-heading>div:first-child{min-width:0}
+.day-actions{gap:10px}.day-actions .agenda-button{min-height:44px;flex:1 1 155px}.day-actions .agenda-status{order:-1;flex-basis:100%;box-sizing:border-box;text-align:center}
+.agenda-status.is-open{background:#e6f5ec;color:#226143}.agenda-status.is-closed{background:#fff0e5;color:#965320}
+.timeline-legend{background:#fff;padding:15px 24px;color:#526579}.timeline-legend i{width:10px;height:10px;border-radius:4px}
+.timeline-wrap{background:#fff}.timeline-block.free{background:linear-gradient(90deg,#e5f5ec,#f4faf6);border-color:#b4d7c2;border-left-color:#3b9d68}
+.timeline-block.booked{background:#edf3ff;border-color:#bbd0f2;border-left-color:#3972c6;box-shadow:0 2px 5px #245dab10}
+.agenda-page button.timeline-block{min-height:0;border-radius:6px}
+.day-footer{background:#f5faf7;color:#46725a}.closed-day{background:linear-gradient(#f4f8fc,#fff);padding:44px 20px}.closed-icon{background:#e7eef8;color:#4774a5}.closed-day h3{color:#2f4e70}
+.booked-summary{background:#fbfcfe}.booked-summary h3{font-size:17px;color:#253f59}
+.booked-summary li{display:flex;justify-content:space-between;align-items:center;gap:18px;background:#fff;border-color:#dce6f1;border-left:4px solid #6798d7;padding:16px}
+.appointment-summary-copy{display:grid;gap:4px;min-width:0}.appointment-summary-copy>strong{font-size:14px;color:#273e59}.appointment-time{font-weight:700;color:#245dab;font-variant-numeric:tabular-nums}
+.appointment-summary-actions{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}.appointment-summary-actions:empty{display:none}.appointment-summary-actions .ui-button{flex:1;min-height:44px}
+.editor-surface{border-color:#d3e1ed;box-shadow:0 16px 50px #162d4920}.editor-context{background:#edf4ff;color:#245582}.editor-footer>*{flex:1}
+@media(max-width:800px){.agenda-header{padding:22px}.agenda-header h1{font-size:29px}.day-navigation{padding:16px}.day-actions{display:flex}.day-actions .agenda-status{flex-basis:100%}.booked-summary li{align-items:stretch;flex-direction:column}.appointment-summary-actions{width:100%}.agenda-section-label .timezone-label{display:block;font-size:10px;text-align:right}.selected-date{min-width:0;flex:1}.selected-date strong{font-size:16px}.date-controls{gap:8px;flex-wrap:wrap}.date-picker{flex:1;min-width:0}.date-picker input{flex:1;width:0;min-width:130px}.date-controls>.agenda-button{flex-shrink:0}}
+@media(max-width:480px){.agenda-header{padding:20px;gap:12px}.agenda-header-mark{width:48px;height:48px;border-radius:14px}.agenda-header-mark svg{width:28px;height:28px}.agenda-header .agenda-kicker{font-size:9px;letter-spacing:.08em}.agenda-header p{font-size:13px}.agenda-section-label{align-items:flex-start}.day-arrows{gap:8px}.day-actions .agenda-button{white-space:normal}.booked-summary{padding:18px}.appointment-summary-actions{flex-direction:column}}
