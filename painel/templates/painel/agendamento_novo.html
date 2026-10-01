@@ -1,7 +1,14 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Novo agendamento · Painel{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}">{% endblock %}
+{% block extra_css %}{{ block.super }}
+.panel-booking-form{width:100%;max-width:620px;margin-inline:auto;box-sizing:border-box}
+.panel-booking-form .edit-form{max-width:none;width:100%}
+.panel-booking-form .edit-form>button,.panel-booking-form .booking-confirm>button{width:100%;min-height:44px}
+.panel-booking-form .booking-confirm>button+button{margin-top:10px}
+{% endblock %}
 {% block painel_content %}
+<div class="panel-booking-form">
 <span class="booking-step">AGENDAMENTO PELO ESTABELECIMENTO</span><h1>Novo agendamento</h1>
 {% if selecionando %}
 <p class="booking-subtitle">Informe o nome e o WhatsApp do cliente para reservar um horário.</p>
@@ -21,4 +28,5 @@
 </form>
 {% endif %}
 <div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}{% if oferta %}?profissional={{ oferta.profissional_id }}&amp;data={{ dia|date:'Y-m-d' }}{% endif %}">Voltar à agenda</a></div>
+</div>
 {% endblock %}
