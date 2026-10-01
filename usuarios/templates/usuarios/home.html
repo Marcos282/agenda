@@ -4,7 +4,7 @@
 <title>{% if request.tenant %}{{ request.tenant.nome }} · Serviços e profissionais{% else %}Agenda · Seu tempo, bem cuidado{% endif %}</title>
 <meta name="description" content="Conheça serviços e profissionais de beleza, bem-estar e cuidados pessoais. Seu próximo cuidado começa aqui.">
 <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/home.css' %}">
-</head><body>
+<link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"></head><body class="public-booking-page">
 <header class="site-header"><a class="wordmark" href="{% url 'home' %}"><span class="brand-symbol" aria-hidden="true">a<span>•</span></span>{{ request.tenant.nome|default:'agenda' }}</a>
 <nav aria-label="Navegação principal">{% if request.tenant %}<a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Loja</a>{% endif %}<a class="ui-button ui-button-quiet" href="#servicos">{% if request.tenant %}Serviços{% else %}Para quem{% endif %}</a><a class="ui-button ui-button-quiet" href="{% if request.tenant %}#profissionais{% else %}#como-funciona{% endif %}">{% if request.tenant %}Profissionais{% else %}Como funciona{% endif %}</a>
 {% if request.tenant %}{% if user.is_authenticated %}<a class="ui-button" href="{% if user.tipo == 'ADMIN' %}{% url 'painel:inicio' %}{% else %}{% url 'conta' %}{% endif %}">{% if user.tipo == 'ADMIN' %}Meu painel{% else %}Minha conta{% endif %}</a>{% else %}<a class="ui-button" href="{% url 'agenda:meus' %}">Meus agendamentos <span aria-hidden="true">↗</span></a>{% endif %}{% else %}<a class="ui-button" href="#encontre">Encontrar meu espaço ↗</a>{% endif %}</nav></header>
@@ -36,5 +36,5 @@
 <section id="encontre" class="join-banner"><div><span class="overline">SEU ESPAÇO ESTÁ AQUI</span><h2>Qual é o seu<br>estabelecimento?</h2><p>Informe o identificador recebido do estabelecimento.</p></div><form method="get" action="#encontre" class="find-space"><label for="id_estabelecimento">Endereço do estabelecimento</label><input id="id_estabelecimento" name="estabelecimento" placeholder="Ex.: marcos" maxlength="63" required value="{{ estabelecimento_form.estabelecimento.value|default:'' }}">{{ estabelecimento_form.estabelecimento.errors }}<button type="submit">Encontrar estabelecimento →</button></form></section>
 {% endif %}
 </main><footer class="site-footer"><a class="wordmark" href="{% url 'home' %}">{{ request.tenant.nome|default:'agenda' }}<span class="brand-period">•</span></a><p>Mais tempo para o que faz bem.</p><span>Serviços profissionais · {% now 'Y' %}</span></footer>
-{% if request.tenant %}<div class="mobile-booking-action"><a class="ui-button mobile-booking-button" href="{% url 'loja' %}">Agende logo <span aria-hidden="true">→</span></a></div>{% endif %}
-</body></html>
+
+{% include 'usuarios/mobile_booking.html' %}</body></html>

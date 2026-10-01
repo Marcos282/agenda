@@ -1,0 +1,7 @@
+.mobile-booking-action{display:none}
+@media(max-width:767px){
+  body.public-booking-page{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  .mobile-booking-action{display:flex;justify-content:center;position:fixed;z-index:1000;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));pointer-events:none}
+  .mobile-booking-button{width:100%;max-width:440px;min-height:54px;padding:15px 24px;gap:12px;border:1px solid #16733f;border-radius:999px;background:#168347;color:#fff;font-size:16px;font-weight:700;text-decoration:none;box-shadow:0 6px 22px #125d463d;pointer-events:auto}
+  .mobile-booking-button:hover,.mobile-booking-button:active{background:#116b39;color:#fff;text-decoration:none}
+}
