@@ -8,9 +8,23 @@
 .send-row:nth-child(even){background:transparent}.send-row:hover{background:rgba(106,196,145,.22)}
 .send-pagination{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:18px 0}
 .send-pagination .ui-button{min-width:120px}.send-pagination span{font-size:13px;color:var(--muted)}
+.whatsapp-overview{padding:26px;margin-bottom:22px;border:1px solid rgba(40,116,84,.18);border-radius:16px;background:rgba(106,196,145,.13)}
+.whatsapp-overview h1{margin:10px 0 12px;color:#205b40}.whatsapp-overview>.eyebrow{color:#357356}
+.whatsapp-overview>p{margin-bottom:20px}.whatsapp-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0;padding:0;list-style:none}
+.whatsapp-guide li{padding:16px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(40,116,84,.12)}
+.whatsapp-guide strong{display:block;color:#205b40;font-size:14px}.whatsapp-guide p{margin:8px 0 0;font-size:13px;line-height:1.65;color:#405d4e}
+@media(max-width:600px){.whatsapp-overview{padding:20px 16px}.whatsapp-guide{grid-template-columns:1fr;gap:10px}}
 {% endblock %}
 {% block painel_content %}
+<div class="whatsapp-overview">
+<span class="eyebrow">LEMBRETES PARA SEUS CLIENTES</span>
 <h1>WhatsApp</h1><p>Conecte o número do estabelecimento e personalize os lembretes dos seus clientes.</p>
+<ol class="whatsapp-guide">
+<li><strong>1. Conecte seu número</strong><p>Gere o QR code, escaneie pelo WhatsApp e use “Verificar conexão” para conferir se o número está conectado.</p></li>
+<li><strong>2. Prepare os lembretes</strong><p>Ative os lembretes, escolha a antecedência e personalize a mensagem com nome, serviço, data e horário. Depois, salve as configurações.</p></li>
+<li><strong>3. Acompanhe os envios</strong><p>Consulte “Últimos lembretes” para ver o resultado de cada envio. “Aceito pela API” ainda não confirma a entrega ao celular do cliente.</p></li>
+</ol>
+</div>
 <div class="whatsapp-stack">
 <section class="card"><h2>Conexão</h2>
 <div aria-live="polite"><span class="connection-status {{ connection.kind }}">{{ connection.label }}</span>
