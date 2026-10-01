@@ -10,6 +10,7 @@
 {% block painel_content %}
 <div class="panel-booking-form">
 <span class="booking-step">AGENDAMENTO PELO ESTABELECIMENTO</span><h1>Novo agendamento</h1>
+<p class="notice">Esta página é para o estabelecimento agendar em nome do cliente. Valem as mesmas regras do agendamento online: só é possível reservar horários disponíveis na agenda do profissional, respeitando os períodos abertos e a duração do serviço. Horários já ocupados não podem ser reservados novamente.</p>
 {% if selecionando %}
 <p class="booking-subtitle">Informe o nome e o WhatsApp do cliente para reservar um horário.</p>
 <form method="post" class="edit-form">{% csrf_token %}{{ form.as_p }}<button type="submit" name="acao" value="consultar">Escolher horário →</button></form>
