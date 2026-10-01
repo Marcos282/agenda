@@ -36,5 +36,5 @@
 <section id="encontre" class="join-banner"><div><span class="overline">SEU ESPAÇO ESTÁ AQUI</span><h2>Qual é o seu<br>estabelecimento?</h2><p>Informe o identificador recebido do estabelecimento.</p></div><form method="get" action="#encontre" class="find-space"><label for="id_estabelecimento">Endereço do estabelecimento</label><input id="id_estabelecimento" name="estabelecimento" placeholder="Ex.: marcos" maxlength="63" required value="{{ estabelecimento_form.estabelecimento.value|default:'' }}">{{ estabelecimento_form.estabelecimento.errors }}<button type="submit">Encontrar estabelecimento →</button></form></section>
 {% endif %}
 </main><footer class="site-footer"><a class="wordmark" href="{% url 'home' %}">{{ request.tenant.nome|default:'agenda' }}<span class="brand-period">•</span></a><p>Mais tempo para o que faz bem.</p><span>Serviços profissionais · {% now 'Y' %}</span></footer>
-{% if request.tenant %}<div class="mobile-booking-action"><a class="ui-button mobile-booking-button" href="#servicos">Agende logo <span aria-hidden="true">↑</span></a></div>{% endif %}
+{% if request.tenant %}<div class="mobile-booking-action"><a class="ui-button mobile-booking-button" href="{% url 'loja' %}">Agende logo <span aria-hidden="true">→</span></a></div>{% endif %}
 </body></html>
