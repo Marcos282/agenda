@@ -1,1 +1,1 @@
-{% if request.tenant %}<div class="mobile-booking-action"><a class="ui-button mobile-booking-button" href="{% url 'loja' %}">Agende logo <span aria-hidden="true">→</span></a></div>{% endif %}
+<div class="mobile-booking-action"><a class="ui-button mobile-booking-button" href="{% if request.tenant %}{% url 'loja' %}{% else %}{% url 'registro' %}{% endif %}">{% if request.tenant %}Agende logo{% else %}Cadastrar meu estabelecimento{% endif %} <span aria-hidden="true">→</span></a></div>
