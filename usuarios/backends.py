@@ -3,6 +3,12 @@ from django.contrib.auth.backends import ModelBackend
 
 
 class TenantBackend(ModelBackend):
+    def user_can_authenticate(self, user):
+        # Keep customer records and history, but disable password access,
+        # including sessions established before this policy changed.
+        platform_admin = user.is_superuser and user.is_staff and user.tenant_id is None
+        return super().user_can_authenticate(user) and (user.tipo != 'CLIENTE' or platform_admin)
+
     def authenticate(self, request, username=None, password=None, email=None, **kwargs):
         if request is None or not hasattr(request, "tenant") or password is None:
             return None

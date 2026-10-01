@@ -1,12 +1,11 @@
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
-from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 from tenants.domains import is_development_public_host, tenant_base_domain_for_host
 from tenants.decorators import tenant_required
-from .forms import CadastroForm, LoginForm, WhatsAppForm
+from .forms import LoginForm, WhatsAppForm
 
 
 def destino_apos_login(request):
@@ -87,25 +86,8 @@ def home(request, profissional_id=None):
 @tenant_required
 @require_http_methods(["GET", "POST"])
 def cadastro(request):
-    if request.user.is_authenticated:
-        return redirect(destino_apos_login(request) or 'conta')
-    form = CadastroForm(request.POST if request.method == 'POST' else None, tenant=request.tenant)
-    if request.method == 'POST' and form.is_valid():
-        try:
-            with transaction.atomic():
-                form.save()
-        except IntegrityError as exc:
-            # A simultaneous registration can pass form validation before the unique check.
-            name = getattr(getattr(exc.__cause__, 'diag', None), 'constraint_name', None)
-            if name not in {'user_email_ci_unique', 'usuarios_user_email_key'}:
-                raise
-            form.add_error('email', 'Não foi possível cadastrar este e-mail.')
-        else:
-            from django.urls import reverse
-            from urllib.parse import urlencode
-            destino = destino_apos_login(request)
-            return redirect(reverse('login') + ('?' + urlencode({'next': destino}) if destino else ''))
-    return render(request, 'usuarios/form.html', {'form': form, 'titulo': 'Criar conta', 'botao': 'Cadastrar'})
+    # Customer reservations use name and WhatsApp instead of password accounts.
+    return redirect('loja')
 
 
 @require_http_methods(["GET", "POST"])

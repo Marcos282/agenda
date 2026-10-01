@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from tenants.domains import tenant_base_domain_for_host
 from .models import User
+from .backends import TenantBackend
 
 
 def iniciar(request, user):
@@ -49,7 +50,7 @@ def concluir(request):
         ticket = Session.objects.select_for_update().filter(session_key=request.POST.get('ticket', ''), expire_date__gt=timezone.now()).first()
         data = ticket.get_decoded() if ticket else {}
         user = User.objects.filter(pk=data.get('login_transfer_user'), tenant=request.tenant, is_active=True).first()
-        if not user or not constant_time_compare(user.get_session_auth_hash(), data.get('login_transfer_hash', '')):
+        if not user or not TenantBackend().user_can_authenticate(user) or not constant_time_compare(user.get_session_auth_hash(), data.get('login_transfer_hash', '')):
             return HttpResponseForbidden('Acesso inválido ou expirado. Entre novamente pela plataforma.')
         ticket.delete()
     login(request, user, backend='usuarios.backends.TenantBackend')
