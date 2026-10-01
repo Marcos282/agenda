@@ -19,6 +19,28 @@ class WhatsAppTests(BookingFixture, TestCase):
         self.config = Configuracao.objects.create(tenant=self.tenant, lembretes_ativos=True)
         self.booking = self.book()
 
+    @patch('whatsapp.evolution.configured', return_value=False)
+    def test_reminder_pagination(self, configured):
+        from agenda.models import Agendamento
+        for i in range(21):
+            booking = Agendamento.objects.get(pk=self.booking.pk)
+            booking.pk = None
+            booking.inicio += timedelta(days=i+1)
+            booking.fim += timedelta(days=i+1)
+            booking.save()
+            Lembrete.objects.create(agendamento=booking)
+        self.client.force_login(self.admin)
+        url = reverse('painel:whatsapp')
+        ids = set()
+        for page_number, count in ((1, 10), (2, 10), (3, 1)):
+            response = self.client.get(url, {'page': page_number}, HTTP_HOST='marcos.localhost')
+            page = response.context['envios']
+            self.assertEqual(len(page), count)
+            self.assertFalse(ids.intersection(e.pk for e in page))
+            ids.update(e.pk for e in page)
+            self.assertContains(response, f'Página {page_number} de 3')
+        self.assertContains(self.client.get(url, HTTP_HOST='marcos.localhost'), '?page=2#ultimos-lembretes')
+
     def process(self, minutes=120):
         with patch('whatsapp.reminders.timezone.now', return_value=self.booking.inicio-timedelta(minutes=minutes)), patch('whatsapp.evolution.state', return_value='open'):
             return process_reminders()

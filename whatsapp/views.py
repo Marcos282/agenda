@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 from painel.decorators import admin_tenant_required
@@ -56,5 +57,8 @@ def configuracao_whatsapp(request):
             connection.update(label='Status indisponível', kind='pending')
     return render(request, 'whatsapp/configuracao.html', {
         'connection': connection, 'form': form, 'qr': qr, 'status': status, 'api_configurada': evolution.configured(),
-        'envios': Lembrete.objects.filter(agendamento__tenant=request.tenant).select_related('agendamento').order_by('-criado_em')[:10],
+        'envios': Paginator(
+            Lembrete.objects.filter(agendamento__tenant=request.tenant)
+            .select_related('agendamento').order_by('-criado_em', '-pk'), 10,
+        ).get_page(request.GET.get('page')),
     })
