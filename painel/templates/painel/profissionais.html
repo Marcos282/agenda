@@ -1,6 +1,11 @@
 {% extends 'painel/base.html' %}
+{% block extra_css %}{{ block.super }}
+.professionals-overview{padding:26px;margin-bottom:22px;border:1px solid rgba(40,116,84,.18);border-radius:16px;background:rgba(106,196,145,.13)}
+.professionals-overview h1{margin:0;color:#205b40}
+@media(max-width:600px){.professionals-overview{padding:20px 16px}}
+{% endblock %}
 {% block painel_content %}
-<h1>Profissionais</h1>
+<div class="professionals-overview"><h1>Profissionais</h1></div>
 <div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:profissional_novo' %}">+ Novo profissional</a></div>
 <div class="cards">
 {% for profissional in page_obj %}<article class="card">
