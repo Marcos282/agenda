@@ -1,6 +1,11 @@
 {% extends 'painel/base.html' %}
+{% block extra_css %}{{ block.super }}
+.services-overview{padding:26px;margin-bottom:22px;border:1px solid rgba(40,116,84,.18);border-radius:16px;background:rgba(106,196,145,.13)}
+.services-overview h1{margin:0 0 12px;color:#205b40}.services-overview p{margin:0;color:#405d4e}
+@media(max-width:600px){.services-overview{padding:20px 16px}}
+{% endblock %}
 {% block painel_content %}
-<h1>Serviços</h1><p>Preço e duração são definidos em cada profissional.</p>
+<div class="services-overview"><h1>Serviços</h1><p>Preço e duração são definidos em cada profissional.</p></div>
 <div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:servico_novo' %}">+ Novo serviço</a></div>
 <div class="cards">{% for servico in page_obj %}<article class="card">
 <h2>{{ servico.nome }}</h2>{% include 'painel/status_ativo.html' with ativo=servico.ativo %}
