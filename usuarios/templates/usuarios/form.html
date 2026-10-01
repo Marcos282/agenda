@@ -22,8 +22,7 @@
     <p>Quer marcar um horário? Basta informar seu nome e WhatsApp. Não precisa criar conta nem senha.</p>
     <a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar sem cadastro</a>
     {% else %}
-    <p>Quer cadastrar seu estabelecimento?</p>
-    <a class="ui-button ui-button-secondary" href="{% url 'registro' %}">Cadastrar estabelecimento</a>
+    <a class="ui-button" href="{% url 'registro' %}">Quer cadastrar seu estabelecimento?</a>
     {% endif %}
   </div>
 </div>
