@@ -132,13 +132,9 @@ def conta(request):
 sair = tenant_required(LogoutView.as_view())
 
 
+@tenant_required
 @require_http_methods(['GET'])
 def loja(request, item_id=None):
-    if request.tenant is None:
-        if item_id is not None:
-            from django.http import Http404
-            raise Http404('Acesse a loja do estabelecimento para consultar este serviço.')
-        return redirect('registro')
     from django.core.paginator import Paginator
     from django.db.models import Q
     from django.http import QueryDict
