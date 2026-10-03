@@ -6,3 +6,5 @@
 .timeline-block .client-reputation-new{font-size:11px;color:#245473}
 .timeline-block.compact .rating-stars .star{font-size:12px!important}
 .rating-average{margin-left:4px}
+
+.client-reputation{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 8px;border-radius:8px;background:#fff7dc}.client-reputation-new{color:#245473;background:#e8f4fc;border:1px solid #b7d7eb;font-weight:600}.client-history-summary>[data-customer-reputation]{margin-bottom:10px}.appointment-summary-copy>[data-customer-reputation]{align-self:flex-start}

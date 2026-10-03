@@ -13,6 +13,7 @@ urlpatterns = [
     path('', views.inicio, name='inicio'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),
     path('agendamentos/<int:pk>/cancelar/', agendamento_views.cancelar_agendamento, name='agendamento_cancelar'),
+    path('agendamentos/<int:pk>/atraso/', agendamento_views.atraso, name='agendamento_atraso'),
     path('agendamentos/<int:pk>/falta/', agendamento_views.falta, name='agendamento_falta'),
     path('clientes/whatsapp/<str:whatsapp>/bloqueio/', cliente_views.whatsapp_bloqueio, name='whatsapp_bloqueio'),
     path('clientes/', cliente_views.lista, name='clientes'),

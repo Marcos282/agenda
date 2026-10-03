@@ -29,6 +29,8 @@ class Tenant(models.Model):
     intervalo_grade_minutos = models.PositiveIntegerField(default=15, validators=[MinValueValidator(1)])
     limite_agendamentos_cliente_dia = models.PositiveSmallIntegerField(
         'Máximo de agendamentos por cliente por dia', default=2, validators=[MinValueValidator(1)])
+    limite_agendamentos_cliente_futuros = models.PositiveSmallIntegerField(
+        'Limite de agendamentos futuros por WhatsApp', default=2, validators=[MinValueValidator(1)])
     ativo = models.BooleanField(default=True)
     expira_em = models.DateField('Data de expiração', null=True, blank=True,
         help_text='Validade do acesso. Quando não informada, será definida como 30 dias após o cadastro.')
@@ -37,6 +39,7 @@ class Tenant(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_futuros__gte=1), name="tenant_limite_agendamentos_futuros_positivo"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_dia__gte=1), name="tenant_limite_ag_dia_positivo"),
             models.CheckConstraint(condition=models.Q(intervalo_grade_minutos__gt=0), name="tenant_grade_positiva"),
             models.CheckConstraint(condition=models.Q(subdomain__regex=r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"), name="tenant_subdomain_valid"),

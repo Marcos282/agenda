@@ -127,6 +127,7 @@ class Agendamento(models.Model):
             models.CheckConstraint(condition=models.Q(inicio__lt=models.F('fim')), name='ag_inicio_antes_fim'),
             models.CheckConstraint(condition=models.Q(valor__gt=0, duracao_minutos__gt=0), name='ag_valor_duracao_positivos'),
             models.CheckConstraint(condition=models.Q(status='CONFIRMADO', cancelado_em__isnull=True, nao_compareceu_em__isnull=True) | models.Q(status='CANCELADO', cancelado_em__isnull=False, nao_compareceu_em__isnull=True) | models.Q(status='NAO_COMPARECEU', cancelado_em__isnull=True, nao_compareceu_em__isnull=False), name='ag_status_consistente'),
+            models.UniqueConstraint(fields=['id', 'tenant'], name='ag_id_tenant_unique'),
             ExclusionConstraint(name='ag_sem_sobreposicao', expressions=[
                 ('tenant', RangeOperators.EQUAL), ('profissional', RangeOperators.EQUAL),
                 (models.Func('inicio', 'fim', models.Value('[)'), function='TSTZRANGE', output_field=DateTimeRangeField()), RangeOperators.OVERLAPS),
@@ -149,6 +150,44 @@ class Agendamento(models.Model):
     @property
     def whatsapp_contato(self):
         return self.contato.whatsapp if self.contato_id else self.cliente.whatsapp
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class ReputacaoCliente(models.Model):
+    class Tipo(models.TextChoices):
+        CONCLUIDO = 'CONCLUIDO', 'Compareceu'
+        ATRASADO = 'ATRASADO', 'Chegou atrasado'
+        DESMARCOU = 'DESMARCOU', 'Desmarcou'
+        AUSENTE = 'AUSENTE', 'Cliente ausente'
+
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    whatsapp_normalizado = models.CharField(max_length=16)
+    agendamento = models.OneToOneField(Agendamento, on_delete=models.PROTECT, related_name='avaliacao_reputacao')
+    pontuacao = models.PositiveSmallIntegerField()
+    tipo = models.CharField(max_length=12, choices=Tipo.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    objects = TenantQuerySet.as_manager()
+
+    class Meta:
+        indexes = [models.Index(fields=['tenant', 'whatsapp_normalizado'], name='reputacao_tenant_whatsapp_idx')]
+        constraints = [models.CheckConstraint(condition=(
+            models.Q(tipo='CONCLUIDO', pontuacao=4) | models.Q(tipo='ATRASADO', pontuacao=3) |
+            models.Q(tipo='DESMARCOU', pontuacao=2) | models.Q(tipo='AUSENTE', pontuacao=1)
+        ), name='reputacao_tipo_pontos_validos')]
+
+    def clean(self):
+        super().clean()
+        from usuarios.validators import normalizar_whatsapp
+        self.whatsapp_normalizado = normalizar_whatsapp(self.whatsapp_normalizado)
+        if self.agendamento_id:
+            booking = Agendamento.objects.for_tenant(self.tenant).filter(pk=self.agendamento_id).first()
+            if booking is None:
+                raise ValidationError('Avaliação e agendamento devem pertencer ao mesmo estabelecimento.')
+            if self.whatsapp_normalizado != normalizar_whatsapp(booking.cliente_whatsapp or booking.whatsapp_contato):
+                raise ValidationError('A avaliação deve usar o WhatsApp do agendamento.')
 
     def save(self, *args, **kwargs):
         self.full_clean()

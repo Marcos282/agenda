@@ -68,22 +68,32 @@
       const title = appointment ? `${item.kind === 'no-show' ? 'Não compareceu' : item.kind === 'cancelled' ? 'Cancelado' : 'Ocupado'} · ${appointment.cliente} · ${appointment.servico}` : item.kind === 'closed' ? 'Intervalo / fechado' : 'Livre';
       const details = `${clock(item.start)} → ${clock(item.end)}${appointment ? ` · ${Math.round((appointment.end - appointment.start) / 60)} min · R$ ${appointment.valor} · ${appointment.statusLabel || appointment.status}` : ''}`;
       block.setAttribute('aria-label', `${title}. ${details}`); block.title = `${title}. ${details}`;
-      const heading = document.createElement('strong'); heading.textContent = title;
+      const heading = document.createElement('strong');
+      if (appointment) {
+        heading.append(root.CustomerReputation.renderRating(appointment.reputacao));
+        heading.append(document.createTextNode(`${appointment.cliente} · ${appointment.servico}`));
+      } else heading.textContent = title;
       const text = document.createElement('span'); text.textContent = details;
       block.append(heading, text);
       if (appointment) block.addEventListener('click', () => {
         const dialog = document.createElement('dialog'); dialog.className = 'appointment-details';
-        const h = document.createElement('h3'); h.textContent = title;
+        const h = document.createElement('h3');
+        h.append(root.CustomerReputation.renderRating(appointment.reputacao));
+        h.append(document.createTextNode(` ${appointment.cliente} · ${appointment.servico}`));
         const p = document.createElement('p'); p.textContent = details;
         const close = document.createElement('button'); close.textContent = 'Fechar'; close.addEventListener('click', () => dialog.close());
         dialog.append(h, p);
         if (appointment.cancelUrl) {
           const cancel = document.createElement('a'); cancel.className = 'ui-button ui-button-secondary';
-          cancel.href = appointment.cancelUrl; cancel.textContent = 'Cancelar agendamento'; dialog.append(cancel);
+          cancel.href = appointment.cancelUrl; cancel.textContent = 'Desmarcou'; dialog.append(cancel);
+        }
+        if (appointment.lateUrl) {
+          const late = document.createElement('a'); late.className = 'ui-button ui-button-secondary';
+          late.href = appointment.lateUrl; late.textContent = 'Chegou atrasado'; dialog.append(late);
         }
         if (appointment.noShowUrl) {
           const noShow = document.createElement('a'); noShow.className = 'ui-button ui-button-secondary';
-          noShow.href = appointment.noShowUrl; noShow.textContent = 'Marcar falta'; dialog.append(noShow);
+          noShow.href = appointment.noShowUrl; noShow.textContent = 'Cliente ausente'; dialog.append(noShow);
         }
         dialog.append(close); document.body.append(dialog); dialog.addEventListener('close', () => dialog.remove()); dialog.showModal();
       });

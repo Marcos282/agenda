@@ -54,3 +54,7 @@ Implementação Evolution v2: `fetchInstances`, `instance/create`, `instance/con
 ## Instalação local deste projeto
 
 A instalação sem Docker e os serviços desta máquina estão descritos em [evolution-local.md](evolution-local.md). A configuração local protegida pode fornecer a URL e a chave quando as variáveis de ambiente não estiverem definidas; variáveis de ambiente têm prioridade.
+
+### Campo de boas-vindas
+
+A seção **Boas-vindas e agradecimento** tem formulário próprio, preenchido com a mensagem padrão, botão **Salvar mensagem de boas-vindas** e as mesmas variáveis dos lembretes. O envio automático é independente da antecedência do lembrete. A migração atualiza apenas mensagens que ainda são exatamente o padrão anterior; textos personalizados são preservados.

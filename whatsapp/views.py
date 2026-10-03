@@ -16,15 +16,29 @@ class ConfiguracaoForm(forms.ModelForm):
         help_texts = {'antecedencia_minutos': '120 minutos = 2 horas. De 1 minuto a 7 dias.'}
 
 
+class ConfirmacaoForm(forms.ModelForm):
+    class Meta:
+        model = Configuracao
+        fields = ['confirmacoes_ativas', 'mensagem_confirmacao']
+        widgets = {'mensagem_confirmacao': forms.Textarea(attrs={'rows': 6})}
+
+
 @admin_tenant_required
 @require_http_methods(['GET', 'POST'])
 def configuracao_whatsapp(request):
     config, _ = Configuracao.objects.get_or_create(tenant=request.tenant)
     form = ConfiguracaoForm(instance=config)
+    confirmacao_form = ConfirmacaoForm(instance=config)
     qr, status = '', ''
     if request.method == 'POST':
         action = request.POST.get('acao')
-        if action == 'salvar':
+        if action == 'salvar_confirmacao':
+            confirmacao_form = ConfirmacaoForm(request.POST, instance=config)
+            if confirmacao_form.is_valid():
+                confirmacao_form.save()
+                messages.success(request, 'Mensagem de boas-vindas salva.')
+                return redirect('painel:whatsapp')
+        elif action == 'salvar':
             form = ConfiguracaoForm(request.POST, instance=config)
             if form.is_valid():
                 form.save()
@@ -56,7 +70,7 @@ def configuracao_whatsapp(request):
         except evolution.EvolutionError:
             connection.update(label='Status indisponível', kind='pending')
     return render(request, 'whatsapp/configuracao.html', {
-        'connection': connection, 'form': form, 'qr': qr, 'status': status, 'api_configurada': evolution.configured(),
+        'connection': connection, 'form': form, 'confirmacao_form': confirmacao_form, 'qr': qr, 'status': status, 'api_configurada': evolution.configured(),
         'envios': Paginator(
             Lembrete.objects.filter(agendamento__tenant=request.tenant)
             .select_related('agendamento').order_by('-criado_em', '-pk'), 10,

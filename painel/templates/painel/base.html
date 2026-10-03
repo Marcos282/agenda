@@ -1,5 +1,5 @@
 {% extends 'usuarios/base.html' %}{% load static %}
-{% block layout_head %}<link rel="stylesheet" href="{% static 'painel/painel.css' %}">{% endblock %}
+{% block layout_head %}<link rel="stylesheet" href="{% static 'painel/painel.css' %}"><link rel="stylesheet" href="{% static 'painel/reputacao.css' %}?v=2"><script src="{% static 'painel/reputacao.js' %}?v=2" defer></script>{% endblock %}
 {% block title %}Painel · {{ request.tenant.nome }}{% endblock %}
 {% block extra_css %}
 main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:20px 0}

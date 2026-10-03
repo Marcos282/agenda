@@ -146,3 +146,25 @@ def falta(request, pk):
         'agendamento': booking, 'voltar': voltar, 'erro': erro,
         'pode_marcar': booking.status == 'CONFIRMADO' and booking.inicio <= timezone.now(),
     }, status=409 if erro else 200)
+
+
+@admin_tenant_required
+@require_http_methods(['GET', 'POST'])
+def atraso(request, pk):
+    from django.shortcuts import get_object_or_404
+    from agenda.models import Agendamento
+    from agenda.reputation import registrar_atraso
+    booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant), pk=pk)
+    dia = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
+    voltar = agenda_url(booking.profissional_id, dia)
+    erro = None
+    if request.method == 'POST':
+        try:
+            registrar_atraso(tenant=request.tenant, administrador=request.user, agendamento_id=booking.pk)
+        except ValidationError as exc:
+            erro = ' '.join(exc.messages)
+        else:
+            messages.success(request, 'Atraso registrado: 3 pontos na reputação do cliente.')
+            return redirect(voltar)
+    return render(request, 'painel/agendamento_atraso.html', {'agendamento': booking, 'voltar': voltar, 'erro': erro,
+        'pode_marcar': booking.status == 'CONFIRMADO' and booking.inicio <= timezone.now()}, status=409 if erro else 200)

@@ -9,12 +9,18 @@ from . import evolution
 from django.core.exceptions import ValidationError
 
 
-def render_message(config, booking):
-    validate_message(config.mensagem_lembrete)
-    local = booking.inicio.astimezone(ZoneInfo(config.tenant.timezone))
-    return config.mensagem_lembrete.format(cliente=booking.cliente_nome, servico=booking.servico_nome,
-        profissional=booking.profissional_nome, estabelecimento=config.tenant.nome,
+def render_template(template, tenant, booking):
+    if tenant.pk != booking.tenant_id:
+        raise ValidationError('A mensagem deve pertencer ao estabelecimento do agendamento.')
+    validate_message(template)
+    local = booking.inicio.astimezone(ZoneInfo(tenant.timezone))
+    return template.format(cliente=booking.cliente_nome, servico=booking.servico_nome,
+        profissional=booking.profissional_nome, estabelecimento=tenant.nome,
         data=local.strftime('%d/%m/%Y'), hora=local.strftime('%H:%M'))
+
+
+def render_message(config, booking):
+    return render_template(config.mensagem_lembrete, config.tenant, booking)
 
 
 def process_reminders():

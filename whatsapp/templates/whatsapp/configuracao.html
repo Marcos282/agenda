@@ -40,6 +40,12 @@
 {% if status %}<p role="status">{{ status }}</p>{% endif %}
 {% if qr %}<img class="whatsapp-qr" src="{{ qr }}" alt="QR code para conectar o WhatsApp do estabelecimento"><p>Se o código expirar, gere outro.</p>{% endif %}
 </section>
+<section class="card"><h2>Boas-vindas e agradecimento</h2>
+<p>Quando o cliente confirmar uma nova reserva, a loja enviará esta mensagem pelo WhatsApp, agradecendo a preferência e informando que aguarda sua chegada.</p>
+<form method="post">{% csrf_token %}{{ confirmacao_form.as_p }}
+<p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{estabelecimento}</code> <code>{data}</code> <code>{hora}</code></p>
+<button name="acao" value="salvar_confirmacao">Salvar mensagem de boas-vindas</button>
+</form><p class="helptext">O WhatsApp da loja precisa estar conectado. O envio ocorre após salvar a reserva; falhas no envio não cancelam o agendamento.</p></section>
 <section class="card"><h2>Lembrete do agendamento</h2><p>Um lembrete por agendamento confirmado, para o WhatsApp cadastrado pelo cliente ou no painel. Agendamentos cancelados não recebem lembretes.</p>
 <form method="post">{% csrf_token %}{{ form.as_p }}
 <p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{estabelecimento}</code> <code>{data}</code> <code>{hora}</code></p>

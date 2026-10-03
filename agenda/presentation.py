@@ -19,13 +19,16 @@ def timeline_payload(profissional, data, periodos):
     from .models import Agendamento
     from django.urls import reverse
     from django.utils import timezone
+    from .reputation import atualizar_reputacoes, reputacoes, reputacao_agendamento
+    atualizar_reputacoes(profissional.tenant)
+    ratings = reputacoes(profissional.tenant)
     bookings = Agendamento.objects.for_tenant(profissional.tenant).filter(profissional=profissional, status__in=['CONFIRMADO', 'NAO_COMPARECEU']).annotate(dia_local=TruncDate('inicio', tzinfo=ZoneInfo(profissional.tenant.timezone))).filter(dia_local=data)
     return {
         'professionalId': profissional.pk,
         'date': data.isoformat(),
         'timeZone': profissional.tenant.timezone,
         'windows': windows,
-        'appointments': [{'id': a.pk, 'cliente': a.cliente_nome, 'servico': a.servico_nome,
+        'appointments': [{'reputacao': reputacao_agendamento(a, ratings), 'lateUrl': reverse('painel:agendamento_atraso', args=[a.pk]) if a.status == 'CONFIRMADO' and a.inicio <= timezone.now() else None, 'id': a.pk, 'cliente': a.cliente_nome, 'servico': a.servico_nome,
             'inicio': a.inicio.isoformat(), 'fim': a.fim.isoformat(), 'valor': str(a.valor),
             'cancelUrl': reverse('painel:agendamento_cancelar', args=[a.pk]) if a.status == 'CONFIRMADO' and a.inicio > timezone.now() else None,
             'noShowUrl': reverse('painel:agendamento_falta', args=[a.pk]) if a.status == 'CONFIRMADO' and a.inicio <= timezone.now() else None,

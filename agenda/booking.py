@@ -222,6 +222,8 @@ def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, dura
         inicio=inicio, fim=fim, valor=oferta.valor, duracao_minutos=oferta.duracao_minutos,
         cliente_nome=nome, cliente_whatsapp=numero, servico_nome=oferta.servico.nome, profissional_nome=oferta.profissional.nome)
     booking.save()
+    from whatsapp.confirmations import send_confirmation
+    transaction.on_commit(lambda: send_confirmation(tenant_id=tenant.pk, agendamento_id=booking.pk), robust=True)
     return booking
 
 
@@ -231,6 +233,8 @@ def cancelar(*, tenant, cliente, agendamento_id):
     Profissional.objects.for_tenant(tenant).select_for_update().get(pk=booking.profissional_id)
     booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk, cliente=cliente)
     if booking.status == Agendamento.Status.CANCELADO:
+        from .reputation import gravar_avaliacao
+        gravar_avaliacao(booking, 'DESMARCOU', corrigir=True)
         return booking
     if booking.status != Agendamento.Status.CONFIRMADO:
         raise ValidationError('Somente agendamentos confirmados podem ser cancelados.')
@@ -239,6 +243,8 @@ def cancelar(*, tenant, cliente, agendamento_id):
     booking.status = Agendamento.Status.CANCELADO
     booking.cancelado_em = timezone.now()
     booking.save(update_fields=['status', 'cancelado_em', 'atualizado_em'])
+    from .reputation import gravar_avaliacao
+    gravar_avaliacao(booking, 'DESMARCOU', corrigir=True)
     return booking
 
 
@@ -259,6 +265,8 @@ def registrar_falta(*, tenant, administrador, agendamento_id):
     Profissional.objects.for_tenant(tenant).select_for_update().get(pk=booking.profissional_id)
     booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk)
     if booking.status == Agendamento.Status.NAO_COMPARECEU:
+        from .reputation import gravar_avaliacao
+        gravar_avaliacao(booking, 'AUSENTE', corrigir=True)
         return booking
     if booking.status != Agendamento.Status.CONFIRMADO:
         raise ValidationError('Somente agendamentos confirmados podem ser marcados como falta.')
@@ -268,6 +276,8 @@ def registrar_falta(*, tenant, administrador, agendamento_id):
     booking.status = Agendamento.Status.NAO_COMPARECEU
     booking.nao_compareceu_em = now
     booking.save(update_fields=['status', 'nao_compareceu_em', 'atualizado_em'])
+    from .reputation import gravar_avaliacao
+    gravar_avaliacao(booking, 'AUSENTE', corrigir=True)
     return booking
 
 

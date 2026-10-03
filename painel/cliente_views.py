@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from agenda.models import Agendamento
+from agenda.reputation import atualizar_reputacoes, reputacoes, resumir
 from usuarios.models import User, ContatoCliente, WhatsAppBloqueado
 from usuarios.validators import normalizar_whatsapp
 from .agenda_views import agenda_url
@@ -35,6 +36,7 @@ def clientes_do_tenant(tenant):
 
 def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
     """One panel identity per number, including account and legacy contact records."""
+    atualizar_reputacoes(tenant)
     clientes = clientes_do_tenant(tenant)
     contatos = ContatoCliente.objects.for_tenant(tenant).annotate(
         nome_exibicao=F('nome'), email=Value('', output_field=CharField()))
@@ -73,14 +75,44 @@ def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
                 group['is_active'] |= row['is_active']
                 group['date_joined'] = min(group['date_joined'], row['date_joined'])
                 group['corresponde'] |= matches
+    # Reservation snapshots preserve the historical identity when accounts change numbers.
+    for group in grupos.values():
+        if group['whatsapp']:
+            for counter in counts:
+                group[counter] = 0
+    for booking in Agendamento.objects.for_tenant(tenant).select_related('cliente', 'contato').order_by('criado_em', 'pk'):
+        raw = booking.cliente_whatsapp or booking.whatsapp_contato
+        if not raw:
+            continue
+        try:
+            numero = normalizar_whatsapp(raw)
+        except ValidationError:
+            continue
+        if whatsapp is not None and numero != whatsapp:
+            continue
+        if numero not in grupos:
+            grupos[numero] = dict(pk=booking.pk, whatsapp=numero, email='', nome_exibicao=booking.cliente_nome,
+                origem='historico', is_active=True, date_joined=booking.criado_em, total=0, confirmados=0,
+                cancelados=0, faltas=0, corresponde=False, bloqueado=numero in bloqueados)
+        group = grupos[numero]
+        group['total'] += 1
+        counter = {'CONFIRMADO': 'confirmados', 'CANCELADO': 'cancelados', 'NAO_COMPARECEU': 'faltas'}[booking.status]
+        group[counter] += 1
+        group['nome_exibicao'] = booking.cliente_nome
+        group['corresponde'] |= not termo or termo.casefold() in booking.cliente_nome.casefold() or bool(digits and digits in numero)
+    ratings = reputacoes(tenant)
+    for group in grupos.values():
+        group['reputacao'] = ratings.get(group['whatsapp'], resumir())
     return sorted((group for group in grupos.values() if group['corresponde']),
                   key=lambda group: (group['nome_exibicao'].casefold(), group['whatsapp'], group['pk']))
 
 
 def agendamentos_por_whatsapp(tenant, whatsapp):
     return Agendamento.objects.for_tenant(tenant).filter(
-        Q(cliente__tenant=tenant, cliente__whatsapp=whatsapp) |
-        Q(contato__tenant=tenant, contato__whatsapp=whatsapp))
+        Q(cliente_whatsapp=whatsapp) | (Q(cliente_whatsapp='') & (
+            Q(cliente__tenant=tenant, cliente__whatsapp=whatsapp) |
+            Q(contato__tenant=tenant, contato__whatsapp=whatsapp))))
+
 
 
 @admin_tenant_required
@@ -124,7 +156,7 @@ def historico(request, pk):
 def render_historico(request, cliente, bookings, contato=False):
     resumo = bookings.aggregate(total=Count('pk'), confirmados=Count('pk', filter=Q(status='CONFIRMADO')),
         cancelados=Count('pk', filter=Q(status='CANCELADO')), faltas=Count('pk', filter=Q(status='NAO_COMPARECEU')))
-    page = Paginator(bookings.order_by('-inicio', '-pk'), 15).get_page(request.GET.get('page'))
+    page = Paginator(bookings.select_related('avaliacao_reputacao').order_by('-inicio', '-pk'), 15).get_page(request.GET.get('page'))
     for booking in page:
         day = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
         booking.link_agenda = agenda_url(booking.profissional_id, day)

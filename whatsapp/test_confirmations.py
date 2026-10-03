@@ -93,14 +93,14 @@ class ConfirmationTests(BookingFixture, TestCase):
         self.client.force_login(self.admin)
         url=reverse('painel:whatsapp')
         response=self.client.get(url,HTTP_HOST='marcos.localhost')
-        self.assertContains(response,'Confirmação e agradecimento')
+        self.assertContains(response,'Boas-vindas e agradecimento')
         self.assertContains(response,'{cliente}')
-        data=dict(acao='salvar',confirmacoes_ativas='on',mensagem_confirmacao='Obrigado {cliente}, até {hora}!',
+        data=dict(acao='salvar_confirmacao',confirmacoes_ativas='on',mensagem_confirmacao='Obrigado {cliente}, até {hora}!',
             antecedencia_minutos=120,mensagem_lembrete='Lembrete {cliente}')
         self.assertEqual(self.client.post(url,data,HTTP_HOST='marcos.localhost').status_code,302)
         with self.captureOnCommitCallbacks(execute=True):
             self.book()
-        self.assertContains(self.client.get(url,HTTP_HOST='marcos.localhost'),'Aceito pela API')
+        self.assertEqual(Confirmacao.objects.get().status,'ENVIADO')
         data['mensagem_confirmacao']='{variavel_invalida}'
         response=self.client.post(url,data,HTTP_HOST='marcos.localhost')
-        self.assertTrue(response.context['form'].errors)
+        self.assertTrue(response.context['confirmacao_form'].errors)
