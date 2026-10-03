@@ -38,12 +38,13 @@
 </div>
 <div class="day-footer"><span>✓ Períodos de atendimento definidos</span><span>Fora dos períodos: fechado</span></div>
 {% else %}
+<div class="timeline-wrap" data-timeline-container hidden><div class="timeline" data-timeline></div></div>
 <div class="closed-day"><span class="closed-icon" aria-hidden="true">☾</span><h3>{% if profissional.ativo %}Este dia ainda está fechado{% else %}Profissional inativo{% endif %}</h3>
 <p>{% if profissional.ativo %}Nenhum período foi aberto para atendimento neste dia.<br>Defina os horários para abrir a agenda de {{ profissional.nome }}.{% else %}Ative o profissional para disponibilizar seus períodos de atendimento.{% endif %}</p>
 {% if profissional.ativo and not dia_passado %}<a class="agenda-button" data-open-schedule href="{{ agenda_url }}&amp;configurar=1#schedule-editor">+ Abrir agenda</a>{% elif dia_passado %}<p>Não é possível abrir a agenda em uma data passada.</p>{% else %}<a class="agenda-button secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar profissional</a>{% endif %}
 </div>
 {% endif %}
-{% if timeline.appointments %}<section class="booked-summary"><h3>Agendamentos do dia</h3><ul>{% for item in timeline.appointments %}<li><div class="appointment-summary-copy"><span class="appointment-time">{{ item.inicio_label }} → {{ item.fim_label }}</span><strong>{{ item.cliente }}</strong>{% include "painel/reputacao.html" with reputacao=item.reputacao %}<span>{{ item.servico }} · R$ {{ item.valor }} · {{ item.statusLabel }}</span></div><div class="appointment-summary-actions">{% if item.lateUrl %}<a class="ui-button ui-button-secondary" href="{{ item.lateUrl }}">Chegou atrasado</a>{% endif %}{% if item.noShowUrl %}<a class="ui-button ui-button-secondary" href="{{ item.noShowUrl }}">Cliente ausente</a>{% endif %} {% if item.cancelUrl %}<a class="ui-button ui-button-secondary" href="{{ item.cancelUrl }}">Desmarcou</a>{% endif %}</div></li>{% endfor %}</ul></section>{% endif %}
+{% include 'painel/agenda/resumo.html' %}
 </section>
 <section id="schedule-editor" class="schedule-editor {% if not configurando %}editor-collapsed{% endif %}" aria-labelledby="editor-title" data-editor data-show="{{ configurando|yesno:'true,false' }}">
 <div class="editor-surface"><header class="editor-heading"><div><span class="agenda-kicker">PERÍODOS DE ATENDIMENTO</span><h2 id="editor-title">{% if aberta %}Configurar horários{% else %}Abrir agenda{% endif %}</h2></div><a href="{{ agenda_url }}" class="icon-button" data-close-schedule aria-label="Fechar configuração">×</a></header>
@@ -59,8 +60,9 @@
 <footer class="editor-footer"><a class="agenda-button secondary" href="{{ agenda_url }}" data-close-schedule>Cancelar</a><button type="submit" class="agenda-button">{% if aberta %}Salvar horários{% else %}Abrir agenda{% endif %}</button></footer>
 </form></div>
 </section>
+<p data-agenda-refresh role="status" class="client-muted" data-url="{% url 'painel:agenda_dados' %}?profissional={{ profissional.pk }}&amp;data={{ data_iso }}">A agenda atualiza automaticamente.</p>
 {{ timeline|json_script:'agenda-data' }}
 {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}<script src="{% static 'painel/agenda.js' %}?v=reputacao-4" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'painel/agenda.js' %}?v=ajax-1" defer></script>{% endblock %}

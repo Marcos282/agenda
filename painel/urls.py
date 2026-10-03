@@ -20,6 +20,7 @@ urlpatterns = [
     path('clientes/whatsapp/<str:whatsapp>/', cliente_views.whatsapp_historico, name='whatsapp_historico'),
     path('clientes/contatos/<int:pk>/', cliente_views.contato_historico, name='contato_historico'),
     path('clientes/<int:pk>/', cliente_views.historico, name='cliente_historico'),
+    path('agenda/dados/', agenda_views.agenda_dados, name='agenda_dados'),
     path('agenda/', agenda_views.agenda, name='agenda'),
     path('configuracoes/', views.configuracoes, name='configuracoes'),
     path('profissionais/', views.profissionais, name='profissionais'),

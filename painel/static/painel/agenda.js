@@ -109,34 +109,50 @@
     const payload = document.getElementById('agenda-data'), timeline = document.querySelector('[data-timeline]');
     if (payload && timeline) {
       renderTimeline(timeline, JSON.parse(payload.textContent));
+      const refreshStatus = document.querySelector('[data-agenda-refresh]');
       let refreshing = false;
       const refresh = async () => {
-        if (refreshing || document.hidden) return;
+        if (refreshing || document.hidden || !refreshStatus) return;
         refreshing = true;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
         try {
-          const response = await fetch(location.href, {cache: 'no-store', credentials: 'same-origin'});
-          if (!response.ok || response.redirected) return;
-          const page = new DOMParser().parseFromString(await response.text(), 'text/html');
-          const updated = page.getElementById('agenda-data');
-          if (updated) {
-            const data = JSON.parse(updated.textContent);
-            renderTimeline(timeline, data);
-            payload.textContent = updated.textContent;
-            const summary = document.querySelector('.booked-summary');
-            const nextSummary = page.querySelector('.booked-summary');
-            if (summary) {
-              if (nextSummary) summary.replaceWith(nextSummary);
-              else summary.remove();
-            } else if (nextSummary) {
-              document.querySelector('.day-card').append(nextSummary);
-            }
+          const response = await fetch(refreshStatus.dataset.url, {
+            cache: 'no-store', credentials: 'same-origin', signal: controller.signal,
+            headers: {'Accept': 'application/json'}
+          });
+          if (!response.ok || response.redirected) throw new Error('Agenda unavailable');
+          const result = await response.json();
+          const data = result.timeline;
+          renderTimeline(timeline, data);
+          payload.textContent = JSON.stringify(data);
+          timeline.closest('[data-timeline-container]').hidden = !result.aberta;
+          const closed = document.querySelector('.closed-day');
+          if (closed) closed.hidden = result.aberta;
+          document.querySelectorAll('.timeline-legend, .day-footer').forEach(el => {el.hidden = !result.aberta;});
+          const badge = document.querySelector('.day-actions .agenda-status');
+          if (badge) {
+            badge.classList.toggle('is-open', result.aberta);
+            badge.classList.toggle('is-closed', !result.aberta);
+            badge.textContent = result.aberta ? '● Agenda aberta' : '○ Agenda fechada';
           }
+          const summary = document.querySelector('.booked-summary');
+          const template = document.createElement('template');
+          template.innerHTML = result.resumo_html;
+          const nextSummary = template.content.querySelector('.booked-summary');
+          if (summary) {
+            if (nextSummary) summary.replaceWith(nextSummary);
+            else summary.remove();
+          } else if (nextSummary) document.querySelector('.day-card').append(nextSummary);
+          refreshStatus.textContent = 'Agenda atualizada automaticamente.';
         } catch (error) {
-          // Preserve the last successful display during connection failures.
+          refreshStatus.textContent = 'Não foi possível atualizar a agenda. Tentaremos novamente em alguns segundos.';
         } finally {
+          clearTimeout(timeout);
           refreshing = false;
         }
       };
+      refresh();
       setInterval(refresh, 15000);
       document.addEventListener('visibilitychange', refresh);
       root.addEventListener('focus', refresh);

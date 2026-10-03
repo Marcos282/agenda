@@ -110,3 +110,9 @@ Os tons suaves, bordas, foco e hover são derivados dessa variável via `color-m
 Não é permitido criar, reativar ou alterar um período ativo em uma data passada. A comparação usa a data local do estabelecimento, tanto no editor diário quanto no formulário individual. No dia atual, horários anteriores ao momento atual podem ser preservados ou configurados; as reservas confirmadas continuam protegidas.
 
 É possível consultar dias anteriores e preservar seu histórico; o botão de abrir uma agenda fechada não aparece em datas passadas. Ao adicionar períodos a um dia com reservas, os períodos ativos necessários para cobrir essas reservas são mantidos automaticamente. As regras de proteção dos agendamentos continuam valendo ao remover ou alterar períodos.
+
+## Atualização da agenda por AJAX
+
+A página administrativa busca `/painel/agenda/dados/?profissional=ID&data=AAAA-MM-DD` ao abrir, a cada 15 segundos e ao retornar à aba. O endpoint exige administrador do estabelecimento, aceita somente GET e impede cache. Reservas e períodos são filtrados pelo tenant, profissional e dia selecionados.
+
+A resposta JSON contém a linha do tempo, estado de abertura e o fragmento da lista de atendimentos. A página atualiza horários ocupados/livres, reputações e ações sem recarregar o formulário de configuração. Falhas de rede preservam os dados já mostrados e exibem uma indicação de nova tentativa; requisições simultâneas são evitadas e cada consulta tem timeout de 10 segundos. Trocar dia ou profissional continua utilizando a navegação existente.

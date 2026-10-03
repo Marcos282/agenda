@@ -6,7 +6,8 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Exists, OuterRef
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest, JsonResponse
+from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -95,3 +96,24 @@ def agenda(request, profissional_id=None):
         'timeline': timeline_payload(profissional, dia, periodos if aberta else []) if profissional else None,
     }
     return render(request, 'painel/agenda/dia.html', context, status=status)
+
+
+@admin_tenant_required
+@never_cache
+@require_http_methods(['GET'])
+def agenda_dados(request):
+    dia = selected_day(request)
+    if dia is None:
+        return JsonResponse({'erro': 'Data inválida.'}, status=400)
+    try:
+        pk = int(request.GET.get('profissional', ''))
+        if not 0 < pk <= 9223372036854775807:
+            raise ValueError
+    except (TypeError, ValueError):
+        raise Http404
+    profissional = get_object_or_404(Profissional.objects.for_tenant(request.tenant), pk=pk)
+    periodos = list(Disponibilidade.objects.for_tenant(request.tenant).filter(
+        profissional=profissional, data=dia, ativo=True).order_by('hora_inicio', 'pk')) if profissional.ativo else []
+    timeline = timeline_payload(profissional, dia, periodos)
+    return JsonResponse({'timeline': timeline, 'aberta': bool(periodos),
+        'resumo_html': render_to_string('painel/agenda/resumo.html', {'timeline': timeline}, request=request)})
