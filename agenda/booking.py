@@ -129,22 +129,14 @@ def validar_limite_agendamentos(*, tenant, whatsapp, dia):
         status__in=['CONFIRMADO', 'NAO_COMPARECEU'],
     )
     quantidade = agendamentos.annotate(dia_local=TruncDate('inicio', tzinfo=ZoneInfo(tenant.timezone))).filter(dia_local=dia).count()
+    mensagem_duplicidade = 'No momento não é possível fazer agendamento para esse número, pois já consta agendamento.'
     if quantidade >= tenant.limite_agendamentos_cliente_dia:
-        hoje = timezone.localdate(timezone=ZoneInfo(tenant.timezone))
-        data_texto = 'hoje' if dia == hoje else f'o dia {dia:%d/%m/%Y}'
-        raise ValidationError(
-            f'Infelizmente, você já atingiu o limite de agendamentos para {data_texto}. '
-            'Não podemos confirmar outro horário nessa data, mas será um prazer receber você em outro dia! '
-            'Escolha outra data ou cancele uma reserva para liberar espaço.'
-        )
+        raise ValidationError(mensagem_duplicidade)
 
     futuros = agendamentos.filter(inicio__gt=timezone.now()).count()
     if futuros >= tenant.limite_agendamentos_cliente_futuros:
-        raise ValidationError(
-            f'Este cliente já possui {futuros} agendamentos futuros. '
-            f'Máximo permitido: {tenant.limite_agendamentos_cliente_futuros}. '
-            'Cancele um agendamento anterior para fazer um novo.'
-        )
+        raise ValidationError(mensagem_duplicidade)
+
 
 
 @transaction.atomic
