@@ -1,10 +1,14 @@
+from types import SimpleNamespace
+
 from django import forms
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 from painel.decorators import admin_tenant_required
-from .models import Configuracao, Lembrete
+from .models import Configuracao, Lembrete, Confirmacao
+from .services import message_values
 from . import evolution
 
 
@@ -69,7 +73,14 @@ def configuracao_whatsapp(request):
                 connection.update(label='Status indisponível', kind='pending')
         except evolution.EvolutionError:
             connection.update(label='Status indisponível', kind='pending')
+    example = SimpleNamespace(tenant_id=request.tenant.pk, inicio=timezone.now(),
+                              cliente_nome='Maria', servico_nome='Serviço escolhido',
+                              profissional_nome='Profissional escolhido')
     return render(request, 'whatsapp/configuracao.html', {
+        'preview_values': message_values(request.tenant, example),
+        'confirmacoes': Paginator(Confirmacao.objects.filter(agendamento__tenant=request.tenant)
+            .select_related('agendamento').order_by('-criado_em', '-pk'), 10
+        ).get_page(request.GET.get('confirmacoes_page')),
         'connection': connection, 'form': form, 'confirmacao_form': confirmacao_form, 'qr': qr, 'status': status, 'api_configurada': evolution.configured(),
         'envios': Paginator(
             Lembrete.objects.filter(agendamento__tenant=request.tenant)

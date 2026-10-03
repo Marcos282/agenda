@@ -179,8 +179,8 @@ def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, dura
         inicio=inicio, fim=fim, valor=oferta.valor, duracao_minutos=oferta.duracao_minutos,
         cliente_nome=nome, cliente_whatsapp=numero, servico_nome=oferta.servico.nome, profissional_nome=oferta.profissional.nome)
     booking.save()
-    from whatsapp.confirmations import send_confirmation
-    transaction.on_commit(lambda: send_confirmation(tenant_id=tenant.pk, agendamento_id=booking.pk), robust=True)
+    from whatsapp.services import enviar_confirmacao_agendamento
+    transaction.on_commit(lambda: enviar_confirmacao_agendamento(tenant_id=tenant.pk, agendamento_id=booking.pk), robust=True)
     return booking
 
 

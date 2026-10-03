@@ -4,8 +4,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 DEFAULT_MESSAGE = 'Olá, {cliente}! Lembramos do seu agendamento de {servico} com {profissional} em {estabelecimento}, dia {data} às {hora}. Esperamos você!'
-DEFAULT_CONFIRMATION = 'Olá, {cliente}! Seja bem-vindo(a) a {estabelecimento}! Obrigado pela preferência. Seu horário para {servico} com {profissional} está confirmado para {data} às {hora}. Aguardamos você no horário combinado! Até lá! 💛'
-VARIABLES = {'cliente', 'servico', 'profissional', 'estabelecimento', 'data', 'hora'}
+DEFAULT_CONFIRMATION = 'Olá, {cliente}! 😊\n\nAgradecemos pela preferência!\n\nSeu horário está reservado para {data} às {horario}, com {profissional}.\n\nServiço: {servico}\n\nAguardamos você no horário combinado.\n\n{empresa}'
+VARIABLES = {'cliente', 'servico', 'profissional', 'empresa', 'horario', 'estabelecimento', 'data', 'hora'}
 
 
 def validate_message(value):
@@ -43,6 +43,9 @@ class Lembrete(models.Model):
 
 
 class Confirmacao(models.Model):
+    destinatario = models.CharField(max_length=16, blank=True)
+    mensagem = models.TextField(blank=True)
+    resposta_api = models.JSONField(default=dict, blank=True)
     agendamento = models.OneToOneField('agenda.Agendamento', on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=Lembrete.Status, default=Lembrete.Status.PROCESSANDO)
     criado_em = models.DateTimeField(auto_now_add=True)

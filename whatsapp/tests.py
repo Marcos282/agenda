@@ -102,6 +102,9 @@ class WhatsAppTests(BookingFixture, TestCase):
     def test_panel_permissions_and_tenant_scope(self, info):
         url = reverse('painel:whatsapp')
         self.client.force_login(self.user)
+        self.assertEqual(self.client.get(url, HTTP_HOST='marcos.localhost').status_code, 302)
+        professional = User.objects.create_user('wa-professional@example.test', tenant=self.tenant, tipo='PROFISSIONAL')
+        self.client.force_login(professional)
         self.assertEqual(self.client.get(url, HTTP_HOST='marcos.localhost').status_code, 403)
         self.client.force_login(self.admin)
         response = self.client.get(url, HTTP_HOST='marcos.localhost')
@@ -174,8 +177,8 @@ from django.test import TransactionTestCase
 class ConcurrentReminderTests(BookingFixture, TransactionTestCase):
     def test_two_workers_send_once(self):
         self.setup_booking()
+        Configuracao.objects.create(tenant=self.tenant, lembretes_ativos=True, confirmacoes_ativas=False)
         booking = self.book()
-        Configuracao.objects.create(tenant=self.tenant, lembretes_ativos=True)
         barrier = Barrier(2)
 
         def connected(tenant):

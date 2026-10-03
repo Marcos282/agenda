@@ -1,22 +1,16 @@
 from datetime import timedelta
-from zoneinfo import ZoneInfo
 from django.db import transaction
 from django.utils import timezone
 from agenda.models import Agendamento
 from usuarios.validators import normalizar_whatsapp
-from .models import Configuracao, Lembrete, validate_message
+from .models import Configuracao, Lembrete
 from . import evolution
 from django.core.exceptions import ValidationError
 
 
 def render_template(template, tenant, booking):
-    if tenant.pk != booking.tenant_id:
-        raise ValidationError('A mensagem deve pertencer ao estabelecimento do agendamento.')
-    validate_message(template)
-    local = booking.inicio.astimezone(ZoneInfo(tenant.timezone))
-    return template.format(cliente=booking.cliente_nome, servico=booking.servico_nome,
-        profissional=booking.profissional_nome, estabelecimento=tenant.nome,
-        data=local.strftime('%d/%m/%Y'), hora=local.strftime('%H:%M'))
+    from .services import renderizar_mensagem_agendamento
+    return renderizar_mensagem_agendamento(booking, template, tenant=tenant)
 
 
 def render_message(config, booking):

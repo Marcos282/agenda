@@ -90,3 +90,6 @@ def send_text(tenant, number, text):
     data = request('POST', '/message/sendText/' + instance(tenant), {'number': number.lstrip('+'), 'text': text})
     if not isinstance(data, dict) or not isinstance(data.get('key'), dict) or not data['key'].get('id'):
         raise EvolutionError('A API não confirmou o envio. Confira a conversa antes de tentar novamente.')
+
+    # Store only delivery metadata, never credentials or the complete API payload.
+    return {'provider': 'evolution', 'message_id': str(data['key']['id'])}

@@ -1,4 +1,5 @@
 {% extends 'painel/base.html' %}
+{% load static %}
 {% block title %}WhatsApp{% endblock %}
 {% block extra_css %}{{ block.super }}
 .whatsapp-stack{display:grid;gap:20px}.whatsapp-stack textarea,.whatsapp-stack input[type=number]{width:100%;box-sizing:border-box}.whatsapp-stack textarea{resize:vertical;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font:inherit;line-height:1.6;min-height:170px}.whatsapp-stack textarea:focus-visible{outline:3px solid var(--focus);outline-offset:3px}.whatsapp-stack .helptext{display:block;color:var(--muted);font-size:.9rem;margin-top:6px}.whatsapp-stack code{display:inline-block;padding:4px 7px;background:var(--brand-soft);border-radius:6px;margin:3px}.whatsapp-qr{width:280px;max-width:100%;height:auto}.send-row{padding:14px 16px;border-top:1px solid var(--line);overflow-wrap:anywhere}.errorlist{color:#a52323}
@@ -43,15 +44,25 @@
 <section class="card"><h2>Boas-vindas e agradecimento</h2>
 <p>Quando o cliente confirmar uma nova reserva, a loja enviará esta mensagem pelo WhatsApp, agradecendo a preferência e informando que aguarda sua chegada.</p>
 <form method="post">{% csrf_token %}{{ confirmacao_form.as_p }}
-<p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{estabelecimento}</code> <code>{data}</code> <code>{hora}</code></p>
-<button name="acao" value="salvar_confirmacao">Salvar mensagem de boas-vindas</button>
-</form><p class="helptext">O WhatsApp da loja precisa estar conectado. O envio ocorre após salvar a reserva; falhas no envio não cancelam o agendamento.</p></section>
+<p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{empresa}</code> <code>{data}</code> <code>{horario}</code></p>
+<button name="acao" value="salvar_confirmacao">Salvar configuração</button>
+</form><h3>Prévia da mensagem</h3><p class="helptext">Exemplo com dados fictícios do cliente. A data usa o fuso do estabelecimento.</p><pre id="confirmation-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit" aria-live="polite"></pre>
+{{ preview_values|json_script:"confirmation-values" }}
+<p class="helptext">O WhatsApp da loja precisa estar conectado. O envio ocorre após salvar a reserva; falhas no envio não cancelam o agendamento.</p></section>
 <section class="card"><h2>Lembrete do agendamento</h2><p>Um lembrete por agendamento confirmado, para o WhatsApp cadastrado pelo cliente ou no painel. Agendamentos cancelados não recebem lembretes.</p>
 <form method="post">{% csrf_token %}{{ form.as_p }}
-<p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{estabelecimento}</code> <code>{data}</code> <code>{hora}</code></p>
+<p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{empresa}</code> <code>{data}</code> <code>{horario}</code></p>
 <p>A data e a hora usam o fuso do estabelecimento. Alterações valem para os lembretes ainda não enviados. Agendamentos feitos dentro da antecedência recebem o lembrete no próximo processamento, antes do início.</p>
 <button name="acao" value="salvar">Salvar configurações</button>
 </form><p class="helptext">O envio exige WhatsApp conectado e processamento automático ativo no servidor.</p></section>
+<section class="card"><h2>Últimas confirmações de agendamento</h2>
+{% for envio in confirmacoes %}<div class="send-row"><strong>{{ envio.agendamento.cliente_nome }}</strong> · {{ envio.destinatario }}<br>{{ envio.get_status_display }} · {{ envio.criado_em|date:'d/m/Y H:i' }}{% if envio.erro %}<p>{{ envio.erro }}</p>{% endif %}</div>{% empty %}<p>Nenhuma confirmação processada ainda.</p>{% endfor %}
+{% if confirmacoes.has_other_pages %}<nav class="send-pagination" aria-label="Páginas de confirmações">
+{% if confirmacoes.has_previous %}<a href="?confirmacoes_page={{ confirmacoes.previous_page_number }}&amp;page={{ envios.number }}">Anterior</a>{% endif %}
+<span>Página {{ confirmacoes.number }} de {{ confirmacoes.paginator.num_pages }}</span>
+{% if confirmacoes.has_next %}<a href="?confirmacoes_page={{ confirmacoes.next_page_number }}&amp;page={{ envios.number }}">Próxima</a>{% endif %}</nav>{% endif %}
+<p class="helptext">Aceito pela API não confirma entrega. Envios incertos não são repetidos automaticamente.</p>
+</section>
 <section class="card" id="ultimos-lembretes"><h2>Últimos lembretes</h2>
 <div class="send-list">
 {% for envio in envios %}<div class="send-row"><strong>{{ envio.agendamento.cliente_nome }}</strong> · {{ envio.agendamento.inicio|date:'d/m/Y H:i' }}<br>{{ envio.get_status_display }}{% if envio.erro %}<p>{{ envio.erro }}</p>{% endif %}</div>{% empty %}<p>Nenhum lembrete processado ainda.</p>{% endfor %}
@@ -66,3 +77,5 @@
 <p class="helptext">“Aceito pela API” não confirma a entrega ao aparelho. Envios iniciados ou incertos não são repetidos automaticamente.</p>
 </section></div>
 {% endblock %}
+
+{% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/confirmation-preview.js' %}" defer></script>{% endblock %}

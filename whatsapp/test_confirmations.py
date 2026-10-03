@@ -27,7 +27,7 @@ class ConfirmationTests(BookingFixture, TestCase):
         self.send.assert_called_once()
         self.assertEqual(self.send.call_args.args[1], self.user.whatsapp)
         text = self.send.call_args.args[2]
-        for value in ['Cliente Teste','Marcos','Corte','João',self.day.strftime('%d/%m/%Y'),'09:07','Obrigado','horário combinado']:
+        for value in ['Cliente Teste','Marcos','Corte','João',self.day.strftime('%d/%m/%Y'),'09:07','Agradecemos','horário combinado']:
             self.assertIn(value,text)
         self.assertEqual(Confirmacao.objects.get().status,'ENVIADO')
         self.assertFalse(send_confirmation(tenant_id=self.tenant.pk,agendamento_id=booking.pk))
@@ -104,3 +104,40 @@ class ConfirmationTests(BookingFixture, TestCase):
         data['mensagem_confirmacao']='{variavel_invalida}'
         response=self.client.post(url,data,HTTP_HOST='marcos.localhost')
         self.assertTrue(response.context['confirmacao_form'].errors)
+
+    def test_custom_provider_and_new_variables_record_delivery(self):
+        config = Configuracao.objects.create(tenant=self.tenant,
+            mensagem_confirmacao='{cliente}: {empresa}, {horario}, {servico}, {profissional}, {data}')
+        with patch('whatsapp.confirmations.get_provider') as provider:
+            provider.return_value.send_text.return_value = {'message_id': 'test-id'}
+            with self.captureOnCommitCallbacks(execute=True):
+                booking = self.book()
+        claim = Confirmacao.objects.get(agendamento=booking)
+        self.assertEqual(claim.destinatario, self.user.whatsapp)
+        self.assertIn('Marcos, 09:07', claim.mensagem)
+        self.assertEqual(claim.resposta_api, {'message_id': 'test-id'})
+        self.assertIsNotNone(claim.enviado_em)
+        self.send.assert_not_called()
+
+    def test_unexpected_provider_failure_is_logged_and_preserves_booking(self):
+        self.send.side_effect = RuntimeError('secret-provider-payload')
+        with self.assertLogs('whatsapp.confirmations', level='ERROR') as logs:
+            with self.captureOnCommitCallbacks(execute=True):
+                booking = self.book()
+        self.assertTrue(Agendamento.objects.filter(pk=booking.pk).exists())
+        self.assertNotIn('secret-provider-payload', str(logs.output))
+        self.assertEqual(Confirmacao.objects.get().status, 'INCERTO')
+
+    @patch('whatsapp.evolution.configured', return_value=False)
+    def test_preview_and_configuration_are_tenant_scoped(self, configured):
+        other = Configuracao.objects.create(tenant=self.other, mensagem_confirmacao='Texto privado')
+        self.client.force_login(self.admin)
+        url = reverse('painel:whatsapp')
+        response = self.client.get(url, HTTP_HOST='marcos.localhost')
+        self.assertContains(response, 'Prévia da mensagem')
+        self.assertContains(response, '{empresa}')
+        self.assertNotContains(response, 'Texto privado')
+        self.client.post(url, dict(acao='salvar_confirmacao', confirmacoes_ativas='on',
+            mensagem_confirmacao='{empresa} às {horario}'), HTTP_HOST='marcos.localhost')
+        other.refresh_from_db()
+        self.assertEqual(other.mensagem_confirmacao, 'Texto privado')
