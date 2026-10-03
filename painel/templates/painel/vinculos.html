@@ -3,11 +3,12 @@
 <h1>{{ profissional.nome }} · Serviços</h1>
 {% if profissional.ativo %}<div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:vinculo_novo' profissional.pk %}">+ Adicionar serviço</a></div>
 {% else %}<p class="notice">Profissional inativo. Seus serviços não estão disponíveis para novos atendimentos.</p>{% endif %}
+<p class="notice">Ao deixar de oferecer um serviço, apenas novos agendamentos desse profissional são impedidos. As reservas existentes são preservadas.</p>
 <div class="cards">{% for vinculo in page_obj %}<article class="card">
 <h2>{{ vinculo.servico.nome }}</h2><p>R$ {{ vinculo.valor|floatformat:2 }} · {{ vinculo.duracao_minutos }} min</p>
 {% include 'painel/status_ativo.html' with ativo=vinculo.ativo %}
 {% if not vinculo.servico.ativo %}<p>Serviço desativado no catálogo.</p>{% endif %}
-<div class="card-actions"><a class="ui-button ui-button-secondary" href="{% url 'painel:vinculo_editar' profissional.pk vinculo.pk %}">Editar</a></div>
+<div class="card-actions"><a class="ui-button ui-button-secondary" href="{% url 'painel:vinculo_editar' profissional.pk vinculo.pk %}">Editar</a><form method="post" action="{% url 'painel:vinculo_disponibilidade' profissional.pk vinculo.pk %}">{% csrf_token %}{% if vinculo.ativo %}<button class="ui-button ui-button-secondary" name="acao" value="desativar">Deixar de oferecer</button>{% elif profissional.ativo and vinculo.servico.ativo %}<button class="ui-button ui-button-secondary" name="acao" value="ativar">Voltar a oferecer</button>{% endif %}</form></div>
 </article>{% empty %}<p>Nenhum serviço vinculado.</p>{% endfor %}</div>
 {% include 'painel/paginacao.html' %}
 {% endblock %}

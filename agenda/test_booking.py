@@ -190,6 +190,23 @@ class BookingTests(BookingFixture, TestCase):
         self.assertContains(self.client.get(reverse('painel:agenda'),{'profissional':self.prof.pk,'data':self.day.isoformat()},HTTP_HOST='marcos.localhost'),'Cliente Teste')
 
 
+    def test_agenda_refresh_includes_new_booking_and_releases_cancelled_interval(self):
+        admin = User.objects.create_user('refresh-admin@example.test', tenant=self.tenant, tipo='ADMIN')
+        self.client.force_login(admin)
+        def load():
+            return self.client.get(reverse('painel:agenda'),
+                {'profissional': self.prof.pk, 'data': self.day.isoformat()},
+                HTTP_HOST='marcos.localhost')
+        initial = load()
+        self.assertEqual(initial.context['timeline']['appointments'], [])
+        self.assertIn('no-store', initial.headers['Cache-Control'])
+        booking = self.book()
+        updated = load()
+        self.assertEqual([a['id'] for a in updated.context['timeline']['appointments']], [booking.pk])
+        cancelar(tenant=self.tenant, cliente=self.user, agendamento_id=booking.pk)
+        self.assertEqual(load().context['timeline']['appointments'], [])
+
+
 class ConcurrentBookingTests(BookingFixture, TransactionTestCase):
     def test_two_simultaneous_customers_only_one_reservation(self):
         self.setup_booking()

@@ -15,6 +15,15 @@
     <strong>https://{{ endereco_publico }}/</strong>
   </div>
 
+  <form method="post" class="owner-profile-card" style="margin-bottom:20px">
+    {% csrf_token %}
+    <input type="hidden" name="acao" value="limite_agendamentos">
+    <h2>Limite diário por WhatsApp</h2>
+    <p class="owner-profile-help">Números iguais de WhatsApp identificam o mesmo cliente, mesmo que o nome seja diferente. Defina 1 para permitir apenas um agendamento por dia. O limite soma todos os serviços e profissionais deste estabelecimento.</p>
+    {{ limite_form.as_p }}
+    <button type="submit">Salvar limite de agendamentos</button>
+  </form>
+
   <form method="post" class="owner-profile-card">
     {% csrf_token %}
     <h2>Dados do responsável</h2>

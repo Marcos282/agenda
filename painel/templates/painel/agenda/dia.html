@@ -31,7 +31,7 @@
 <div class="day-actions"><a class="agenda-button" href="{% url 'painel:agendamento_novo' %}?profissional={{ profissional.pk }}&amp;data={{ data_iso }}">+ Novo agendamento</a><span class="agenda-status {% if aberta %}is-open{% else %}is-closed{% endif %}">{% if aberta %}● Agenda aberta{% else %}○ Agenda fechada{% endif %}</span>
 {% if profissional.ativo and aberta %}<a class="agenda-button secondary" data-open-schedule href="{{ agenda_url }}&amp;configurar=1#schedule-editor">{% if aberta %}Configurar horários{% else %}+ Abrir agenda{% endif %}</a>{% endif %}</div></header>
 {% if aberta %}
-<div class="timeline-legend" aria-label="Legenda"><span><i class="legend-free"></i>Livre</span><span><i class="legend-booked"></i>Agendamento</span><span><i class="legend-no-show"></i>Não compareceu</span><span><i class="legend-closed"></i>Intervalo / fechado</span></div>
+<div class="timeline-legend" aria-label="Legenda"><span><i class="legend-free"></i>Livre</span><span><i class="legend-booked"></i>Ocupado</span><span><i class="legend-no-show"></i>Não compareceu</span><span><i class="legend-closed"></i>Intervalo / fechado</span></div>
 <div class="timeline-wrap" data-timeline-container>
 <div class="timeline" data-timeline aria-label="Linha do tempo de {{ profissional.nome }}"></div>
 <div class="timeline-fallback"><p>Períodos abertos:</p><ul>{% for periodo in periodos %}<li>{{ periodo.hora_inicio|time:'H:i' }} → {{ periodo.hora_fim|time:'H:i' }} · Aberto</li>{% endfor %}</ul><p>Fora desses períodos, a agenda está fechada.</p></div>

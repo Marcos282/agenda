@@ -30,6 +30,8 @@ class MensalidadeTests(TestCase):
         self.assertNotContains(page, '20 primeiros cadastros')
         self.assertContains(page, 'Em configuração')
         self.assertContains(page, 'Pagamento ainda indisponível')
+        self.assertContains(page, f'href="{reverse("painel:meu_cadastro")}"')
+        self.assertContains(page, 'Configurar limite diário de agendamentos')
         self.assertEqual(page.context['dias_restantes'], 30)
         self.assertIn('no-store', page['Cache-Control'])
         self.tenant.refresh_from_db()

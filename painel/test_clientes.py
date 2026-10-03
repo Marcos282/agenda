@@ -78,6 +78,9 @@ class PanelCustomerTests(BookingFixture, TestCase):
         self.assertEqual(len(self.get(self.detail,page=2).context['page_obj']),2)
 
     def test_whatsapp_groups_accounts_and_contacts_with_all_statuses(self):
+        # This history aggregation scenario needs more than the default daily quota.
+        self.tenant.limite_agendamentos_cliente_dia = 10
+        self.tenant.save(update_fields=['limite_agendamentos_cliente_dia'])
         from usuarios.models import ContatoCliente
         from agenda.booking import reservar
         phone = self.user.whatsapp
