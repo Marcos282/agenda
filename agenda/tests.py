@@ -1,10 +1,11 @@
-from datetime import date, time
+from datetime import date, time, timedelta
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from profissionais.models import Profissional
 from tenants.models import Tenant
 from usuarios.models import User
@@ -21,7 +22,7 @@ class DailyAgendaTests(TestCase):
         cls.prof = Profissional.objects.create(tenant=cls.tenant, nome='João')
         cls.sandro = Profissional.objects.create(tenant=cls.tenant, nome='Sandro')
         cls.foreign = Profissional.objects.create(tenant=cls.other, nome='Maria')
-        cls.day = date(2026, 9, 30)
+        cls.day = timezone.localdate() + timedelta(days=1)
 
     def setUp(self):
         self.client.force_login(self.admin)
@@ -70,13 +71,14 @@ class DailyAgendaTests(TestCase):
 
     def test_day_and_professional_switches_are_isolated(self):
         self.window()
-        for url in [self.url(day=date(2026,10,1)), self.url(prof=self.sandro)]:
+        next_day = self.day + timedelta(days=1)
+        for url in [self.url(day=next_day), self.url(prof=self.sandro)]:
             response = self.get(url)
             self.assertFalse(response.context['aberta'])
             self.assertEqual(response.context['periodos'], [])
-        response = self.get(self.url(day=date(2026,10,1)))
-        self.assertEqual(response.context['anterior'], '2026-09-30')
-        self.assertEqual(response.context['proximo'], '2026-10-02')
+        response = self.get(self.url(day=next_day))
+        self.assertEqual(response.context['anterior'], (next_day - timedelta(days=1)).isoformat())
+        self.assertEqual(response.context['proximo'], (next_day + timedelta(days=1)).isoformat())
 
     def test_inactive_professional_and_period_are_closed(self):
         self.window(ativo=False)
@@ -123,7 +125,7 @@ class DailyAgendaTests(TestCase):
 
     def test_closing_day_preserves_other_dates_and_history(self):
         first=self.window()
-        other=Disponibilidade.objects.create(tenant=self.tenant, profissional=self.prof, data=date(2026,10,1),hora_inicio=time(9),hora_fim=time(12))
+        other=Disponibilidade.objects.create(tenant=self.tenant, profissional=self.prof, data=self.day + timedelta(days=1),hora_inicio=time(9),hora_fim=time(12))
         self.assertEqual(self.post(self.payload([])).status_code,302)
         first.refresh_from_db(); other.refresh_from_db()
         self.assertFalse(first.ativo); self.assertTrue(other.ativo)
@@ -168,7 +170,7 @@ class DailyAgendaTests(TestCase):
     def test_permissions_and_csrf(self):
         self.client.logout()
         self.assertEqual(self.get().status_code,302)
-        user=User.objects.create_user('client@example.test','strongPassword123!',tenant=self.tenant)
+        user=User.objects.create_user('professional@example.test','strongPassword123!',tenant=self.tenant,tipo='PROFISSIONAL')
         self.client.force_login(user)
         self.assertEqual(self.get().status_code,403)
         self.assertEqual(self.post(self.payload([])).status_code,403)
@@ -186,7 +188,7 @@ class DailyAgendaTests(TestCase):
     def test_no_professionals_and_today_in_tenant_timezone(self):
         from datetime import datetime, timezone as dt_timezone
         self.tenant.timezone='America/Sao_Paulo';self.tenant.save()
-        with patch('django.utils.timezone.now',return_value=datetime(2026,10,1,1,0,tzinfo=dt_timezone.utc)):
+        with patch('django.utils.timezone.now',return_value=datetime.combine(self.day + timedelta(days=1), time(1), tzinfo=dt_timezone.utc)):
             self.assertEqual(self.get(reverse('painel:agenda')).context['dia'], self.day)
         self.prof.delete();self.sandro.delete()
         response=self.get(reverse('painel:agenda'))

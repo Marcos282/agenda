@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, time
+from datetime import date, time, timedelta
 from decimal import Decimal
 from io import BytesIO
 from tempfile import TemporaryDirectory
@@ -12,6 +12,7 @@ from django.db import IntegrityError, OperationalError, close_old_connections, c
 from django.db.models.deletion import ProtectedError
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from agenda.models import Disponibilidade
 from catalogo.models import Servico, ProfissionalServico
 from profissionais.models import Profissional
@@ -19,7 +20,7 @@ from tenants.models import Tenant
 from usuarios.models import User
 
 PASSWORD = 'Senha!Painel_2026'
-DAY = date(2026, 9, 30)
+DAY = timezone.localdate() + timedelta(days=1)
 
 
 class PanelTests(TestCase):
@@ -60,9 +61,10 @@ class PanelTests(TestCase):
         for tipo in ['CLIENTE', 'PROFISSIONAL']:
             user = User.objects.create_user(f'{tipo}@test.com', PASSWORD, tenant=self.marcos, tipo=tipo, is_staff=True)
             self.client.force_login(user)
+            expected_status = 302 if tipo == 'CLIENTE' else 403
             for path in ['/painel/', '/painel/profissionais/', '/painel/servicos/novo/', '/painel/configuracoes/']:
-                self.assertEqual(self.get(path).status_code, 403)
-                self.assertEqual(self.post(path, {}).status_code, 403)
+                self.assertEqual(self.get(path).status_code, expected_status)
+                self.assertEqual(self.post(path, {}).status_code, expected_status)
         self.client.force_login(self.admin)
         self.assertEqual(self.get('/painel/').status_code, 200)
         self.assertEqual(self.get('/painel/', 'wanessa.localhost').status_code, 403)
@@ -229,12 +231,12 @@ class PanelTests(TestCase):
     def test_availability_form_and_adjacent_windows(self):
         url = reverse('painel:disponibilidade_nova', args=[self.joao.pk])
         for start, end in [('09:00', '12:00'), ('12:00', '15:00'), ('16:00', '18:00')]:
-            response = self.post(url, {'data': '2026-09-30', 'hora_inicio': start, 'hora_fim': end, 'ativo': 'on',
+            response = self.post(url, {'data': DAY.isoformat(), 'hora_inicio': start, 'hora_fim': end, 'ativo': 'on',
                                        'tenant_id': self.wanessa.pk, 'profissional_id': self.maria.pk})
             self.assertEqual(response.status_code, 302)
         self.assertEqual(Disponibilidade.objects.filter(tenant=self.marcos, profissional=self.joao).count(), 3)
         for start, end in [('09:00', '09:00'), ('12:00', '09:00'), ('10:00', '13:00'), ('08:00', '19:00')]:
-            response = self.post(url, {'data': '2026-09-30', 'hora_inicio': start, 'hora_fim': end, 'ativo': 'on'})
+            response = self.post(url, {'data': DAY.isoformat(), 'hora_inicio': start, 'hora_fim': end, 'ativo': 'on'})
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['form'].errors)
         self.assertEqual(Disponibilidade.objects.count(), 3)
@@ -242,7 +244,7 @@ class PanelTests(TestCase):
     def test_availability_edit_deactivate_reactivate_conflict(self):
         window = self.availability(); window.save()
         url = reverse('painel:disponibilidade_editar', args=[self.joao.pk, window.pk])
-        data = {'data': '2026-09-30', 'hora_inicio': '09:00', 'hora_fim': '12:00'}
+        data = {'data': DAY.isoformat(), 'hora_inicio': '09:00', 'hora_fim': '12:00'}
         self.assertEqual(self.post(url, data).status_code, 302)
         window.refresh_from_db(); self.assertFalse(window.ativo)
         replacement = self.availability(); replacement.save()
@@ -259,7 +261,7 @@ class PanelTests(TestCase):
         self.assertFalse(ProfissionalServico.objects.for_tenant(self.marcos).disponiveis().exists())
         self.assertFalse(Disponibilidade.objects.for_tenant(self.marcos).disponiveis().exists())
         response = self.post(reverse('painel:disponibilidade_nova', args=[self.joao.pk]), {
-            'data': '2026-10-01', 'hora_inicio': '09:00', 'hora_fim': '12:00', 'ativo': 'on'})
+            'data': (DAY + timedelta(days=1)).isoformat(), 'hora_inicio': '09:00', 'hora_fim': '12:00', 'ativo': 'on'})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
         with self.assertRaises(ValidationError):
@@ -345,7 +347,7 @@ class PanelTests(TestCase):
                 Disponibilidade.objects.bulk_create([self.availability(hora_inicio=time(start), hora_fim=time(end))])
         Disponibilidade.objects.bulk_create([self.availability(hora_inicio=time(12), hora_fim=time(15))])
         self.availability(profissional=self.sandro).save()
-        self.availability(data=date(2026, 10, 1)).save()
+        self.availability(data=DAY + timedelta(days=1)).save()
         inactive = self.availability(ativo=False); inactive.save()
         with self.assertRaises(IntegrityError), transaction.atomic():
             Disponibilidade.objects.filter(pk=inactive.pk).update(ativo=True)

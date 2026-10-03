@@ -6,3 +6,5 @@
 .client-overview>.client-muted{margin-bottom:0}
 .client-overview .client-search{margin-top:22px}
 @media(max-width:600px){.client-overview{padding:20px 16px}.client-overview .client-search>button,.client-overview .client-search>.ui-button{flex:1;min-height:44px}}
+
+.client-pagination{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}.client-pagination>[aria-disabled=true]{opacity:.45;cursor:default}.client-pagination>span:not(.ui-button){font-size:13px;color:var(--muted)}

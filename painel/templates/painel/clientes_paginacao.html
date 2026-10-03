@@ -1,1 +1,7 @@
-{% if page_obj.has_other_pages %}<nav aria-label="Paginação">{% if page_obj.has_previous %}<a class="ui-button ui-button-secondary" href="?{% if termo %}q={{ termo|urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">← Anterior</a>{% endif %}<span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="ui-button ui-button-secondary" href="?{% if termo %}q={{ termo|urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Próxima →</a>{% endif %}</nav>{% endif %}
+{% if page_obj.paginator.count %}
+<nav class="client-pagination" aria-label="Paginação de clientes">
+  {% if page_obj.has_previous %}<a class="ui-button ui-button-secondary" href="?{% if termo %}q={{ termo|urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">← Anterior</a>{% else %}<span class="ui-button ui-button-secondary" aria-disabled="true">← Anterior</span>{% endif %}
+  <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · Até 10 clientes por página</span>
+  {% if page_obj.has_next %}<a class="ui-button ui-button-secondary" href="?{% if termo %}q={{ termo|urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Próxima →</a>{% else %}<span class="ui-button ui-button-secondary" aria-disabled="true">Próxima →</span>{% endif %}
+</nav>
+{% endif %}

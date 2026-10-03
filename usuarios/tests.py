@@ -51,7 +51,7 @@ class FoundationTests(TestCase):
         self.assertIsNone(response.wsgi_request.tenant)
         self.assertEqual(submitted.status_code, 200)
 
-    def test_registration_uses_host_and_ignores_privilege_injection(self):
+    def test_registration_is_closed_and_ignores_privilege_injection(self):
         for tenant in [self.marcos, self.wanessa]:
             email = f'{tenant.subdomain}@example.com'
             response = self.client.post('/cadastro/', {
@@ -59,27 +59,21 @@ class FoundationTests(TestCase):
                 'tenant_id': self.sofia.pk, 'tenant': self.sofia.pk,
                 'tipo': 'ADMIN', 'is_staff': True, 'is_superuser': True,
             }, HTTP_HOST=f'{tenant.subdomain}.localhost')
-            self.assertRedirects(response, '/login/', fetch_redirect_response=False)
-            user = User.objects.get(email=email)
-            self.assertEqual(user.tenant, tenant)
-            self.assertEqual(user.tipo, User.Tipo.CLIENTE)
-            self.assertFalse(user.is_staff)
-            self.assertFalse(user.is_superuser)
-            self.assertNotEqual(user.password, PASSWORD)
-            self.assertTrue(user.check_password(PASSWORD))
-            self.assertNotIn('username', [f.name for f in User._meta.fields])
+            self.assertRedirects(response, '/loja/', fetch_redirect_response=False)
+            self.assertFalse(User.objects.filter(email=email).exists())
             page = self.client.get('/cadastro/', HTTP_HOST=f'{tenant.subdomain}.localhost')
-            self.assertNotContains(page, 'name="tenant')
-            self.assertNotContains(page, 'name="username"')
+            self.assertRedirects(page, '/loja/', fetch_redirect_response=False)
 
-    def test_password_confirmation_and_validators(self):
+    def test_customer_password_registration_is_disabled(self):
+        original_count = User.objects.count()
         for password1, password2 in [(PASSWORD, 'different'), ('12345678', '12345678')]:
             response = self.client.post('/cadastro/', {'email': 'new@example.com', 'whatsapp': '11999991234', 'password1': password1, 'password2': password2}, HTTP_HOST='marcos.localhost')
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(response.context['form'].errors)
-        self.assertFalse(User.objects.filter(email='new@example.com').exists())
+            self.assertRedirects(response, '/loja/', fetch_redirect_response=False)
+        self.assertEqual(User.objects.count(), original_count)
 
     def test_email_login_without_username_and_logout(self):
+        self.user.tipo = User.Tipo.ADMIN
+        self.user.save(update_fields=['tipo'])
         response = self.post_login(email='CLIENTE@EXEMPLO.COM')
         self.assertEqual(response.status_code, 302)
         self.assertEqual(int(self.client.session['_auth_user_id']), self.user.pk)
@@ -99,6 +93,8 @@ class FoundationTests(TestCase):
             self.assertTrue(response.context['form'].errors)
 
     def test_copied_session_is_rejected_on_other_tenants_and_root(self):
+        self.user.tipo = User.Tipo.ADMIN
+        self.user.save(update_fields=['tipo'])
         self.post_login()
         for host in ['wanessa.localhost', 'sofia.localhost', 'localhost']:
             for path in ['/', '/conta/', '/cadastro/', '/login/']:
@@ -111,6 +107,8 @@ class FoundationTests(TestCase):
         self.assertEqual(self.client.get('/conta/', HTTP_HOST='marcos.localhost').status_code, 403)
 
     def test_inactive_user_login_and_existing_session(self):
+        self.user.tipo = User.Tipo.ADMIN
+        self.user.save(update_fields=['tipo'])
         self.post_login()
         User.objects.filter(pk=self.user.pk).update(is_active=False)
         self.assertEqual(self.client.get('/conta/', HTTP_HOST='marcos.localhost').status_code, 302)
@@ -125,8 +123,10 @@ class FoundationTests(TestCase):
         self.assertEqual(self.post_login().status_code, 404)
 
     def test_duplicate_email_rejected_across_tenants_form_and_database(self):
+        original_count = User.objects.count()
         response = self.client.post('/cadastro/', {'email': self.user.email.upper(), 'whatsapp': '11999991234', 'password1': PASSWORD, 'password2': PASSWORD}, HTTP_HOST='wanessa.localhost')
-        self.assertIn('email', response.context['form'].errors)
+        self.assertRedirects(response, '/loja/', fetch_redirect_response=False)
+        self.assertEqual(User.objects.count(), original_count)
         for email in [self.user.email, self.user.email.upper()]:
             with self.subTest(email=email), self.assertRaises(IntegrityError), transaction.atomic():
                 User.objects.bulk_create([User(email=email, tenant=self.wanessa, password='!')])
@@ -169,6 +169,8 @@ class FoundationTests(TestCase):
         client = Client(enforce_csrf_checks=True)
         self.assertEqual(client.post('/cadastro/', {}, HTTP_HOST='marcos.localhost').status_code, 403)
         self.assertEqual(client.post('/login/', {}, HTTP_HOST='marcos.localhost').status_code, 403)
+        self.user.tipo = User.Tipo.ADMIN
+        self.user.save(update_fields=['tipo'])
         self.post_login()
         self.assertEqual(self.client.cookies['sessionid']['domain'], '')
         client.cookies = self.client.cookies
