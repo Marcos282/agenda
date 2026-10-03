@@ -1,0 +1,3 @@
+<span class="client-reputation{% if not reputacao.estrelas %} client-reputation-new{% endif %}" data-customer-reputation>
+{% if reputacao.estrelas %}<span class="rating-stars" role="img" aria-label="{{ reputacao.estrelas }} de 4 estrelas">{% for star in '1234' %}<span class="star {% if forloop.counter <= reputacao.estrelas %}active{% else %}inactive{% endif %}" aria-hidden="true">★</span>{% endfor %}</span><span class="rating-average">{{ reputacao.media|floatformat:1 }}</span>{% else %}Cliente Novo{% endif %}
+</span>

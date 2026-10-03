@@ -1,0 +1,9 @@
+{% extends 'painel/base.html' %}
+{% block painel_content %}
+<h1>Chegou atrasado</h1><p>{{ agendamento.cliente_nome }} · {{ agendamento.servico_nome }}</p>
+<p>{{ agendamento.inicio|date:'d/m/Y H:i' }} · {{ agendamento.profissional_nome }}</p>
+<p>O atendimento receberá 3 pontos. Se já houver avaliação automática, ela será corrigida sem duplicação.</p>
+{% if erro %}<p role="alert">{{ erro }}</p>{% endif %}
+{% if pode_marcar %}<form method="post">{% csrf_token %}<button type="submit">Confirmar: chegou atrasado</button></form>{% else %}<p>O atraso só pode ser registrado após o início de um atendimento confirmado.</p>{% endif %}
+<a href="{{ voltar }}">Voltar à agenda</a>
+{% endblock %}

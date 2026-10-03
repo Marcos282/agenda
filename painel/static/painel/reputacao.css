@@ -1,0 +1,8 @@
+.rating-stars{display:inline-flex!important;align-items:center;gap:2px;vertical-align:middle}
+.rating-stars .star{display:inline-block!important;font-size:18px!important;line-height:1!important;margin:0!important;font-style:normal;background:transparent!important;padding:0!important;border:0!important}
+.rating-stars .star.active{color:#F59E0B!important;opacity:1!important}
+.rating-stars .star.inactive{color:#94A3B8!important;opacity:.25!important}
+.timeline-block .client-reputation{display:inline-flex!important;align-items:center;gap:4px;margin:0 6px 0 0;vertical-align:middle}
+.timeline-block .client-reputation-new{font-size:11px;color:#245473}
+.timeline-block.compact .rating-stars .star{font-size:12px!important}
+.rating-average{margin-left:4px}
