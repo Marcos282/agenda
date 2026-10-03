@@ -6,12 +6,14 @@ from django.db.models import CharField, Count, Exists, F, OuterRef, Q, Subquery,
 from django.db.models.functions import Coalesce, Concat, NullIf, Trim
 from django.core.exceptions import ValidationError
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
+from django.db import transaction
+from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from agenda.models import Agendamento
-from usuarios.models import User, ContatoCliente
+from usuarios.models import User, ContatoCliente, WhatsAppBloqueado
 from usuarios.validators import normalizar_whatsapp
 from .agenda_views import agenda_url
 from .decorators import admin_tenant_required
@@ -48,6 +50,7 @@ def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
     )
     columns = ('pk', 'nome_exibicao', 'email', 'whatsapp', 'is_active', 'date_joined',
                'total', 'confirmados', 'cancelados', 'faltas')
+    bloqueados = set(WhatsAppBloqueado.objects.for_tenant(tenant).values_list("whatsapp", flat=True))
     grupos = {}
     digits = re.sub(r'[^0-9]', '', termo) if re.fullmatch(r'[+0-9\s().-]+', termo) else ''
     for origem, queryset, relation in [('conta', clientes, 'cliente_id'), ('contato', contatos, 'contato_id')]:
@@ -60,7 +63,7 @@ def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
                 termo.casefold() in value.casefold() for value in [row['nome_exibicao'], row['email']]
             ) or bool(digits and digits in row['whatsapp'])
             if key not in grupos:
-                grupos[key] = dict(row, origem=origem, corresponde=matches)
+                grupos[key] = dict(row, origem=origem, corresponde=matches, bloqueado=row['whatsapp'] in bloqueados)
             else:
                 group = grupos[key]
                 for counter in counts:
@@ -138,3 +141,28 @@ def contato_historico(request, pk):
     if cliente.whatsapp:
         return historico_do_numero(request, cliente.whatsapp)
     return render_historico(request, cliente, Agendamento.objects.for_tenant(request.tenant).filter(contato=cliente), contato=True)
+
+
+@admin_tenant_required
+@require_http_methods(['POST'])
+@transaction.atomic
+def whatsapp_bloqueio(request, whatsapp):
+    from tenants.models import Tenant
+    try:
+        numero = normalizar_whatsapp(whatsapp)
+    except ValidationError:
+        raise Http404
+    Tenant.objects.select_for_update().get(pk=request.tenant.pk)
+    if not grupos_por_whatsapp(request.tenant, whatsapp=numero):
+        raise Http404
+    acao = request.POST.get('acao')
+    if acao == 'bloquear':
+        WhatsAppBloqueado.objects.get_or_create(tenant=request.tenant, whatsapp=numero)
+        messages.success(request, 'WhatsApp bloqueado para novos agendamentos.')
+    elif acao == 'desbloquear':
+        WhatsAppBloqueado.objects.for_tenant(request.tenant).filter(whatsapp=numero).delete()
+        messages.success(request, 'WhatsApp desbloqueado para novos agendamentos.')
+    else:
+        from django.http import HttpResponseBadRequest
+        return HttpResponseBadRequest('Ação inválida.')
+    return redirect('painel:clientes')

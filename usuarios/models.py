@@ -98,3 +98,18 @@ class ContatoCliente(models.Model):
         self.nome = ' '.join(self.nome.split())
         self.whatsapp = normalizar_whatsapp(self.whatsapp)
         return super().save(*args, **kwargs)
+
+
+class WhatsAppBloqueado(models.Model):
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    whatsapp = models.CharField(max_length=16, validators=[validate_whatsapp])
+    objects = TenantQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['tenant', 'whatsapp'], name='whatsapp_bloqueado_tenant_uniq'),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.whatsapp = normalizar_whatsapp(self.whatsapp)
+        return super().save(*args, **kwargs)
