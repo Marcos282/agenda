@@ -12,6 +12,13 @@ from agenda.models import Disponibilidade
 from usuarios.validators import normalizar_whatsapp
 
 
+class LimiteAgendamentosForm(forms.Form):
+    limite_agendamentos_cliente_dia = forms.IntegerField(
+        label='Máximo de agendamentos por WhatsApp por dia', min_value=1, max_value=32767,
+        help_text='Escolha 1 para impedir duas ou mais reservas do mesmo WhatsApp no mesmo dia, mesmo com nomes, serviços ou profissionais diferentes. Reservas canceladas não contam.',
+        widget=forms.NumberInput(attrs={'min': 1, 'max': 32767}))
+
+
 class CadastroResponsavelForm(forms.Form):
     first_name = forms.CharField(label='Nome', max_length=150, widget=forms.TextInput(attrs={'autocomplete': 'name'}))
     email = forms.EmailField(label='Login (e-mail)', disabled=True)

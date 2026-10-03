@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 from agenda.forms import DiaForm, PeriodosFormSet
 from agenda.models import Disponibilidade
 from agenda.presentation import timeline_payload
@@ -31,6 +32,7 @@ def selected_day(request):
 
 
 @admin_tenant_required
+@never_cache
 @require_http_methods(['GET', 'POST'])
 def agenda(request, profissional_id=None):
     dia = selected_day(request)

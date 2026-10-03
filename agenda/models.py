@@ -105,6 +105,7 @@ class Agendamento(models.Model):
     profissional = models.ForeignKey('profissionais.Profissional', on_delete=models.PROTECT, related_name='agendamentos')
     acesso_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
     cliente_nome = models.CharField(max_length=150)
+    cliente_whatsapp = models.CharField(max_length=16, blank=True, default='')
     servico_nome = models.CharField(max_length=150)
     profissional_nome = models.CharField(max_length=150)
     inicio = models.DateTimeField()

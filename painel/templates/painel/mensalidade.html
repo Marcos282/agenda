@@ -34,6 +34,7 @@
         <div><dt>Estabelecimento</dt><dd>{{ request.tenant.nome }}</dd></div>
         <div><dt>Data de expiração</dt><dd>{{ data_expiracao|date:"d/m/Y" }}</dd></div>
       </dl>
+      <a class="ui-button ui-button-secondary billing-daily-limit" href="{% url 'painel:meu_cadastro' %}">Configurar limite diário de agendamentos</a>
     </section>
 
     <section class="billing-card billing-payment" aria-labelledby="payment-title">

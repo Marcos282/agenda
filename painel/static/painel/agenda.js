@@ -37,7 +37,7 @@
       add('closed', cursor, window.start);
       let freeStart = window.start;
       for (const a of appointments.filter(a => a.status !== 'CANCELADO' && a.end > window.start && a.start < window.end).sort((a, b) => a.start - b.start)) {
-        add('free', freeStart, Math.max(freeStart, a.start));
+        add('free', freeStart, Math.min(window.end, Math.max(freeStart, a.start)));
         freeStart = Math.max(freeStart, Math.min(a.end, window.end));
       }
       add('free', freeStart, window.end);
@@ -65,7 +65,7 @@
       if (appointment) block.type = 'button';
       block.className = `timeline-block ${item.kind}${item.height < 48 ? ' compact' : ''}`;
       block.style.top = `${item.top}px`; block.style.height = `${item.height}px`;
-      const title = appointment ? `${appointment.cliente} · ${appointment.servico}` : item.kind === 'closed' ? 'Intervalo / fechado' : 'Livre';
+      const title = appointment ? `${item.kind === 'no-show' ? 'Não compareceu' : item.kind === 'cancelled' ? 'Cancelado' : 'Ocupado'} · ${appointment.cliente} · ${appointment.servico}` : item.kind === 'closed' ? 'Intervalo / fechado' : 'Livre';
       const details = `${clock(item.start)} → ${clock(item.end)}${appointment ? ` · ${Math.round((appointment.end - appointment.start) / 60)} min · R$ ${appointment.valor} · ${appointment.statusLabel || appointment.status}` : ''}`;
       block.setAttribute('aria-label', `${title}. ${details}`); block.title = `${title}. ${details}`;
       const heading = document.createElement('strong'); heading.textContent = title;
@@ -97,7 +97,40 @@
   root.DailyAgenda = api;
   document.addEventListener('DOMContentLoaded', () => {
     const payload = document.getElementById('agenda-data'), timeline = document.querySelector('[data-timeline]');
-    if (payload && timeline) renderTimeline(timeline, JSON.parse(payload.textContent));
+    if (payload && timeline) {
+      renderTimeline(timeline, JSON.parse(payload.textContent));
+      let refreshing = false;
+      const refresh = async () => {
+        if (refreshing || document.hidden) return;
+        refreshing = true;
+        try {
+          const response = await fetch(location.href, {cache: 'no-store', credentials: 'same-origin'});
+          if (!response.ok || response.redirected) return;
+          const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+          const updated = page.getElementById('agenda-data');
+          if (updated) {
+            const data = JSON.parse(updated.textContent);
+            renderTimeline(timeline, data);
+            payload.textContent = updated.textContent;
+            const summary = document.querySelector('.booked-summary');
+            const nextSummary = page.querySelector('.booked-summary');
+            if (summary) {
+              if (nextSummary) summary.replaceWith(nextSummary);
+              else summary.remove();
+            } else if (nextSummary) {
+              document.querySelector('.day-card').append(nextSummary);
+            }
+          }
+        } catch (error) {
+          // Preserve the last successful display during connection failures.
+        } finally {
+          refreshing = false;
+        }
+      };
+      setInterval(refresh, 15000);
+      document.addEventListener('visibilitychange', refresh);
+      root.addEventListener('focus', refresh);
+    }
     const editor = document.querySelector('[data-editor]');
     if (!editor) return;
     let previousFocus = null;

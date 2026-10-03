@@ -11,7 +11,7 @@ from agenda.models import Disponibilidade
 from catalogo.models import Servico, ProfissionalServico
 from profissionais.models import Profissional
 from .decorators import admin_tenant_required
-from .forms import CadastroResponsavelForm, ProfissionalForm, ServicoForm, ProfissionalServicoForm, DisponibilidadeForm
+from .forms import LimiteAgendamentosForm, CadastroResponsavelForm, ProfissionalForm, ServicoForm, ProfissionalServicoForm, DisponibilidadeForm
 
 
 CONFLICTS = {
@@ -66,16 +66,29 @@ def inicio(request):
 @admin_tenant_required
 @require_http_methods(['GET', 'POST'])
 def meu_cadastro(request):
+    alterando_limite = request.method == 'POST' and request.POST.get('acao') == 'limite_agendamentos'
+    limite_form = LimiteAgendamentosForm(
+        request.POST if alterando_limite else None,
+        initial={'limite_agendamentos_cliente_dia': request.tenant.limite_agendamentos_cliente_dia})
+    if alterando_limite and limite_form.is_valid():
+        from tenants.models import Tenant
+        with transaction.atomic():
+            tenant = Tenant.objects.select_for_update().get(pk=request.tenant.pk)
+            tenant.limite_agendamentos_cliente_dia = limite_form.cleaned_data['limite_agendamentos_cliente_dia']
+            tenant.save(update_fields=['limite_agendamentos_cliente_dia', 'atualizado_em'])
+        messages.success(request, 'Limite de agendamentos salvo com sucesso.')
+        return redirect('painel:meu_cadastro')
     form = CadastroResponsavelForm(
-        request.POST if request.method == 'POST' else None,
+        request.POST if request.method == 'POST' and not alterando_limite else None,
         user=request.user,
     )
-    if request.method == 'POST' and form.is_valid():
+    if request.method == 'POST' and not alterando_limite and form.is_valid():
         form.save()
         messages.success(request, 'Cadastro salvo com sucesso.')
         return redirect('painel:meu_cadastro')
     return render(request, 'painel/meu_cadastro.html', {
         'form': form,
+        'limite_form': limite_form,
         'endereco_publico': f'{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}',
     })
 
@@ -134,6 +147,29 @@ def vinculos(request, profissional_id):
     profissional = scoped_object(request, Profissional, profissional_id)
     query = ProfissionalServico.objects.for_tenant(request.tenant).filter(profissional=profissional).select_related('servico')
     return render(request, 'painel/vinculos.html', {'profissional': profissional, 'page_obj': page(request, query)})
+
+
+@admin_tenant_required
+@require_http_methods(['POST'])
+@transaction.atomic
+def vinculo_disponibilidade(request, profissional_id, pk):
+    profissional = scoped_object(request, Profissional, profissional_id)
+    vinculo = scoped_object(request, ProfissionalServico, pk, profissional=profissional)
+    acao = request.POST.get('acao')
+    if acao not in ('desativar', 'ativar'):
+        from django.http import HttpResponseBadRequest
+        return HttpResponseBadRequest('Ação inválida.')
+    # Use the same service lock as link editing and catalog deactivation.
+    Servico.objects.for_tenant(request.tenant).select_for_update().get(pk=vinculo.servico_id)
+    vinculo.ativo = acao == 'ativar'
+    try:
+        vinculo.save(update_fields=['ativo', 'atualizado_em'])
+    except ValidationError as exc:
+        messages.error(request, ' '.join(exc.messages))
+    else:
+        messages.success(request, 'Serviço disponível para novos agendamentos deste profissional.'
+            if vinculo.ativo else 'O profissional deixou de oferecer este serviço. Agendamentos existentes foram preservados.')
+    return redirect('painel:vinculos', profissional_id=profissional.pk)
 
 
 @admin_tenant_required
