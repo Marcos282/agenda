@@ -1,8 +1,22 @@
 {% extends 'painel/base.html' %}
 {% block painel_content %}
 <h1>{{ titulo }}</h1>
+{% if not profissional %}
+  <div class="notice" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid #4CAF50; background-color: #f0f8f4; border-radius: 4px;">
+    <p style="margin: 0 0 10px 0; color: #333;"><strong>ℹ️ Informação importante:</strong></p>
+    <p style="margin: 0 0 12px 0; color: #555;">O preço (R$) e a duração (minutos) são definidos <strong>por profissional</strong>.</p>
+    <p style="margin: 0 0 8px 0; color: #555;"><strong>Para configurar o valor de um serviço para um profissional:</strong></p>
+    <ol style="margin: 0; padding-left: 20px; color: #555;">
+      <li>Vá em <strong>Profissionais</strong></li>
+      <li>Selecione o profissional desejado</li>
+      <li>Clique em <strong>Serviços</strong></li>
+      <li>Clique em <strong>+ Adicionar serviço</strong></li>
+      <li>Selecione o serviço e informe o <strong>Valor (R$)</strong> e <strong>Duração (minutos)</strong> específicos daquele profissional</li>
+    </ol>
+  </div>
+{% endif %}
 {% if profissional %}<p>{{ profissional.nome }}{% if not profissional.ativo %} · Profissional inativo{% endif %}</p>{% endif %}
-{% if form.ativo %}<p class="muted">Para desativar um registro existente, desmarque “Ativo” e salve.</p>{% endif %}
+{% if form.ativo %}<p class="muted">Para desativar um registro existente, desmarque "Ativo" e salve.</p>{% endif %}
 <form class="edit-form" method="post" enctype="multipart/form-data">
 {% csrf_token %}{{ form.as_p }}
 <div class="toolbar"><button type="submit">Salvar</button><a class="ui-button ui-button-secondary" href="{{ voltar }}">Voltar</a></div>
