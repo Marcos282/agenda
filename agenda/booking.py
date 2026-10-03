@@ -115,6 +115,37 @@ def periodos_com_reservas(*, tenant, profissional_id, data, existentes, desejado
     return protegidos
 
 
+def validar_limite_agendamentos(*, tenant, whatsapp, max_futuros=2):
+    """
+    Valida se o cliente pode fazer um novo agendamento.
+    Conta agendamentos CONFIRMADO e NAO_COMPARECEU no futuro.
+    Levanta ValidationError se o limite foi atingido.
+    """
+    from usuarios.models import ContatoCliente
+    
+    # Encontra o contato pelo WhatsApp
+    contato = ContatoCliente.objects.for_tenant(tenant).filter(whatsapp=whatsapp).first()
+    
+    if contato is None:
+        # Novo cliente, sem limite
+        return True
+    
+    # Conta agendamentos futuros confirmados
+    agendamentos_futuros = Agendamento.objects.for_tenant(tenant).filter(
+        contato=contato,
+        status__in=['CONFIRMADO', 'NAO_COMPARECEU'],
+        inicio__gt=timezone.now()  # Apenas futuros
+    ).count()
+    
+    if agendamentos_futuros >= max_futuros:
+        raise ValidationError(
+            f'Este cliente já possui {agendamentos_futuros} agendamentos futuros. '
+            f'Máximo permitido: {max_futuros}. Cancele um agendamento anterior para fazer um novo.'
+        )
+    
+    return True
+
+
 @transaction.atomic
 def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, duracao_exibida, contato=None):
     from usuarios.validators import normalizar_whatsapp
@@ -126,6 +157,10 @@ def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, dura
     if not pessoa.whatsapp:
         raise ValidationError('O cliente precisa cadastrar o WhatsApp em Minha conta antes de agendar.')
     normalizar_whatsapp(pessoa.whatsapp)
+    
+    # Validar limite de agendamentos futuros
+    validar_limite_agendamentos(tenant=tenant, whatsapp=pessoa.whatsapp)
+    
     oferta = ProfissionalServico.objects.for_tenant(tenant).get(pk=oferta_id)
     # The same lock is used by daily opening edits and cancellation.
     Profissional.objects.for_tenant(tenant).select_for_update().get(pk=oferta.profissional_id)
@@ -207,6 +242,10 @@ def reservar_por_whatsapp(*, tenant, nome, whatsapp, acesso_publico=False, **dad
     if not nome or len(nome) > 150:
         raise ValidationError('Informe o nome do cliente, com até 150 caracteres.')
     whatsapp = normalizar_whatsapp(whatsapp)
+    
+    # Validar limite de agendamentos futuros
+    validar_limite_agendamentos(tenant=tenant, whatsapp=whatsapp)
+    
     # Serialize contact lookup/creation, including requests for different professionals.
     Tenant.objects.select_for_update().get(pk=tenant.pk, ativo=True)
     contato = ContatoCliente.objects.for_tenant(tenant).filter(whatsapp=whatsapp).order_by('pk').first()
