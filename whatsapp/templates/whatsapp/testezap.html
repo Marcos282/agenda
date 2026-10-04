@@ -25,10 +25,10 @@
 <input type="text" value="{{ webhook_url }}" readonly aria-label="URL de recebimento" style="width:100%;box-sizing:border-box">
 <p>O endereço precisa ser alcançável pela Evolution. Esta URL contém uma chave de acesso exclusiva do estabelecimento.</p></details>
 </section>
-<section class="card"><h2>Conversa</h2>
+<section class="card"><h2>Mensagens recebidas</h2>
 <p>Informe o destino acima e responda pelo celular. As mensagens salvas no SQLite e disponíveis na Evolution serão consultadas a cada 10 segundos.</p>
 <button type="button" id="refresh-chat">Atualizar conversa</button>
-<p id="chat-status" role="status"></p><div id="chat-messages"></div>
+<p id="chat-status" role="status"></p><div id="chat-messages">{% for message in received_messages %}<article><strong>{{ message.number }}</strong><p>{{ message.text }}</p><small>{{ message.received_at }}</small></article>{% empty %}<p>Nenhuma mensagem recebida ainda.</p>{% endfor %}</div>
 </section>
 {% endblock %}
 {% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/testezap.js' %}" defer></script>{% endblock %}

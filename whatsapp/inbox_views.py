@@ -17,7 +17,8 @@ def webhook_token(tenant):
 
 
 def webhook_url(request):
-    return request.build_absolute_uri(reverse('whatsapp_test_receive')) + '?token=' + webhook_token(request.tenant)
+    route = 'whatsapp_test_receive_single' if request.resolver_match.url_name == 'teste' else 'whatsapp_test_receive'
+    return request.build_absolute_uri(reverse(route)) + '?token=' + webhook_token(request.tenant)
 
 
 @csrf_exempt

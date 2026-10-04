@@ -38,14 +38,15 @@ def console(request, *, route, protected=False):
         return JsonResponse(diagnose(request.tenant))
     if request.GET.get('mensagens') == '1' and request.method == 'GET':
         try:
-            number = normalizar_whatsapp(request.GET.get('whatsapp', ''))
+            raw_number = request.GET.get('whatsapp', '').strip()
+            number = normalizar_whatsapp(raw_number) if raw_number else None
         except forms.ValidationError:
             return JsonResponse({'error': 'Informe um WhatsApp válido.'}, status=400)
         try:
             local_messages = inbox.messages_for(request.tenant.pk, number)
             warning = ''
             try:
-                remote_messages = evolution.find_messages(request.tenant, number)
+                remote_messages = evolution.find_messages(request.tenant, number) if number else []
             except evolution.EvolutionError as exc:
                 remote_messages = []
                 warning = str(exc)
@@ -89,7 +90,7 @@ def console(request, *, route, protected=False):
             request.session['testezap_number'] = form.cleaned_data['whatsapp']
             messages.success(request, 'Mensagem aceita pela API. Confira o recebimento no celular.')
             return redirect(route)
-    return render(request, 'whatsapp/testezap.html', {'form': form, 'protected': protected, 'test_run': current_test(request) if protected else None, 'webhook_url': webhook_url(request)})
+    return render(request, 'whatsapp/testezap.html', {'form': form, 'protected': protected, 'test_run': current_test(request) if protected else None, 'webhook_url': webhook_url(request), 'received_messages': inbox.messages_for(request.tenant.pk)})
 
 
 class PinForm(forms.Form):
@@ -99,7 +100,7 @@ class PinForm(forms.Form):
 
 @admin_tenant_required
 @require_http_methods(['GET', 'POST'])
-def testes(request):
+def testes(request, route='testes'):
     now = time.time()
     tenant_id = request.tenant.pk
     key = f'whatsapp-testes-pin:{tenant_id}:{request.user.pk}'
@@ -107,9 +108,9 @@ def testes(request):
     unlocked = access.get('tenant') == tenant_id and access.get('expires', 0) > now
     if request.method == 'POST' and request.POST.get('acao') == 'bloquear':
         request.session.pop('whatsapp_testes_access', None)
-        return redirect('testes')
+        return redirect(route)
     if unlocked:
-        return console(request, route='testes', protected=True)
+        return console(request, route=route, protected=True)
     if request.GET.get('mensagens') == '1' or request.GET.get('diagnostico') == '1':
         return JsonResponse({'error': 'Acesso expirado. Abra /testes e informe o PIN novamente.'}, status=403)
     form = PinForm(request.POST if request.method == 'POST' else None)
@@ -120,7 +121,7 @@ def testes(request):
         elif compare_digest(form.cleaned_data['pin'].encode(), str(settings.WHATSAPP_TESTS_PIN).encode()):
             cache.delete(key)
             request.session['whatsapp_testes_access'] = {'tenant': tenant_id, 'expires': now + 1800}
-            return redirect('testes')
+            return redirect(route)
         else:
             cache.set(key, attempts + 1, 600)
             form.add_error('pin', 'PIN incorreto.')

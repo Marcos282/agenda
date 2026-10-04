@@ -4,7 +4,7 @@
     const chat = document.getElementById('chat-messages');
     let busy = false;
     async function update() {
-        if (busy || !number.value.trim() || document.hidden) return;
+        if (busy || document.hidden) return;
         busy = true;
         try {
             const url = new URL(window.location.href);
@@ -22,7 +22,7 @@
             chat.replaceChildren();
             for (const message of data.messages) {
                 const row = document.createElement('p');
-                row.textContent = `${message.sent ? 'Enviada' : 'Recebida'}: ${message.text}`;
+                row.textContent = `${message.sent ? 'Enviada' : 'Recebida'}${message.number ? ' · ' + message.number : ''}: ${message.text}`;
                 chat.append(row);
             }
             status.textContent = data.messages.length ? 'Conversa atualizada.' : 'Nenhuma mensagem recebida. Confira a configuração do webhook.';

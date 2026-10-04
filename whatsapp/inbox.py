@@ -34,9 +34,12 @@ def save_message(tenant_id, message_id, number, text):
         return bool(cursor.rowcount)
 
 
-def messages_for(tenant_id, number):
+def messages_for(tenant_id, number=None):
     with database() as connection:
-        rows = connection.execute('''SELECT message_id, text, received_at FROM received_messages
-            WHERE tenant = ? AND number = ? ORDER BY received_at DESC LIMIT 50''',
-            (tenant_id, number)).fetchall()
+        query = 'SELECT message_id, number, text, received_at FROM received_messages WHERE tenant = ?'
+        parameters = [tenant_id]
+        if number:
+            query += ' AND number = ?'
+            parameters.append(number)
+        rows = connection.execute(query + ' ORDER BY received_at DESC LIMIT 50', parameters).fetchall()
         return [dict(row, sent=False) for row in rows]

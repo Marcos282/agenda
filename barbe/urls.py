@@ -7,6 +7,8 @@ from whatsapp.console import testezap, testes
 from whatsapp.inbox_views import receive
 
 urlpatterns = [
+    path('teste/', testes, {'route': 'teste'}, name='teste'),
+    path('teste/receber/', receive, name='whatsapp_test_receive_single'),
     path('testes/whatsapp/receber', receive, name='whatsapp_test_receive'),
     path('testes', testes, name='testes'),
     path('testes/', testes),

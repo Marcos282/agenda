@@ -161,3 +161,27 @@ class SQLiteInboxTests(ConsoleTests):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['messages'][0]['text'], 'Resposta do celular')
         self.assertEqual(response.json()['warning'], 'offline')
+
+
+class SingleTestRouteTests(ProtectedConsoleTests):
+    @patch('whatsapp.console.get_provider')
+    def test_single_route_sends_and_stays_on_route(self, provider):
+        self.assertEqual(self.client.post('/teste/', {'pin': '1031'}, HTTP_HOST='marcos.localhost').url, '/teste/')
+        response = self.client.get('/teste/', HTTP_HOST='marcos.localhost')
+        self.assertContains(response, '/teste/receber/?token=')
+        response = self.client.post('/teste/', {'whatsapp': '5521990921092', 'mensagem': 'Olá'}, HTTP_HOST='marcos.localhost')
+        self.assertEqual(response.url, '/teste/')
+        provider.return_value.send_text.assert_called_once_with(self.tenant, '+5521990921092', 'Olá')
+
+    def test_received_messages_visible_without_destination(self):
+        from .inbox_views import webhook_token
+        payload = {'event': 'messages.upsert', 'instance': evolution.instance(self.tenant),
+            'data': {'key': {'remoteJid': '5521990921092@s.whatsapp.net', 'id': 'single-test', 'fromMe': False},
+                     'message': {'conversation': 'Resposta salva'}}}
+        self.assertEqual(self.client.post('/teste/receber/', payload, content_type='application/json',
+            HTTP_HOST='marcos.localhost', HTTP_X_TESTZAP_TOKEN=webhook_token(self.tenant)).status_code, 200)
+        self.client.post('/teste/', {'pin': '1031'}, HTTP_HOST='marcos.localhost')
+        response = self.client.get('/teste/', HTTP_HOST='marcos.localhost')
+        self.assertContains(response, 'Resposta salva')
+        response = self.client.get('/teste/?mensagens=1', HTTP_HOST='marcos.localhost')
+        self.assertEqual(response.json()['messages'][0]['number'], '+5521990921092')
