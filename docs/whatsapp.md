@@ -113,3 +113,13 @@ A sessão guarda a última tentativa, tenant, destino, código, identificador de
 `/teste/` reutiliza o acesso de administrador e PIN 1031 e a instância WhatsApp já conectada no tenant do domínio. Exemplo no servidor: `https://marcos.tacombinado.net/teste/`. Não é necessário cadastrar o WhatsApp novamente. A tela tem destino, campo de texto e botão de envio, com as últimas 50 mensagens recebidas no SQLite exibidas abaixo. Sem destino informado, a atualização automática mostra a caixa de entrada inteira daquele tenant; com destino informado, filtra a conversa.
 
 O endpoint de recebimento dessa rota é `POST /teste/receber/`. Copie a URL autenticada exibida na tela para o webhook da Evolution (evento `MESSAGES_UPSERT`). O PIN libera a tela; o endpoint valida um token exclusivo, o domínio e a instância. As rotas anteriores continuam disponíveis. O banco SQLite dos testes é independente do PostgreSQL da aplicação. Usar a instância do servidor exige publicar o código nesse servidor; executar a página localmente não reutiliza a sessão WhatsApp remota por si só.
+
+### Configurar o webhook pelo servidor
+
+Com o endpoint publicado, execute na pasta do projeto do servidor:
+
+```bash
+venv/bin/python manage.py configurar_webhook_testes --tenant marcos
+```
+
+O comando usa as credenciais Evolution e a chave Django daquele servidor, valida a acessibilidade e autenticação de `/teste/receber/` com um evento ignorado (não grava mensagem), configura `MESSAGES_UPSERT` e verifica o resultado. O token vai no cabeçalho `X-TestZap-Token`, evitando segredo na URL. Preserva eventos do próprio webhook de testes e recusa substituir destinos de outras integrações. Não conecta números nem envia mensagens WhatsApp. Depois, responda pelo celular para validar o recebimento real no SQLite.
