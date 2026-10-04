@@ -4,8 +4,10 @@ from usuarios import views, registro, login_transfer
 from django.views.generic import TemplateView
 from pagamentos.views import webhook
 from whatsapp.console import testezap, testes
+from whatsapp.inbox_views import receive
 
 urlpatterns = [
+    path('testes/whatsapp/receber', receive, name='whatsapp_test_receive'),
     path('testes', testes, name='testes'),
     path('testes/', testes),
     path('testezap', testezap, name='testezap'),

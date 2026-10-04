@@ -232,3 +232,5 @@ MERCADO_PAGO_LIVE_MODE = str(os.environ.get('MERCADO_PAGO_LIVE_MODE', LOCAL.get(
 
 # PIN adicional do console de diagnóstico, por sessão de administrador.
 WHATSAPP_TESTS_PIN = os.environ.get("WHATSAPP_TESTS_PIN", "1031")
+
+WHATSAPP_TESTS_DB = Path(os.environ.get("WHATSAPP_TESTS_DB", str(BASE_DIR / "whatsapp-tests.sqlite3")))

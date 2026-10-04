@@ -1,4 +1,9 @@
 {% extends 'usuarios/base.html' %}{% load static %}
+{% block public_layout_head %}{% endblock %}
+{% block body_class %}{% endblock %}
+{% block main_class %}{% endblock %}
+{% block public_header %}{% endblock %}
+{% block public_footer %}{% endblock %}
 {% block layout_head %}<link rel="stylesheet" href="{% static 'painel/painel.css' %}"><link rel="stylesheet" href="{% static 'painel/reputacao.css' %}?v=2"><script src="{% static 'painel/reputacao.js' %}?v=2" defer></script>{% endblock %}
 {% block title %}Painel · {{ request.tenant.nome }}{% endblock %}
 {% block extra_css %}

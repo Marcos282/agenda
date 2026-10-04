@@ -1,0 +1,6 @@
+<header class="public-header">
+<a class="public-brand" href="{% url 'home' %}"><span class="public-brand-symbol" aria-hidden="true">a.</span>{{ request.tenant.nome|default:'agenda' }}</a>
+<nav aria-label="Navegação do site"><a class="ui-button ui-button-quiet" href="{% url 'home' %}">Início</a>
+{% if request.tenant %}<a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a>{% endif %}
+{% if user.is_authenticated %}<a class="ui-button" href="{% if user.tipo == 'ADMIN' %}{% url 'painel:inicio' %}{% else %}{% url 'conta' %}{% endif %}">Meu acesso</a>{% else %}<a class="ui-button ui-button-secondary" href="{% url 'login' %}">Já sou cliente</a>{% if not request.tenant %}<a class="ui-button" href="{% url 'registro' %}">Contratar ↗</a>{% endif %}{% endif %}
+</nav></header>

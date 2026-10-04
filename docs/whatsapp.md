@@ -54,6 +54,8 @@ Implementação Evolution v2: `fetchInstances`, `instance/create`, `instance/con
 ## Instalação local deste projeto
 
 A instalação sem Docker e os serviços desta máquina estão descritos em [evolution-local.md](evolution-local.md). A configuração local protegida pode fornecer a URL e a chave quando as variáveis de ambiente não estiverem definidas; variáveis de ambiente têm prioridade.
+<<<<<<< HEAD
+=======
 
 ### Campo de boas-vindas
 
@@ -92,6 +94,7 @@ Informe o WhatsApp de destino e o texto, e clique em **Enviar mensagem**. O envi
 O recebimento consulta `POST /chat/findMessages/{instance}`. O armazenamento de mensagens precisa estar habilitado na Evolution: a instalação descrita em `evolution-local.md` desativa esse histórico, portanto nessa configuração as respostas não aparecerão até habilitá-lo no provedor. Nenhuma configuração do provedor é alterada automaticamente. A consulta filtra a conversa na API e novamente no servidor. Credenciais nunca são enviadas ao navegador; envio e consulta exigem administrador do tenant correto. O console não cria agendamentos nem cadastra clientes.
 
 Referência oficial do endpoint: https://doc.evolution-api.com/v2/api-reference/chat-controller/find-messages . Testes: `myenv/bin/python manage.py test whatsapp.test_console --noinput` (API simulada).
+>>>>>>> d4ce4f7 (Primeiro envio: guia pronta)
 
 ## Área de diagnóstico `/testes`
 

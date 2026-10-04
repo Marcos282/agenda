@@ -10,3 +10,4 @@ staticfiles/
 
 venv/
 env/
+whatsapp-tests.sqlite3*

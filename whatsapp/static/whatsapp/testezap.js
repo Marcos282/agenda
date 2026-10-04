@@ -25,7 +25,8 @@
                 row.textContent = `${message.sent ? 'Enviada' : 'Recebida'}: ${message.text}`;
                 chat.append(row);
             }
-            status.textContent = data.messages.length ? 'Conversa atualizada.' : 'Nenhuma mensagem disponível. O histórico precisa estar habilitado na Evolution.';
+            status.textContent = data.messages.length ? 'Conversa atualizada.' : 'Nenhuma mensagem recebida. Confira a configuração do webhook.';
+            if (data.warning) status.textContent += ` Consulta da Evolution: ${data.warning}`;
         } catch (error) {
             status.textContent = error.message;
         } finally { busy = false; }

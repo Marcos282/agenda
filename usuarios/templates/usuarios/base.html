@@ -5,11 +5,14 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ request.tenant.nome|default:"Plataforma" }}{% endblock %} · Agendamento</title>
   <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}">
+  {% block public_layout_head %}{% if not request.tenant %}<link rel="stylesheet" href="{% static 'usuarios/public-layout.css' %}">{% endif %}{% endblock %}
   <style>{% block extra_css %}{% endblock %}</style>
 {% block extra_head %}{% endblock %}
 {% block layout_head %}{% endblock %}
 </head>
-<body><main>
+<body class="{% block body_class %}{% if not request.tenant %}public-site{% endif %}{% endblock %}">
+{% block public_header %}{% if not request.tenant %}{% include 'usuarios/public_header.html' %}{% endif %}{% endblock %}
+<main class="{% block main_class %}{% if not request.tenant %}public-card{% endif %}{% endblock %}">
   <div class="eyebrow">{{ request.tenant.nome|default:"Plataforma de agendamento" }}</div>
   {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
   {% if user.is_authenticated and user.tipo == 'CLIENTE' and not user.whatsapp and request.resolver_match.url_name != 'conta' %}<p class="notice">Cadastre seu WhatsApp para fazer novos agendamentos. <a class="ui-button ui-button-secondary" href="{% url 'conta' %}">Completar cadastro</a></p>{% endif %}
@@ -29,4 +32,4 @@
       <a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a><a class="ui-button ui-button-secondary" href="{% url 'login' %}">Área do estabelecimento</a>
     {% endif %}
   </nav>{% endif %}
-</main>{% block scripts %}{% endblock %}</body></html>
+</main>{% block public_footer %}{% if not request.tenant %}{% include 'usuarios/public_footer.html' %}{% endif %}{% endblock %}{% block scripts %}{% endblock %}</body></html>

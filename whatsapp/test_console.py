@@ -1,4 +1,6 @@
 from unittest.mock import patch
+from tempfile import TemporaryDirectory
+from pathlib import Path
 from django.test import TestCase, override_settings
 from agenda.test_booking import BookingFixture
 from usuarios.models import User
@@ -8,6 +10,11 @@ from . import evolution
 @override_settings(TENANT_BASE_DOMAIN='localhost')
 class ConsoleTests(BookingFixture, TestCase):
     def setUp(self):
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        setting = override_settings(WHATSAPP_TESTS_DB=Path(directory.name) / 'inbox.sqlite3')
+        setting.enable()
+        self.addCleanup(setting.disable)
         self.setup_booking()
         self.admin = User.objects.create_user('console@example.test', tenant=self.tenant, tipo='ADMIN')
         self.client.force_login(self.admin)
@@ -115,3 +122,42 @@ class ProtectedConsoleTests(ConsoleTests):
             'mensagem': 'Teste'}, HTTP_HOST='marcos.localhost')
         self.assertContains(response, 'Conexão indisponível')
         self.assertEqual(self.client.session['whatsapp_roundtrip']['status'], 'falha')
+
+
+class SQLiteInboxTests(ConsoleTests):
+    def payload(self):
+        return {'event': 'messages.upsert', 'instance': evolution.instance(self.tenant),
+                'data': {'key': {'remoteJid': '5521990921092@s.whatsapp.net', 'fromMe': False, 'id': 'received-1'},
+                         'message': {'conversation': 'Resposta do celular'}}}
+
+    def receive(self, payload=None, token=None):
+        from .inbox_views import webhook_token
+        return self.client.post('/testes/whatsapp/receber', payload or self.payload(),
+            content_type='application/json', HTTP_HOST='marcos.localhost',
+            HTTP_X_TESTZAP_TOKEN=token or webhook_token(self.tenant))
+
+    def test_webhook_persists_once_and_isolates_tenant(self):
+        from . import inbox
+        self.assertEqual(self.receive().json()['received'], 1)
+        self.assertEqual(self.receive().json()['received'], 0)
+        self.assertEqual(inbox.messages_for(self.tenant.pk, '+5521990921092')[0]['text'], 'Resposta do celular')
+        self.assertEqual(inbox.messages_for(self.other.pk, '+5521990921092'), [])
+        payload = self.payload()
+        payload['instance'] = evolution.instance(self.other)
+        self.assertEqual(self.receive(payload).status_code, 403)
+        self.assertEqual(self.receive(token='1031').status_code, 403)
+
+    def test_outgoing_messages_are_not_received(self):
+        from . import inbox
+        payload = self.payload()
+        payload['data']['key']['fromMe'] = True
+        self.assertEqual(self.receive(payload).json()['received'], 0)
+        self.assertEqual(inbox.messages_for(self.tenant.pk, '+5521990921092'), [])
+
+    @patch('whatsapp.console.evolution.find_messages', side_effect=evolution.EvolutionError('offline'))
+    def test_read_sqlite_while_provider_is_offline(self, find):
+        self.receive()
+        response = self.client.get('/testezap?mensagens=1&whatsapp=5521990921092', HTTP_HOST='marcos.localhost')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['messages'][0]['text'], 'Resposta do celular')
+        self.assertEqual(response.json()['warning'], 'offline')

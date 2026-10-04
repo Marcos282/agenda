@@ -8,6 +8,7 @@ from tenants.models import Tenant
 from usuarios.models import User
 
 
+@override_settings(TENANT_BASE_DOMAIN='localhost')
 class StoreQRCodeTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -58,3 +59,31 @@ class StoreQRCodeTests(TestCase):
         self.client.logout()
         for url in [self.page, self.image]:
             self.assertEqual(self.client.get(url, **self.host).status_code, 302)
+
+    def test_professional_profile_photo_address_and_qr(self):
+        from profissionais.models import Profissional
+        professional = Profissional.objects.create(tenant=self.tenant, nome='João', foto='foto-teste.jpg')
+        self.admin.endereco = 'Rua das Flores'
+        self.admin.numero_endereco = '123'
+        self.admin.bairro = 'Centro'
+        self.admin.cidade = 'Rio de Janeiro'
+        self.admin.estado = 'RJ'
+        self.admin.save()
+        response = self.client.get(self.page, {'profissional': professional.pk}, **self.host)
+        self.assertContains(response, 'Foto de João')
+        self.assertContains(response, 'Rua das Flores, 123')
+        self.assertContains(response, 'Rio de Janeiro / RJ')
+        self.assertContains(response, 'store-profile-photo')
+        self.assertEqual(response.context['endereco_loja'], f'https://marcos.tacombinado.net/profissional/{professional.pk}/')
+        store = self.client.get(self.image, **self.host)
+        profile = self.client.get(self.image, {'profissional': professional.pk}, **self.host)
+        self.assertEqual(profile.status_code, 200)
+        self.assertNotEqual(store.content, profile.content)
+
+    def test_professional_selector_cannot_cross_tenants(self):
+        from profissionais.models import Profissional
+        other = Profissional.objects.create(tenant=self.other, nome='Outro profissional')
+        inactive = Profissional.objects.create(tenant=self.tenant, nome='Inativo', ativo=False)
+        for selected in [other.pk, inactive.pk, 'invalido']:
+            for url in [self.page, self.image]:
+                self.assertEqual(self.client.get(url, {'profissional': selected}, **self.host).status_code, 404)

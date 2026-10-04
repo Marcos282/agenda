@@ -12,7 +12,8 @@ from django.views.decorators.http import require_http_methods
 from painel.decorators import admin_tenant_required
 from usuarios.validators import normalizar_whatsapp
 from .providers import get_provider
-from . import evolution
+from . import evolution, inbox
+from .inbox_views import webhook_url
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,15 @@ def console(request, *, route, protected=False):
         except forms.ValidationError:
             return JsonResponse({'error': 'Informe um WhatsApp válido.'}, status=400)
         try:
-            conversation = evolution.find_messages(request.tenant, number)
+            local_messages = inbox.messages_for(request.tenant.pk, number)
+            warning = ''
+            try:
+                remote_messages = evolution.find_messages(request.tenant, number)
+            except evolution.EvolutionError as exc:
+                remote_messages = []
+                warning = str(exc)
+            conversation = local_messages + [message for message in remote_messages
+                if not any(local['text'] == message['text'] and not message['sent'] for local in local_messages)]
             run = current_test(request)
             if run and run['number'] == number and run['status'] == 'aguardando_resposta':
                 if any(not item['sent'] and run['token'] in item['text'] for item in conversation):
@@ -49,7 +58,7 @@ def console(request, *, route, protected=False):
                     run['received_at'] = time.time()
                     request.session['whatsapp_roundtrip'] = run
             return JsonResponse({'messages': conversation,
-                                 'test': run if run and run['number'] == number else None})
+                                 'test': run if run and run['number'] == number else None, 'warning': warning})
         except evolution.EvolutionError as exc:
             return JsonResponse({'error': str(exc)}, status=502)
     form = TestMessageForm(request.POST if request.method == 'POST' else None,
@@ -80,7 +89,7 @@ def console(request, *, route, protected=False):
             request.session['testezap_number'] = form.cleaned_data['whatsapp']
             messages.success(request, 'Mensagem aceita pela API. Confira o recebimento no celular.')
             return redirect(route)
-    return render(request, 'whatsapp/testezap.html', {'form': form, 'protected': protected, 'test_run': current_test(request) if protected else None})
+    return render(request, 'whatsapp/testezap.html', {'form': form, 'protected': protected, 'test_run': current_test(request) if protected else None, 'webhook_url': webhook_url(request)})
 
 
 class PinForm(forms.Form):
