@@ -82,3 +82,13 @@ Falhas esperadas e inesperadas do provedor deixam o registro como “Verificar e
 Para novos eventos (cancelamento, reagendamento etc.), adicione configurações por tenant, um registro idempotente próprio e uma função de serviço que reutilize a renderização e o provedor. Registre o evento com `on_commit` na operação correspondente. Lembretes futuros continuam usando seu processamento periódico; confirmações não dependem de cron.
 
 Aplique as migrações com `myenv/bin/python manage.py migrate` antes de publicar o código. Os testes de confirmação usam provedor simulado, sem envio real.
+
+## Console de testes `/testezap`
+
+Acesse `/testezap` (ou `/testezap/`) no subdomínio do estabelecimento, autenticado como administrador. O botão **Testar envio e recebimento** no painel WhatsApp abre a mesma tela. Ela usa a instância já conectada, sem cadastrar números, criar instâncias ou gerar QR code.
+
+Informe o WhatsApp de destino e o texto, e clique em **Enviar mensagem**. O envio usa o provedor existente e normaliza o destino. A conversa é consultada pela Evolution a cada dez segundos e também pelo botão **Atualizar conversa**, com até 30 mensagens. A página diferencia mensagens enviadas e recebidas e mantém o conteúdo como texto, sem interpretar HTML.
+
+O recebimento consulta `POST /chat/findMessages/{instance}`. O armazenamento de mensagens precisa estar habilitado na Evolution: a instalação descrita em `evolution-local.md` desativa esse histórico, portanto nessa configuração as respostas não aparecerão até habilitá-lo no provedor. Nenhuma configuração do provedor é alterada automaticamente. A consulta filtra a conversa na API e novamente no servidor. Credenciais nunca são enviadas ao navegador; envio e consulta exigem administrador do tenant correto. O console não cria agendamentos nem cadastra clientes.
+
+Referência oficial do endpoint: https://doc.evolution-api.com/v2/api-reference/chat-controller/find-messages . Testes: `myenv/bin/python manage.py test whatsapp.test_console --noinput` (API simulada).

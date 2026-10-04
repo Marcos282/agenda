@@ -1,0 +1,16 @@
+{% extends 'painel/base.html' %}
+{% load static %}
+{% block title %}Teste de WhatsApp{% endblock %}
+{% block painel_content %}
+<h1>Teste de WhatsApp</h1>
+<p>Use o WhatsApp já conectado deste estabelecimento para enviar uma mensagem e acompanhar a resposta.</p>
+<section class="card"><h2>Enviar mensagem</h2>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Enviar mensagem</button></form>
+</section>
+<section class="card"><h2>Conversa</h2>
+<p>Informe o destino acima e responda pelo celular. As mensagens disponíveis na Evolution serão consultadas a cada 10 segundos.</p>
+<button type="button" id="refresh-chat">Atualizar conversa</button>
+<p id="chat-status" role="status"></p><div id="chat-messages"></div>
+</section>
+{% endblock %}
+{% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/testezap.js' %}" defer></script>{% endblock %}

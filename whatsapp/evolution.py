@@ -93,3 +93,31 @@ def send_text(tenant, number, text):
 
     # Store only delivery metadata, never credentials or the complete API payload.
     return {'provider': 'evolution', 'message_id': str(data['key']['id'])}
+
+
+def find_messages(tenant, number):
+    """Read a single conversation; filter again even if the API ignores its filter."""
+    jid = number.lstrip('+') + '@s.whatsapp.net'
+    data = request('POST', '/chat/findMessages/' + instance(tenant), {
+        'where': {'key': {'remoteJid': jid}}, 'page': 1, 'offset': 30,
+    })
+    records = data.get('messages', data) if isinstance(data, dict) else data
+    if isinstance(records, dict):
+        records = records.get('records', [])
+    if not isinstance(records, list):
+        raise EvolutionError('Resposta inesperada ao consultar mensagens.')
+    result = []
+    for item in records:
+        if not isinstance(item, dict):
+            continue
+        key = item.get('key') or {}
+        if not isinstance(key, dict) or key.get('remoteJid') != jid:
+            continue
+        message = item.get('message') or {}
+        if not isinstance(message, dict):
+            continue
+        extended = message.get('extendedTextMessage') or {}
+        text = message.get('conversation') or (extended.get('text') if isinstance(extended, dict) else '')
+        if text:
+            result.append({'text': str(text), 'sent': bool(key.get('fromMe'))})
+    return result[:30]
