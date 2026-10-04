@@ -1,0 +1,58 @@
+* [33m8612b69[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Remove env do versionamento
+* [33md407e63[m Remove env do versionamento
+* [33mb0da4f2[m acerto do zap
+* [33m035cf4e[m envio zap no inicio
+* [33m083cc1b[m msg mais agradavel
+* [33m90ff822[m Ajax Agenda
+* [33m216a46d[m Atualiza agendamentos e confirmações
+* [33m46a9d96[m mensagemd e boas vindas
+* [33m4cefc05[m Alteracoes criticas
+* [33m53eea16[m emelezation e dias para suspenderdublicidade
+* [33mfca3246[m Agnedamentoduplo
+* [33m5ee9601[m docs: Adicionar instrução clara sobre configuração de preço por profissional
+* [33mb066a7f[m feat: Adicionar validação de limite de agendamentos por cliente (máx. 2 futuros)
+[31m|[m * [33m7a15eea[m[33m ([m[1;31morigin/alteracao-critica[m[33m)[m emelezation e dias para suspenderdublicidade
+[31m|[m * [33m56ceae5[m Agnedamentoduplo
+[31m|[m[31m/[m  
+* [33mfa3af82[m teste
+* [33m290d6a0[m Voltando para versão 0af7e9b - botão flutuante
+* [33m1ed6cee[m Redireciona loja do domínio principal ao cadastro
+* [33m1992d9e[m Direciona botão móvel da plataforma ao cadastro
+* [33m0af7e9b[m Exibe botão flutuante de agendamento na página inicial e loja
+* [33medeba62[m botao verdade
+* [33mda9431d[m Destaca botão de cadastro do estabelecimento no login
+* [33mdf161f3[m Desativa login e cadastro de clientes comuns
+* [33m23fa58a[m Aplica fundo verde ao cabeçalho do QR Code da loja
+* [33md636848[m Aplica fundo verde ao título de profissionais
+* [33m202cabf[m Aplica fundo verde ao cabeçalho de serviços
+* [33m5364a72[m Renova visual da agenda com navegação destacada e ações alinhadas
+* [33m1fa388c[m Esclarece regras do agendamento pelo estabelecimento
+* [33m66e9c47[m Destaca introdução do WhatsApp com orientações de uso
+* [33m0e1982d[m Pagina lembretes em grupos de dez e alterna fundo das linhas
+* [33mba9145c[m Centraliza formulário de novo agendamento
+* [33m5cd814f[m Destaca cabeçalho e busca de clientes em verde claro
+* [33mfe65640[m Padroniza botões do painel e simplifica acesso ao agendamento
+* [33m35b2647[m Acertos finos
+* [33m4f435a3[m Melhora visual do painel com cards coloridos e botões
+* [33m0c3008b[m Corrige confirmação de Checkout Pro com vendedor de teste
+* [33m37795ee[m debug mp
+* [33m893085d[m aperfeicoamente do mp
+* [33m134175a[m botao azual
+* [33mda6e99c[m configuracoes mp
+* [33m3187c37[m refeito mp
+* [33m51b3950[m chekc pro
+* [33mdca319d[m mp
+* [33mdf80925[m correcao mp
+* [33mb5a28ea[m formatacaodo cadastro e mp
+* [33m04f4ada[m debug2 mp
+* [33me2937a8[m debug mp
+* [33m11abec4[m mercado pago
+* [33m1e91fbb[m acerto de abertura de tempo passado
+* [33m4f1c6df[m link dos botoes sem sublinhado
+* [33md421e25[m acerto de filtro do zap e mercado pago
+* [33m8e40351[m redirecionamento do login
+* [33me0584e6[m resend e registro
+* [33m0a921d5[m implementacao Evolutiion API e Foto do profissional
+* [33m5360591[m minimalista
+* [33mf3891ce[m second
+* [33m4d3a306[m first commit
