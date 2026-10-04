@@ -229,3 +229,6 @@ MERCADO_PAGO_ACCESS_TOKEN = os.environ.get('MERCADO_PAGO_ACCESS_TOKEN', LOCAL.ge
 MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get('MERCADO_PAGO_WEBHOOK_SECRET', LOCAL.get('MERCADO_PAGO_WEBHOOK_SECRET', '')).strip()
 MERCADO_PAGO_PUBLIC_URL = os.environ.get('MERCADO_PAGO_PUBLIC_URL', LOCAL.get('MERCADO_PAGO_PUBLIC_URL', '')).rstrip('/')
 MERCADO_PAGO_LIVE_MODE = str(os.environ.get('MERCADO_PAGO_LIVE_MODE', LOCAL.get('MERCADO_PAGO_LIVE_MODE', 'false'))).lower() == 'true'
+
+# PIN adicional do console de diagnóstico, por sessão de administrador.
+WHATSAPP_TESTS_PIN = os.environ.get("WHATSAPP_TESTS_PIN", "1031")

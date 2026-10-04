@@ -3,9 +3,11 @@ from django.urls import path, include
 from usuarios import views, registro, login_transfer
 from django.views.generic import TemplateView
 from pagamentos.views import webhook
-from whatsapp.console import testezap
+from whatsapp.console import testezap, testes
 
 urlpatterns = [
+    path('testes', testes, name='testes'),
+    path('testes/', testes),
     path('testezap', testezap, name='testezap'),
     path('testezap/', testezap),
     path('integracoes/mercado-pago/webhook/', webhook, name='mercado_pago_webhook'),

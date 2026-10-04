@@ -4,9 +4,20 @@
 {% block painel_content %}
 <h1>Teste de WhatsApp</h1>
 <p>Use o WhatsApp já conectado deste estabelecimento para enviar uma mensagem e acompanhar a resposta.</p>
+{% if protected %}<section class="card"><h2>Diagnóstico da conexão</h2>
+<button type="button" id="diagnose-whatsapp">Verificar conexão e configuração</button>
+<p id="diagnosis-status" role="status">Clique para consultar a Evolution.</p>
+<form method="post">{% csrf_token %}<button name="acao" value="bloquear">Bloquear área de testes</button></form>
+</section>{% endif %}
 <section class="card"><h2>Enviar mensagem</h2>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Enviar mensagem</button></form>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Enviar mensagem</button>
+{% if protected %}<button type="submit" name="acao" value="teste_completo">Testar envio e recebimento</button>{% endif %}</form>
 </section>
+{% if protected %}<section class="card"><h2>Resultado do teste completo</h2>
+<p>O teste envia a mensagem com um código único. Responda pelo celular de destino com esse código para confirmar o caminho de ida e volta.</p>
+<p id="roundtrip-status" role="status">{% if test_run.status == 'confirmado' %}Envio e recebimento confirmados pela resposta do celular.{% elif test_run.status == 'falha' %}Falha no envio: {{ test_run.error }}{% elif test_run %}Mensagem aceita pela API. Aguardando resposta com {{ test_run.token }}.{% else %}Nenhum teste completo executado nesta sessão.{% endif %}</p>
+<p>Sem uma resposta correspondente, o recebimento permanece pendente. O histórico da Evolution precisa estar habilitado para consultar a resposta.</p>
+</section>{% endif %}
 <section class="card"><h2>Conversa</h2>
 <p>Informe o destino acima e responda pelo celular. As mensagens disponíveis na Evolution serão consultadas a cada 10 segundos.</p>
 <button type="button" id="refresh-chat">Atualizar conversa</button>

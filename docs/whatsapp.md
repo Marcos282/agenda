@@ -92,3 +92,15 @@ Informe o WhatsApp de destino e o texto, e clique em **Enviar mensagem**. O envi
 O recebimento consulta `POST /chat/findMessages/{instance}`. O armazenamento de mensagens precisa estar habilitado na Evolution: a instalação descrita em `evolution-local.md` desativa esse histórico, portanto nessa configuração as respostas não aparecerão até habilitá-lo no provedor. Nenhuma configuração do provedor é alterada automaticamente. A consulta filtra a conversa na API e novamente no servidor. Credenciais nunca são enviadas ao navegador; envio e consulta exigem administrador do tenant correto. O console não cria agendamentos nem cadastra clientes.
 
 Referência oficial do endpoint: https://doc.evolution-api.com/v2/api-reference/chat-controller/find-messages . Testes: `myenv/bin/python manage.py test whatsapp.test_console --noinput` (API simulada).
+
+## Área de diagnóstico `/testes`
+
+Abra `/testes` no subdomínio do estabelecimento, autenticado como administrador, e informe o PIN **1031**. O PIN pode ser alterado pela variável `WHATSAPP_TESTS_PIN` no `.env`. A liberação fica na sessão, vinculada ao tenant, por 30 minutos. Cinco PINs incorretos bloqueiam novas tentativas por dez minutos no cache configurado. O botão **Bloquear área de testes** encerra a liberação; o PIN também protege consultas AJAX e envio.
+
+A área reutiliza o console de envio e conversa, sem cadastro de WhatsApp. **Verificar conexão e configuração** verifica as configurações carregadas, a instância esperada e o estado retornado pela Evolution. Falhas distinguem erros HTTP (incluindo autenticação e instância não encontrada), problemas de conexão e respostas inválidas, sem expor a chave ou o payload externo. O recebimento continua dependendo do histórico habilitado na Evolution. Os testes usam API simulada.
+
+### Teste completo de ida e volta
+
+Em `/testes`, preencha o destino e a mensagem e clique em **Testar envio e recebimento**. Será enviada uma mensagem real com um código aleatório `TESTE-…`. Responda pelo celular de destino com esse código. A consulta periódica confirma o teste apenas quando encontra uma mensagem recebida (não enviada pela loja) da conversa correta com o código desta tentativa. Mensagens antigas sem esse código e a própria mensagem de saída não confirmam o recebimento.
+
+A sessão guarda a última tentativa, tenant, destino, código, identificador devolvido pela API, horário e resultado. Os estados são falha no envio, mensagem aceita/aguardando resposta e ida e volta confirmada. Uma mensagem aceita pela API ainda não prova entrega. Sem histórico da Evolution, a resposta não pode ser verificada pela tela. Verificar a conexão ou abrir a página não dispara mensagens; o envio exige o botão e o PIN liberado.

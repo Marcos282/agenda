@@ -1,0 +1,6 @@
+{% extends 'painel/base.html' %}
+{% block title %}Acesso aos testes{% endblock %}
+{% block painel_content %}<section class="card"><h1>Testes de WhatsApp</h1>
+<p>Informe o PIN para acessar envio, recebimento e diagnóstico deste estabelecimento.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Entrar nos testes</button></form>
+</section>{% endblock %}

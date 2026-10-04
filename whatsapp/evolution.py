@@ -35,8 +35,18 @@ def request(method, path, payload=None):
     try:
         with build_opener(NoRedirect).open(req, timeout=15) as response:
             return json.load(response)
-    except (HTTPError, URLError, TimeoutError, OSError, ValueError):
-        raise EvolutionError('Não foi possível concluir a operação na Evolution API. Verifique a conexão e a configuração.') from None
+    except HTTPError as exc:
+        detail = {
+            401: 'Chave da Evolution inválida ou sem autorização.',
+            403: 'A Evolution negou acesso. Confira a chave e as permissões.',
+            404: 'Endpoint ou instância não encontrada. Confira a URL, a versão e o prefixo.',
+            429: 'Limite de requisições da Evolution atingido. Aguarde e tente novamente.',
+        }.get(exc.code, 'A Evolution retornou um erro. Confira o serviço e seus logs.')
+        raise EvolutionError(f'HTTP {exc.code}: {detail}') from None
+    except (TimeoutError, URLError, OSError):
+        raise EvolutionError('Não foi possível conectar à Evolution: conexão recusada, endereço inacessível ou tempo esgotado. Confira a URL, a porta e se o serviço está iniciado.') from None
+    except ValueError:
+        raise EvolutionError('A Evolution retornou uma resposta inválida. Confira a URL e a versão da API.') from None
 
 
 def connection_info(tenant):

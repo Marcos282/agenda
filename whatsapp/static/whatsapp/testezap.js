@@ -12,6 +12,13 @@
             const response = await fetch(url, {headers: {'Accept': 'application/json'}});
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Não foi possível consultar a conversa.');
+            const testOutput = document.getElementById('roundtrip-status');
+            if (testOutput && data.test) {
+                testOutput.textContent = data.test.status === 'confirmado'
+                    ? 'Envio e recebimento confirmados pela resposta do celular.'
+                    : data.test.status === 'falha' ? `Falha no envio: ${data.test.error}`
+                    : `Mensagem aceita pela API. Aguardando resposta com ${data.test.token}.`;
+            }
             chat.replaceChildren();
             for (const message of data.messages) {
                 const row = document.createElement('p');
@@ -24,6 +31,20 @@
         } finally { busy = false; }
     }
     document.getElementById('refresh-chat').addEventListener('click', update);
+    const diagnose = document.getElementById('diagnose-whatsapp');
+    if (diagnose) diagnose.addEventListener('click', async () => {
+        const output = document.getElementById('diagnosis-status');
+        diagnose.disabled = true;
+        output.textContent = 'Verificando…';
+        try {
+            const url = new URL(window.location.href);
+            url.search = new URLSearchParams({diagnostico: '1'});
+            const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+            const data = await response.json();
+            output.textContent = data.error || `${data.instance}: ${data.status}. ${data.detail || ''}`;
+        } catch (_) { output.textContent = 'Não foi possível consultar o diagnóstico. Verifique sua conexão ou entre novamente.'; }
+        finally { diagnose.disabled = false; }
+    });
     setInterval(update, 10000);
     update();
 })();
