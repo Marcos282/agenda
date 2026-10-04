@@ -54,3 +54,44 @@ Implementação Evolution v2: `fetchInstances`, `instance/create`, `instance/con
 ## Instalação local deste projeto
 
 A instalação sem Docker e os serviços desta máquina estão descritos em [evolution-local.md](evolution-local.md). A configuração local protegida pode fornecer a URL e a chave quando as variáveis de ambiente não estiverem definidas; variáveis de ambiente têm prioridade.
+<<<<<<< HEAD
+=======
+
+### Campo de boas-vindas
+
+A seção **Boas-vindas e agradecimento** tem formulário próprio, preenchido com a mensagem padrão, botão **Salvar configuração** e as mesmas variáveis dos lembretes. O envio automático é independente da antecedência do lembrete. A migração atualiza apenas mensagens que ainda são exatamente o padrão anterior; textos personalizados são preservados.
+
+## Confirmação automática após novo agendamento
+
+A rota `/painel/whatsapp/` oferece ativação independente, texto editável e prévia que acompanha a digitação. A prévia usa dados fictícios de cliente, serviço e profissional e o nome/fuso do estabelecimento. O administrador pode consultar as últimas confirmações, em páginas de dez registros.
+
+Reutilizamos `whatsapp.Configuracao`: `tenant` é uma relação exclusiva por estabelecimento, `confirmacoes_ativas` controla o envio e `mensagem_confirmacao` guarda o texto. A criação de uma configuração começa com confirmações ativadas e a mensagem padrão de agradecimento. Configurações e textos personalizados existentes são preservados. O formulário exige administrador do tenant da requisição; o histórico também é filtrado por esse tenant.
+
+Variáveis aceitas: `{cliente}`, `{empresa}`, `{profissional}`, `{servico}`, `{data}` e `{horario}`. Os aliases anteriores `{estabelecimento}` e `{hora}` continuam funcionando, inclusive nos lembretes. Formatação adicional e variáveis desconhecidas são rejeitadas. Data e horário usam o fuso do tenant e os nomes registrados no agendamento.
+
+Fluxo: `agenda.booking.reservar` grava a reserva e registra `transaction.on_commit(..., robust=True)` → `whatsapp.services.enviar_confirmacao_agendamento` → `whatsapp.confirmations.send_confirmation` → provedor. Não há disparo no `save()` do model. Cadastros públicos, clientes com conta e agendamentos pelo painel passam por esse mesmo fluxo. Uma transação revertida não envia mensagens. O envio é síncrono após o commit e pode acrescentar a latência da API à resposta da reserva.
+
+`whatsapp.services.renderizar_mensagem_agendamento` centraliza a renderização, também reutilizada pelos lembretes. O envio usa o WhatsApp registrado na reserva; a função existente `usuarios.validators.normalizar_whatsapp` prepara o número internacional sem alterar o cadastro. O adaptador Evolution remove o `+` apenas ao montar a requisição de sua API.
+
+`whatsapp.Confirmacao` mantém um registro exclusivo por agendamento, criado antes da chamada externa para impedir duplicação. A migração `0004` acrescenta `destinatario`, `mensagem` e `resposta_api`; os campos existentes registram início, horário de aceitação, status e erro. O adaptador armazena apenas metadados da resposta (provedor e identificador), sem credenciais ou payload completo. Registros anteriores permanecem com os novos campos vazios. “Aceito pela API” não prova entrega ao telefone.
+
+Falhas esperadas e inesperadas do provedor deixam o registro como “Verificar envio” e geram log com tenant, agendamento e classe do erro. Não cancelam nem apagam a reserva. Não há repetição automática: uma resposta ambígua pode corresponder a uma mensagem já enviada. O callback robusto também protege a reserva se ocorrer erro ao carregar a configuração ou persistir o registro; nesse caso o Django registra a falha do callback.
+
+### Trocar o provedor ou acrescentar mensagens
+
+`whatsapp.providers.get_provider` instancia o adaptador indicado por `WHATSAPP_PROVIDER`, cujo padrão é `whatsapp.providers.EvolutionProvider`. Um adaptador deve implementar `send_text(tenant, number, text)` e retornar um dicionário JSON com metadados seguros da resposta, ou `None`. Ele é responsável por credenciais e instâncias isoladas por tenant. Não devolva segredos nesse dicionário. Configure o caminho Python da nova classe no settings para trocar o transporte das confirmações sem alterar o agendamento. A conexão via QR e o processamento atual dos lembretes ainda usam Evolution.
+
+Para novos eventos (cancelamento, reagendamento etc.), adicione configurações por tenant, um registro idempotente próprio e uma função de serviço que reutilize a renderização e o provedor. Registre o evento com `on_commit` na operação correspondente. Lembretes futuros continuam usando seu processamento periódico; confirmações não dependem de cron.
+
+Aplique as migrações com `myenv/bin/python manage.py migrate` antes de publicar o código. Os testes de confirmação usam provedor simulado, sem envio real.
+
+## Console de testes `/testezap`
+
+Acesse `/testezap` (ou `/testezap/`) no subdomínio do estabelecimento, autenticado como administrador. O botão **Testar envio e recebimento** no painel WhatsApp abre a mesma tela. Ela usa a instância já conectada, sem cadastrar números, criar instâncias ou gerar QR code.
+
+Informe o WhatsApp de destino e o texto, e clique em **Enviar mensagem**. O envio usa o provedor existente e normaliza o destino. A conversa é consultada pela Evolution a cada dez segundos e também pelo botão **Atualizar conversa**, com até 30 mensagens. A página diferencia mensagens enviadas e recebidas e mantém o conteúdo como texto, sem interpretar HTML.
+
+O recebimento consulta `POST /chat/findMessages/{instance}`. O armazenamento de mensagens precisa estar habilitado na Evolution: a instalação descrita em `evolution-local.md` desativa esse histórico, portanto nessa configuração as respostas não aparecerão até habilitá-lo no provedor. Nenhuma configuração do provedor é alterada automaticamente. A consulta filtra a conversa na API e novamente no servidor. Credenciais nunca são enviadas ao navegador; envio e consulta exigem administrador do tenant correto. O console não cria agendamentos nem cadastra clientes.
+
+Referência oficial do endpoint: https://doc.evolution-api.com/v2/api-reference/chat-controller/find-messages . Testes: `myenv/bin/python manage.py test whatsapp.test_console --noinput` (API simulada).
+>>>>>>> d4ce4f7 (Primeiro envio: guia pronta)
