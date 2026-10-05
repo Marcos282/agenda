@@ -1,9 +1,14 @@
 {% extends 'agenda/base.html' %}
 {% block content %}
 <span class="booking-step">01 / ESCOLHA O DIA</span>
-<h1>Um tempo para você.</h1><p class="booking-subtitle">Escolha uma data para consultar os horários de atendimento.</p>
-<section class="booking-summary"><span class="booking-symbol" aria-hidden="true">✦</span><div><h2>{{ oferta.servico.nome }}</h2><p>Com {{ oferta.profissional.nome }}</p><strong>R$ {{ oferta.valor|floatformat:2 }} <span>· {{ oferta.duracao_minutos }} min</span></strong></div></section>
-<form method="get" class="booking-date">{{ form.as_p }}<button type="submit">Ver horários disponíveis →</button></form>
+<h1>Um tempo para você.</h1><p class="booking-subtitle">Use as setas para escolher o dia e selecione seu horário.</p>
+<section class="booking-summary{% if oferta.profissional.foto %} booking-summary-with-photo{% endif %}">{% if oferta.profissional.foto %}<img class="booking-professional-photo" src="{% url 'profissional_foto_publica' oferta.profissional.pk %}" alt="Foto de {{ oferta.profissional.nome }}" width="88" height="88">{% endif %}<span class="booking-symbol" aria-hidden="true">✦</span><div><h2>{{ oferta.servico.nome }}</h2><p>Com {{ oferta.profissional.nome }}</p><strong>R$ {{ oferta.valor|floatformat:2 }} <span>· {{ oferta.duracao_minutos }} min</span></strong></div></section>
+<nav class="booking-day-selector" aria-label="Escolher dia de atendimento">
+{% if dia_anterior %}<a class="booking-day-arrow" href="?dia={{ dia_anterior|date:'Y-m-d' }}" aria-label="Recuar 1 dia">←</a>{% else %}<button class="booking-day-arrow" type="button" disabled aria-label="Recuar 1 dia">←</button>{% endif %}
+<div class="booking-selected-day"><strong>{{ dia_selecionado|date:'d' }} de {{ dia_selecionado|date:'F'|capfirst }}, {{ dia_selecionado|date:'Y' }}</strong><span>{{ dia_selecionado|date:'l'|capfirst }}</span></div>
+{% if proximo_dia %}<a class="booking-day-arrow" href="?dia={{ proximo_dia|date:'Y-m-d' }}" aria-label="Avançar 1 dia">→</a>{% else %}<button class="booking-day-arrow" type="button" disabled aria-label="Avançar 1 dia">→</button>{% endif %}
+</nav>
+<div class="booking-slots">{% for horario in horarios %}<a class="booking-slot preview" href="{% url 'agenda:horarios' oferta.pk dia_selecionado|date:'Y-m-d' %}?hora={{ horario.hora|urlencode }}" aria-label="Agendar às {{ horario.hora }}"><strong>{{ horario.hora }}</strong><small>até {{ horario.fim }}</small></a>{% endfor %}</div>
 <p class="booking-note">Horários de {{ request.tenant.timezone }}. Apenas os períodos abertos pelo estabelecimento estarão disponíveis.</p>
 <a class="ui-button ui-button-secondary" href="{% url 'loja_item' oferta.pk %}">← Voltar ao serviço</a>
 {% endblock %}

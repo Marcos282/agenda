@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 from tenants.domains import is_development_public_host, tenant_base_domain_for_host
 from tenants.decorators import tenant_required
 from .forms import LoginForm, WhatsAppForm
@@ -69,6 +70,7 @@ def home(request, profissional_id=None):
                 params.pop(key)
         query = params.urlencode()
         return redirect(destination + ('?' + query if query else '') + '#servicos')
+    profissional = None
     if profissional_id is not None:
         if profissional_id > 9223372036854775807:
             raise Http404
@@ -76,7 +78,14 @@ def home(request, profissional_id=None):
         ofertas = ofertas.filter(profissional=profissional)
     if termo:
         ofertas = ofertas.filter(Q(servico__nome__icontains=termo) | Q(profissional__nome__icontains=termo))
+    from .public_profiles import endereco_fisico
+    profile_title = f'{profissional.nome} — {request.tenant.nome}' if profissional else request.tenant.nome
+    public_root = f'https://{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}'
+    profile_path = reverse('home_profissional', args=[profissional.pk]) if profissional else reverse('home')
     return render(request, 'usuarios/home.html', {
+        'profile_title': profile_title, 'profile_address': endereco_fisico(request.tenant),
+        'profile_url': public_root + profile_path,
+        'profile_image': public_root + reverse('profissional_foto_publica', args=[profissional.pk]) if profissional and profissional.foto else '',
         'ofertas': Paginator(ofertas.order_by('servico__nome', 'profissional__nome', 'pk'), 9).get_page(request.GET.get('page')),
         'equipe': equipe, 'total_servicos': total_servicos, 'total_profissionais': equipe.count(),
         'termo': termo, 'profissional_selecionado': str(profissional_id) if profissional_id is not None else '',
@@ -133,8 +142,11 @@ sair = tenant_required(LogoutView.as_view())
 
 
 @tenant_required
+@never_cache
 @require_http_methods(['GET'])
 def loja(request, item_id=None):
+    if item_id is None:
+        return redirect('inicio')
     from django.core.paginator import Paginator
     from django.db.models import Q
     from django.http import QueryDict
@@ -161,7 +173,28 @@ def loja(request, item_id=None):
             ofertas = ofertas.filter(profissional_id=int(profissional))
     filtros = QueryDict(mutable=True)
     filtros.update({'q': termo, 'profissional': profissional, 'ordem': ordem})
+    dias_disponiveis = []
+    dia_selecionado = dia_anterior = proximo_dia = None
+    if item:
+        from datetime import date, timedelta
+        from zoneinfo import ZoneInfo
+        from django.utils import timezone
+        from agenda.booking import horarios_disponiveis
+        hoje = timezone.localdate(timezone=ZoneInfo(request.tenant.timezone))
+        try:
+            dia_selecionado = max(hoje, date.fromisoformat(request.GET.get('dia', hoje.isoformat())))
+        except ValueError:
+            dia_selecionado = hoje
+        if dia_selecionado > hoje:
+            dia_anterior = dia_selecionado - timedelta(days=1)
+        if dia_selecionado < date.max:
+            proximo_dia = dia_selecionado + timedelta(days=1)
+        horarios = horarios_disponiveis(item, dia_selecionado)
+        if horarios:
+            dias_disponiveis.append({'data': dia_selecionado, 'horarios': horarios})
     return render(request, 'usuarios/loja.html', {
+        'dia_selecionado': dia_selecionado, 'dia_anterior': dia_anterior, 'proximo_dia': proximo_dia,
+        'dias_disponiveis': dias_disponiveis,
         'item': item, 'ofertas': Paginator(ofertas.order_by(*ordenacoes[ordem]), 12).get_page(request.GET.get('page')),
         'equipe': Profissional.objects.for_tenant(request.tenant).ativos(),
         'termo': termo, 'profissional_selecionado': profissional, 'ordem': ordem, 'filtros': filtros.urlencode(),

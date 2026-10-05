@@ -110,10 +110,12 @@
     if (payload && timeline) {
       renderTimeline(timeline, JSON.parse(payload.textContent));
       const refreshStatus = document.querySelector('[data-agenda-refresh]');
+      const refreshButton = document.querySelector('[data-refresh-agenda]');
       let refreshing = false;
       const refresh = async () => {
         if (refreshing || document.hidden || !refreshStatus) return;
         refreshing = true;
+        if (refreshButton) refreshButton.disabled = true;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
         try {
@@ -144,16 +146,21 @@
             if (nextSummary) summary.replaceWith(nextSummary);
             else summary.remove();
           } else if (nextSummary) document.querySelector('.day-card').append(nextSummary);
-          refreshStatus.textContent = 'Agenda atualizada automaticamente.';
+          refreshStatus.textContent = `Agenda atualizada às ${new Date().toLocaleTimeString('pt-BR')}.`;
         } catch (error) {
           refreshStatus.textContent = 'Não foi possível atualizar a agenda. Tentaremos novamente em alguns segundos.';
         } finally {
           clearTimeout(timeout);
           refreshing = false;
+          if (refreshButton) refreshButton.disabled = false;
         }
       };
       refresh();
-      setInterval(refresh, 15000);
+      setInterval(refresh, 10000);
+      if (refreshButton) {
+        refreshButton.hidden = false;
+        refreshButton.addEventListener('click', refresh);
+      }
       document.addEventListener('visibilitychange', refresh);
       root.addEventListener('focus', refresh);
     }

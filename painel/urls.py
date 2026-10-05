@@ -9,6 +9,7 @@ urlpatterns = [
     path('meu-cadastro/', views.meu_cadastro, name='meu_cadastro'),
     path('loja/qr/', loja_qrcode_views.loja_qrcode, name='loja_qrcode'),
     path('loja/qr.png', loja_qrcode_views.loja_qrcode_imagem, name='loja_qrcode_imagem'),
+    path('loja/profissional/<int:profissional_id>/qr.png', loja_qrcode_views.profissional_qrcode_imagem, name='profissional_qrcode_imagem'),
     path('whatsapp/', configuracao_whatsapp, name='whatsapp'),
     path('', views.inicio, name='inicio'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from zoneinfo import ZoneInfo
 
 from django.contrib import messages
@@ -27,14 +27,24 @@ def oferta_publica(request, pk):
 
 
 @tenant_required
+@never_cache
 @require_http_methods(['GET'])
 def escolher_data(request, oferta_id):
     oferta = oferta_publica(request, oferta_id)
     hoje = timezone.localdate(timezone=ZoneInfo(request.tenant.timezone))
-    form = DataAgendamentoForm(request.GET or None, initial={'data': hoje})
+    try:
+        dia = max(hoje, date.fromisoformat(request.GET.get('dia', hoje.isoformat())))
+    except ValueError:
+        dia = hoje
+    form = DataAgendamentoForm(request.GET if 'data' in request.GET else None, initial={'data': dia})
     if form.is_bound and form.is_valid():
         return redirect('agenda:horarios', oferta_id=oferta.pk, dia=form.cleaned_data['data'].isoformat())
-    return render(request, 'agenda/escolher_data.html', {'oferta': oferta, 'form': form, 'hoje': hoje.isoformat()})
+    return render(request, 'agenda/escolher_data.html', {
+        'oferta': oferta, 'form': form, 'hoje': hoje.isoformat(), 'dia_selecionado': dia,
+        'horarios': horarios_disponiveis(oferta, dia),
+        'dia_anterior': dia - timedelta(days=1) if dia > hoje else None,
+        'proximo_dia': dia + timedelta(days=1) if dia < date.max else None,
+    })
 
 
 @tenant_required
@@ -50,6 +60,7 @@ def horarios(request, oferta_id, dia):
     quote = signing.dumps({'oferta': oferta.pk, 'valor': str(oferta.valor), 'duracao': oferta.duracao_minutos}, salt='agendamento')
     form = ConfirmarAgendamentoForm(request.POST if request.method == 'POST' else None,
         initial={'nome': request.user.get_full_name() if request.user.is_authenticated else '', 'cotacao': quote,
+                 'hora': request.GET.get('hora', ''),
                  'whatsapp': request.user.whatsapp if request.user.is_authenticated else ''})
     status = 200
     if request.method == 'POST':

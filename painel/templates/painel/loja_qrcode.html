@@ -1,32 +1,35 @@
-{% extends 'painel/base.html' %}
-{% block title %}QR Code da loja · Painel{% endblock %}
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}QR Codes da loja e funcionários · Painel{% endblock %}
 {% block extra_css %}{{ block.super }}
-.store-qr-overview{padding:26px;margin-bottom:22px;border:1px solid rgba(40,116,84,.18);border-radius:16px;background:rgba(106,196,145,.13)}
-.store-qr-overview h1{margin:10px 0 12px;color:#205b40}.store-qr-overview p{margin:0;color:#405d4e}.store-qr-overview .eyebrow{color:#357356}
-@media(max-width:600px){.store-qr-overview{padding:20px 16px}}
-
-.store-qr{text-align:center;max-width:520px;margin:28px auto;padding:24px;border:1px solid var(--line);border-radius:16px;background:white}
-.store-qr .qr-image{display:block;width:100%;max-width:360px;height:auto;margin:16px auto;image-rendering:pixelated}
-.store-qr h2{margin:0}.store-qr-url{overflow-wrap:anywhere}.store-qr-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:24px}
-.store-profile-photo{display:block;width:100%;max-width:440px;aspect-ratio:1;object-fit:cover;border-radius:16px;margin:18px auto}.store-profile-placeholder{display:grid;place-items:center;min-height:240px;font-size:96px;background:var(--brand-soft);border-radius:16px;margin:18px auto}.store-profile-address{font-style:normal;overflow-wrap:anywhere;line-height:1.6}.store-qr-selector{max-width:520px;margin:20px auto}.store-qr-selector select{max-width:100%;padding:10px}
+.store-qr{text-align:center;max-width:680px;margin:28px auto;padding:24px;border:1px solid var(--line);border-radius:16px;background:white}
+.store-qr select{display:block;width:100%;margin:10px 0 24px;padding:12px;border:1px solid var(--line);border-radius:8px;background:white;font:inherit}
+.store-qr .qr-image{display:block;width:100%;max-width:560px;height:auto;margin:0 auto 24px;image-rendering:pixelated}
+.store-qr .professional-photo{display:block;width:128px;height:128px;margin:0 auto 24px;border-radius:50%;object-fit:cover}
+.store-qr .professional-photo[hidden]{display:none}
+.store-qr-url{display:flex;align-items:center;justify-content:center;gap:12px}.store-qr-url input{min-width:0;flex:1;padding:12px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;font:inherit}
+.store-qr-copy{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px;border:1px solid var(--line);border-radius:8px;background:white;cursor:pointer;color:var(--brand-color)}
+.store-qr-copy[hidden]{display:none}.store-qr-copy svg{width:22px;height:22px}.store-qr-copy:focus-visible{outline:2px solid var(--brand-color);outline-offset:3px}
 {% endblock %}
 {% block painel_content %}
-<div class="store-qr-overview">
-<span class="eyebrow">COMPARTILHE SUA LOJA</span>
-<h1>QR Code da loja</h1>
-<p>O cliente aponta a câmera do celular para acessar sua loja e escolher um horário.</p>
+<section class="store-qr" aria-label="QR Code do site da loja">
+<label for="qr-selection">Selecione a loja ou um funcionário</label>
+<select id="qr-selection" data-qr-selection>
+<option value="loja" data-url="{{ endereco_loja }}" data-image="{% url 'painel:loja_qrcode_imagem' %}" data-title="QR Code da loja">Loja</option>
+{% for profissional in profissionais %}
+<option value="{{ profissional.id }}" data-url="{{ profissional.endereco }}" data-image="{% url 'painel:profissional_qrcode_imagem' profissional.id %}" data-photo="{{ profissional.foto }}" data-title="QR Code de {{ profissional.nome }}">{{ profissional.nome }}</option>
+{% endfor %}
+</select>
+<h2 data-qr-title>QR Code da loja</h2>
+<img class="qr-image" src="{% url 'painel:loja_qrcode_imagem' %}" alt="QR Code para acessar {{ endereco_loja }}" width="560" height="560">
+<img class="professional-photo" data-professional-photo alt="" width="128" height="128" hidden>
+<div class="store-qr-url">
+<input type="text" value="{{ endereco_loja }}" data-store-url readonly aria-label="Endereço do site da loja">
+<button type="button" class="store-qr-copy" data-copy-store-url aria-label="Copiar endereço do site" title="Copiar endereço do site" hidden>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+</button>
 </div>
-<form method="get" class="store-qr-selector"><label for="qr-profissional">Profissional</label>
-<select name="profissional" id="qr-profissional"><option value="">Loja · todos os profissionais</option>{% for pessoa in equipe %}<option value="{{ pessoa.pk }}" {% if profissional_selecionado.pk == pessoa.pk %}selected{% endif %}>{{ pessoa.nome }}</option>{% endfor %}</select><button type="submit">Atualizar QR Code</button></form>
-<section class="store-qr" aria-label="QR Code de {{ request.tenant.nome }}">
-<h2>{{ request.tenant.nome }}</h2>
-{% if perfil_profissional %}
-{% if perfil_profissional.foto %}<img class="store-profile-photo" src="{% url 'profissional_foto_publica' perfil_profissional.pk %}" alt="Foto de {{ perfil_profissional.nome }}" width="440" height="440">{% else %}<div class="store-profile-placeholder" aria-label="Profissional sem foto">{{ perfil_profissional.nome|first|upper }}</div>{% endif %}
-<h3>{{ perfil_profissional.nome }}</h3>{% endif %}
-{% if endereco_fisico %}<address class="store-profile-address">{{ endereco_fisico }}</address>{% else %}<p>Endereço da loja ainda não informado.</p>{% endif %}
-<img class="qr-image" src="{% url 'painel:loja_qrcode_imagem' %}{% if profissional_selecionado %}?profissional={{ profissional_selecionado.pk }}{% endif %}" alt="QR Code para acessar {{ endereco_loja }}" width="444" height="444">
-<p class="store-qr-url"><a class="ui-button ui-button-secondary" href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">{{ endereco_loja }}</a></p>
-<div class="store-qr-actions"><a class="ui-button" href="{% url 'painel:loja_qrcode_imagem' %}?download=1{% if profissional_selecionado %}&amp;profissional={{ profissional_selecionado.pk }}{% endif %}" download>Baixar QR Code</a><a class="ui-button ui-button-secondary" href="{{ endereco_loja }}" target="_blank" rel="noopener noreferrer">Abrir loja ↗</a></div>
+<p data-copy-status role="status" aria-live="polite"></p>
 </section>
-<p>Baixe a imagem para imprimir ou compartilhar com seus clientes.</p>
+
 {% endblock %}
+{% block scripts %}{{ block.super }}<script src="{% static 'painel/loja-qrcode.js' %}" defer></script>{% endblock %}

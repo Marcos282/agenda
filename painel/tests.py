@@ -55,6 +55,32 @@ class PanelTests(TestCase):
         data.update(kwargs)
         return ProfissionalServico(**data)
 
+    def test_new_link_excludes_existing_services_even_inactive(self):
+        offer = self.link()
+        offer.save()
+        url = reverse('painel:vinculo_novo', args=[self.joao.pk])
+        for active in (True, False):
+            offer.ativo = active
+            offer.save()
+            response = self.get(url)
+            self.assertNotIn(self.corte, response.context['form'].fields['servico'].queryset)
+            response = self.post(url, {
+                'servico': self.corte.pk, 'valor': '50', 'duracao_minutos': '40', 'ativo': 'on',
+            })
+            self.assertContains(response, 'Volte à lista para editar ou reativar')
+            self.assertNotContains(response, 'Profissional servico com este Tenant')
+            self.assertEqual(ProfissionalServico.objects.filter(
+                tenant=self.marcos, profissional=self.joao, servico=self.corte).count(), 1)
+        other_url = reverse('painel:vinculo_novo', args=[self.sandro.pk])
+        self.assertIn(self.corte, self.get(other_url).context['form'].fields['servico'].queryset)
+        edit_url = reverse('painel:vinculo_editar', args=[self.joao.pk, offer.pk])
+        self.assertEqual(self.post(edit_url, {
+            'valor': '55', 'duracao_minutos': '45', 'ativo': 'on',
+        }).status_code, 302)
+        offer.refresh_from_db()
+        self.assertTrue(offer.ativo)
+        self.assertEqual(offer.valor, Decimal('55'))
+
     def test_panel_requires_admin_of_current_tenant(self):
         self.client.logout()
         self.assertEqual(self.get('/painel/').status_code, 302)

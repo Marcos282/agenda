@@ -113,6 +113,6 @@ Não é permitido criar, reativar ou alterar um período ativo em uma data passa
 
 ## Atualização da agenda por AJAX
 
-A página administrativa busca `/painel/agenda/dados/?profissional=ID&data=AAAA-MM-DD` ao abrir, a cada 15 segundos e ao retornar à aba. O endpoint exige administrador do estabelecimento, aceita somente GET e impede cache. Reservas e períodos são filtrados pelo tenant, profissional e dia selecionados.
+A página administrativa busca `/painel/agenda/dados/?profissional=ID&data=AAAA-MM-DD` ao abrir, a cada 10 segundos, ao retornar à aba e pelo botão **Atualizar agora**. O endpoint exige administrador do estabelecimento, aceita somente GET e impede cache. Reservas e períodos são filtrados pelo tenant, profissional e dia selecionados.
 
-A resposta JSON contém a linha do tempo, estado de abertura e o fragmento da lista de atendimentos. A página atualiza horários ocupados/livres, reputações e ações sem recarregar o formulário de configuração. Falhas de rede preservam os dados já mostrados e exibem uma indicação de nova tentativa; requisições simultâneas são evitadas e cada consulta tem timeout de 10 segundos. Trocar dia ou profissional continua utilizando a navegação existente.
+A resposta JSON contém a linha do tempo, estado de abertura e o fragmento da lista de atendimentos. A página atualiza horários ocupados/livres, reputações e ações sem recarregar o formulário de configuração. O horário da última atualização aparece abaixo da agenda. Falhas de rede preservam os dados já mostrados e exibem uma indicação de nova tentativa; requisições simultâneas são evitadas e cada consulta tem timeout de 10 segundos. Trocar dia ou profissional continua utilizando a navegação existente.

@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.utils import timezone
 from zoneinfo import ZoneInfo
 
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.core import mail
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
@@ -45,6 +45,45 @@ class RegistroTests(TestCase):
         self.client.post('/registro',data,HTTP_HOST='localhost')
         self.assertEqual(Tenant.objects.count(),1)
         self.assertEqual(self.client.get('/registro',HTTP_HOST='meusalao.localhost').status_code,404)
+
+    @override_settings(
+        DEBUG=False,
+        TENANT_BASE_DOMAIN='tacombinado.net',
+        ALLOWED_HOSTS=['tacombinado.net', '.tacombinado.net'],
+        SESSION_COOKIE_SECURE=True,
+        CSRF_COOKIE_SECURE=True,
+    )
+    def test_registered_admin_can_login_from_production_platform(self):
+        data = self.data()
+        response = self.client.post(
+            '/registro', data, HTTP_HOST='tacombinado.net', secure=True,
+        )
+        self.assertRedirects(response, '/registro/concluido/', fetch_redirect_response=False)
+        user = User.objects.get(email=data['email'])
+        self.assertTrue(user.check_password(data['password1']))
+        response = self.client.post(
+            '/login/',
+            {'email': data['email'].upper(), 'password': data['password1']},
+            HTTP_HOST='tacombinado.net', secure=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context['target'],
+            'https://meusalao.tacombinado.net/login/continuar/',
+        )
+        self.assertNotIn('_auth_user_id', self.client.session)
+        store_client = Client()
+        response = store_client.post(
+            '/login/continuar/', {'ticket': response.context['ticket']},
+            HTTP_HOST='meusalao.tacombinado.net',
+            HTTP_ORIGIN='https://tacombinado.net', secure=True,
+        )
+        self.assertRedirects(response, '/painel/', fetch_redirect_response=False)
+        self.assertEqual(int(store_client.session['_auth_user_id']), user.pk)
+        self.assertEqual(
+            store_client.get('/painel/', HTTP_HOST='meusalao.tacombinado.net', secure=True).status_code,
+            200,
+        )
 
     def test_cta_and_field_order(self):
         page=self.client.get('/',HTTP_HOST='localhost')

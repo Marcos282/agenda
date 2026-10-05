@@ -157,7 +157,15 @@ class ProfissionalServicoForm(TenantForm):
         if self.instance.pk:
             self.fields.pop('servico')
         else:
-            self.fields['servico'].queryset = Servico.objects.for_tenant(tenant).ativos()
+            vinculados = ProfissionalServico.objects.for_tenant(tenant).filter(
+                profissional=profissional).values_list('servico_id', flat=True)
+            self.fields['servico'].queryset = Servico.objects.for_tenant(tenant).ativos().exclude(pk__in=vinculados)
+            self.fields['servico'].help_text = (
+                'Apenas serviços ainda não vinculados aparecem aqui. '
+                'Para alterar ou reativar um serviço já vinculado, volte à lista e edite o registro existente.')
+            self.fields['servico'].error_messages['invalid_choice'] = (
+                'Este serviço já está vinculado ou não está disponível para este profissional. '
+                'Volte à lista para editar ou reativar o vínculo existente.')
 
     class Meta:
         model = ProfissionalServico

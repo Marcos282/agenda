@@ -60,9 +60,10 @@
 <footer class="editor-footer"><a class="agenda-button secondary" href="{{ agenda_url }}" data-close-schedule>Cancelar</a><button type="submit" class="agenda-button">{% if aberta %}Salvar horários{% else %}Abrir agenda{% endif %}</button></footer>
 </form></div>
 </section>
+<button type="button" class="agenda-button secondary" data-refresh-agenda hidden>Atualizar agora</button>
 <p data-agenda-refresh role="status" class="client-muted" data-url="{% url 'painel:agenda_dados' %}?profissional={{ profissional.pk }}&amp;data={{ data_iso }}">A agenda atualiza automaticamente.</p>
 {{ timeline|json_script:'agenda-data' }}
 {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}<script src="{% static 'painel/agenda.js' %}?v=ajax-1" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'painel/agenda.js' %}?v=ajax-2" defer></script>{% endblock %}

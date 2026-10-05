@@ -10,3 +10,10 @@ html{scroll-behavior:smooth;scroll-padding-top:24px}body{background:#fcfcfa}.lan
 .service-card{display:flex;flex-direction:column;align-items:stretch}
 .service-card>.ui-button{margin-top:auto;min-height:44px}
 .service-card .service-meta{margin-bottom:16px}
+.service-card .small-avatar{object-fit:cover;flex-shrink:0}
+
+.service-card-heading{position:relative;min-height:56px;padding-right:70px;margin-bottom:12px}
+.service-avatar{display:grid;place-items:center;width:56px;height:56px;flex-shrink:0;border-radius:50%;object-fit:cover;object-position:center;background:var(--brand-soft);color:var(--brand-ink);font-size:20px;overflow:hidden}
+.service-card-heading>.service-avatar{position:absolute;top:0;right:0;aspect-ratio:1;box-sizing:border-box;border:2px solid var(--brand-border)}
+.service-card-title{min-width:0;flex:1}
+.service-card-heading h3{margin:10px 0 0}

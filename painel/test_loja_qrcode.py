@@ -28,7 +28,8 @@ class StoreQRCodeTests(TestCase):
         response = self.client.get(self.page, **self.host)
         self.assertContains(response, 'https://marcos.tacombinado.net/')
         self.assertEqual(response.context['endereco_loja'], 'https://marcos.tacombinado.net/')
-        self.assertContains(response, 'Baixar QR Code')
+        self.assertContains(response, 'data-copy-store-url')
+        self.assertContains(response, 'Copiar endereço do site')
         image = self.client.get(self.image, **self.host)
         self.assertEqual(image['Content-Type'], 'image/png')
         with Image.open(BytesIO(image.content)) as png:
@@ -60,30 +61,42 @@ class StoreQRCodeTests(TestCase):
         for url in [self.page, self.image]:
             self.assertEqual(self.client.get(url, **self.host).status_code, 302)
 
-    def test_professional_profile_photo_address_and_qr(self):
+    def test_store_profile_ignores_old_professional_selection(self):
         from profissionais.models import Profissional
         professional = Profissional.objects.create(tenant=self.tenant, nome='João', foto='foto-teste.jpg')
         self.admin.endereco = 'Rua das Flores'
         self.admin.numero_endereco = '123'
-        self.admin.bairro = 'Centro'
-        self.admin.cidade = 'Rio de Janeiro'
-        self.admin.estado = 'RJ'
         self.admin.save()
         response = self.client.get(self.page, {'profissional': professional.pk}, **self.host)
-        self.assertContains(response, 'Foto de João')
-        self.assertContains(response, 'Rua das Flores, 123')
-        self.assertContains(response, 'Rio de Janeiro / RJ')
-        self.assertContains(response, 'store-profile-photo')
-        self.assertEqual(response.context['endereco_loja'], f'https://marcos.tacombinado.net/profissional/{professional.pk}/')
-        store = self.client.get(self.image, **self.host)
-        profile = self.client.get(self.image, {'profissional': professional.pk}, **self.host)
-        self.assertEqual(profile.status_code, 200)
-        self.assertNotEqual(store.content, profile.content)
+        self.assertNotContains(response, 'Rua das Flores, 123')
+        self.assertNotContains(response, 'Foto de João')
+        self.assertNotContains(response, 'qr-profissional')
+        self.assertContains(response, f'data-photo="{reverse("painel:profissional_foto", args=[professional.pk])}"')
+        self.assertEqual(response.context['endereco_loja'], 'https://marcos.tacombinado.net/')
+        self.assertEqual(self.client.get(self.image, **self.host).content,
+                         self.client.get(self.image, {'profissional': professional.pk}, **self.host).content)
 
-    def test_professional_selector_cannot_cross_tenants(self):
+    def test_professional_cards_and_tenant_scoped_qr(self):
+        from unittest.mock import patch
         from profissionais.models import Profissional
-        other = Profissional.objects.create(tenant=self.other, nome='Outro profissional')
+        professional = Profissional.objects.create(tenant=self.tenant, nome='Ana')
         inactive = Profissional.objects.create(tenant=self.tenant, nome='Inativo', ativo=False)
-        for selected in [other.pk, inactive.pk, 'invalido']:
-            for url in [self.page, self.image]:
-                self.assertEqual(self.client.get(url, {'profissional': selected}, **self.host).status_code, 404)
+        foreign = Profissional.objects.create(tenant=self.other, nome='Outra loja')
+        url = f'https://marcos.tacombinado.net/profissional/{professional.pk}/'
+        response = self.client.get(self.page, **self.host)
+        self.assertContains(response, 'Ana')
+        self.assertContains(response, f'data-url="{url}"')
+        self.assertContains(response, f'data-photo=""')
+        self.assertNotContains(response, 'Inativo')
+        self.assertNotContains(response, 'Outra loja')
+        image_url = reverse('painel:profissional_qrcode_imagem', args=[professional.pk])
+        with patch('painel.loja_qrcode_views.qrcode.QRCode.add_data', autospec=True) as add_data:
+            image = self.client.get(image_url, **self.host)
+            self.assertEqual(image.status_code, 200)
+            self.assertEqual(add_data.call_args.args[1], url)
+        for unavailable in [inactive, foreign]:
+            route = reverse('painel:profissional_qrcode_imagem', args=[unavailable.pk])
+            self.assertEqual(self.client.get(route, **self.host).status_code, 404)
+        self.assertEqual(self.client.post(image_url, **self.host).status_code, 405)
+        self.client.force_login(self.customer)
+        self.assertEqual(self.client.get(image_url, **self.host).status_code, 403)

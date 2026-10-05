@@ -2,3 +2,23 @@ html{scroll-behavior:smooth;scroll-padding-top:24px}body{background:#fafbf9}.sho
 @media(max-width:1000px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-stamp{width:175px;height:175px;margin-right:10px}.shop-hero{padding:35px}.shop-layout{grid-template-columns:200px minmax(0,1fr);gap:20px}}
 @media(max-width:680px){.shop-header,.shop-footer{padding:20px}.shop{padding:0 20px}.shop-header{flex-wrap:wrap}.shop-brand{font-size:19px}.shop-header .ui-button{padding:9px 11px;font-size:11px}.shop-hero{padding:30px 24px;margin-top:20px}.hero-stamp{display:none}.shop-hero h1{font-size:40px}.shop-hero p{font-size:12px}.shop-benefits{flex-wrap:wrap;justify-content:flex-start;font-size:10px;gap:14px}.catalog-top{align-items:flex-start;flex-direction:column}.shop-catalog{padding:30px 0}.shop-layout{grid-template-columns:1fr}.shop-filters form{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}.shop-filters h3{grid-column:1/-1;margin:0}.shop-filters label{grid-column:1/-1;margin-top:8px;margin-bottom:0}.shop-filters input,.shop-filters select{grid-column:1/-1}.shop-filters button,.shop-filters .ui-button{margin-top:8px}.shop-help{display:none}.product-grid{gap:12px}.product-art{min-height:145px;padding:17px 10px}.product-art-name{font-size:15px}.product-body{padding:13px}.product-body h3{font-size:14px}.product-price strong{font-size:21px}.product-body .ui-button{padding:9px;font-size:10px}.shop-invite{flex-direction:column;align-items:flex-start;padding:25px}.shop-invite h2{font-size:23px}.shop-footer{flex-wrap:wrap;gap:8px}.shop-footer p{margin:0}.product-detail{grid-template-columns:1fr;gap:25px;padding-top:25px}.detail-art{min-height:240px}.detail-copy h1{font-size:30px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.product-art>.product-professional-photo{position:absolute;top:12px;right:12px;width:88px;height:88px;min-width:88px;max-width:88px;aspect-ratio:1;border-radius:50%;clip-path:circle(50%);border:3px solid white;box-sizing:border-box;object-fit:cover;object-position:center;display:block}
+.product-art-photo .product-duration{left:10px;right:auto}
+
+.detail-professional-photo{width:240px;height:240px;max-width:100%;aspect-ratio:1;border-radius:50%;clip-path:circle(50%);object-fit:cover;object-position:center;border:4px solid white;box-sizing:border-box}
+.product-detail{align-items:start}.detail-art{position:sticky;top:24px}
+.detail-availability{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
+.detail-availability h2{font-size:22px;margin:0 0 10px}.detail-timezone{font-size:11px;color:var(--muted)}
+.detail-available-day h3{font-size:14px;margin:20px 0 10px}.detail-slots{display:flex;flex-wrap:wrap;gap:8px}
+.detail-slots .ui-button{flex-direction:column;gap:3px;min-width:76px;font-size:14px}.detail-slots small{font-size:10px;font-weight:400}
+@media(max-width:680px){.detail-art{position:static}.detail-professional-photo{width:200px;height:200px}}
+
+.detail-day-navigation{display:flex;flex-direction:column;gap:12px;margin:16px 0}.detail-day-navigation>strong{font-size:15px}.detail-day-navigation>div{display:flex;flex-wrap:wrap;gap:8px}.detail-day-navigation .ui-button{font-size:12px}
+
+.detail-top-navigation{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:28px}.detail-top-navigation .ui-button{margin-top:0;font-size:12px}
+
+.shop-day-selector{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 20px;border:1px solid #d5e3fb;border-radius:14px;background:#f3f7ff;min-width:0;max-width:100%;box-sizing:border-box}
+.shop-selected-day{text-align:center;min-width:0}.shop-selected-day strong{display:block;font-size:17px;color:#24568c}.shop-selected-day span{display:block;font-size:12px;color:#6f8fb9;margin-top:3px}
+.shop-day-selector .shop-day-arrow{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:0;flex-shrink:0;border:1px solid #d0dffa;border-radius:9px;background:white;color:#2463b6;text-decoration:none;font-size:24px;line-height:1}
+.shop-day-selector .shop-day-arrow:disabled{opacity:.4;cursor:default}.shop-day-selector .shop-day-arrow:focus-visible{outline:2px solid #2463b6;outline-offset:3px}
+@media(max-width:680px){.shop-day-selector{width:100%;gap:10px;padding:16px 12px}.shop-selected-day strong{font-size:15px}}
