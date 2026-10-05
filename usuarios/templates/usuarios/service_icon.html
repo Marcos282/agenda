@@ -1,0 +1,15 @@
+{% with servico=nome|lower %}
+<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
+{% if 'barba' in servico or 'navalha' in servico or 'gilete' in servico %}
+<rect x="5" y="5" width="22" height="9" rx="2"/><path d="M8 8h16M8 11h16M13 14v5h6v-5M16 19v8"/>
+{% elif 'máquina' in servico or 'maquina' in servico or 'degrad' in servico or 'fade' in servico %}
+<path d="M10 10h12v13a6 6 0 0 1-12 0ZM9 10V5h14v5M12 5V2m4 3V2m4 3V2M13 14h6M16 19v3"/>
+{% elif 'corte' in servico or 'cabelo' in servico or 'tesoura' in servico %}
+<circle cx="8" cy="24" r="4"/><circle cx="24" cy="24" r="4"/><path d="m11 21 13-17M21 21 9 4M16 15l-2 3"/>
+{% elif 'unha' in servico or 'manicure' in servico or 'pedicure' in servico or 'esmalte' in servico %}
+<rect x="9" y="14" width="14" height="14" rx="3"/><path d="M12 14V5h8v9M12 9h8M13 19h6"/>
+{% else %}
+<path d="m16 4 3.5 8.5L28 16l-8.5 3.5L16 28l-3.5-8.5L4 16l8.5-3.5ZM25 3v6m-3-3h6"/>
+{% endif %}
+</svg>
+{% endwith %}
