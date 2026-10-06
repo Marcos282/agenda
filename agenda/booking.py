@@ -119,9 +119,11 @@ def validar_limite_agendamentos(*, tenant, whatsapp, dia):
     """Count this number's noncancelled bookings on the chosen local date."""
     from django.db.models import Q
     from django.db.models.functions import TruncDate
-    from usuarios.validators import normalizar_whatsapp
+    from usuarios.validators import normalizar_whatsapp, whatsapp_liberado_para_testes
 
     numero = normalizar_whatsapp(whatsapp)
+    if whatsapp_liberado_para_testes(tenant, numero):
+        return
     # The caller holds the tenant lock, including reservations for other professionals.
     agendamentos = Agendamento.objects.for_tenant(tenant).filter(
         Q(cliente_whatsapp=numero) |
@@ -154,7 +156,9 @@ def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, dura
     from usuarios.models import WhatsAppBloqueado
     # Serialize blocking and reservations across professionals in this establishment.
     tenant = Tenant.objects.select_for_update().get(pk=tenant.pk, ativo=True)
-    if WhatsAppBloqueado.objects.for_tenant(tenant).filter(whatsapp=numero).exists():
+    from usuarios.validators import whatsapp_liberado_para_testes
+    if (not whatsapp_liberado_para_testes(tenant, numero)
+            and WhatsAppBloqueado.objects.for_tenant(tenant).filter(whatsapp=numero).exists()):
         raise ValidationError('Este WhatsApp está bloqueado para novos agendamentos neste estabelecimento.')
     validar_limite_agendamentos(tenant=tenant, whatsapp=numero, dia=dia)
 

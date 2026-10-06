@@ -233,4 +233,8 @@ MERCADO_PAGO_LIVE_MODE = str(os.environ.get('MERCADO_PAGO_LIVE_MODE', LOCAL.get(
 # PIN adicional do console de diagnóstico, por sessão de administrador.
 WHATSAPP_TESTS_PIN = os.environ.get("WHATSAPP_TESTS_PIN", "1031")
 
+# Exceção de testes restrita ao estabelecimento e número autorizados.
+# Formato: subdominio:numero,subdominio:numero. Valor vazio desativa a exceção.
+WHATSAPP_TEST_RECIPIENTS = os.environ.get('WHATSAPP_TEST_RECIPIENTS', 'marcos:21990921092')
+
 WHATSAPP_TESTS_DB = Path(os.environ.get("WHATSAPP_TESTS_DB", str(BASE_DIR / "whatsapp-tests.sqlite3")))

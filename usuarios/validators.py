@@ -26,3 +26,19 @@ def normalizar_whatsapp(value):
 
 def validate_whatsapp(value):
     normalizar_whatsapp(value)
+
+
+def whatsapp_liberado_para_testes(tenant, value):
+    """Allow quantity/block exceptions only for the configured tenant/number pair."""
+    from django.conf import settings
+    numero = normalizar_whatsapp(value)
+    for entry in getattr(settings, 'WHATSAPP_TEST_RECIPIENTS', '').split(','):
+        subdomain, separator, phone = entry.strip().partition(':')
+        if not separator or subdomain != tenant.subdomain:
+            continue
+        try:
+            if normalizar_whatsapp(phone) == numero:
+                return True
+        except ValidationError:
+            continue
+    return False
