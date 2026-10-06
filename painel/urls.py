@@ -2,6 +2,7 @@ from django.urls import path
 from . import views, agenda_views, agendamento_views, cliente_views, loja_qrcode_views, mensalidade_views
 
 from whatsapp.views import configuracao_whatsapp
+from whatsapp.console import testes
 
 app_name = 'painel'
 urlpatterns = [
@@ -11,6 +12,7 @@ urlpatterns = [
     path('loja/qr.png', loja_qrcode_views.loja_qrcode_imagem, name='loja_qrcode_imagem'),
     path('loja/profissional/<int:profissional_id>/qr.png', loja_qrcode_views.profissional_qrcode_imagem, name='profissional_qrcode_imagem'),
     path('whatsapp/', configuracao_whatsapp, name='whatsapp'),
+    path('testes/', testes, {'route': 'painel:testes'}, name='testes'),
     path('', views.inicio, name='inicio'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),
     path('agendamentos/<int:pk>/cancelar/', agendamento_views.cancelar_agendamento, name='agendamento_cancelar'),

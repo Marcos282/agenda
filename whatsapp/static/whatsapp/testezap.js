@@ -20,9 +20,19 @@
                     : `Mensagem aceita pela API. Aguardando resposta com ${data.test.token}.`;
             }
             chat.replaceChildren();
+            if (!data.messages.length) {
+                const empty = document.createElement('div'); empty.className = 'conversation-empty';
+                const title = document.createElement('strong'); title.textContent = 'Sua conversa começa aqui';
+                const hint = document.createElement('p'); hint.textContent = 'Envie uma mensagem e responda pelo celular para acompanhar a conversa.';
+                empty.append(title, hint); chat.append(empty);
+            }
             for (const message of data.messages) {
-                const row = document.createElement('p');
-                row.textContent = `${message.sent ? 'Enviada' : 'Recebida'}${message.number ? ' · ' + message.number : ''}: ${message.text}`;
+                const row = document.createElement('article');
+                row.className = `chat-bubble ${message.sent ? 'outgoing' : 'incoming'}`;
+                const label = document.createElement('strong');
+                label.textContent = `${message.sent ? 'Enviada' : 'Recebida'}${message.number ? ' · ' + message.number : ''}`;
+                const body = document.createElement('p'); body.textContent = message.text;
+                row.append(label, body);
                 chat.append(row);
             }
             status.textContent = data.messages.length ? 'Conversa atualizada.' : 'Nenhuma mensagem recebida. Confira a configuração do webhook.';

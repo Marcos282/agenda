@@ -28,3 +28,32 @@
 .whatsapp-stack summary{cursor:pointer;font-weight:600;font-size:14px}
 .connection-number{overflow-wrap:anywhere;color:var(--muted)}
 @media(max-width:600px){.whatsapp-overview{padding:20px}.whatsapp-overview h1{font-size:27px}.whatsapp-stack>.card{padding:20px 16px}.whatsapp-stack .toolbar>*{flex:1 1 160px}.whatsapp-heading{gap:12px}}
+.test-overview{background:linear-gradient(125deg,#eaf6ef,#f9fcfa);padding:30px}
+.test-eyebrow{font-size:10px;font-weight:700;letter-spacing:.14em;color:#437b5f}
+.test-overview h1{font-size:clamp(26px,3.5vw,36px);margin:12px 0;line-height:1.15}
+.test-overview .whatsapp-heading>div{flex:1;min-width:220px}
+.test-overview .whatsapp-heading p{font-size:14px;line-height:1.7;color:#617368;margin:0}
+.test-overview-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid #d4e5da}
+.test-overview-bottom .connection-number{margin:0;font-size:13px}
+.test-workspace{grid-template-columns:minmax(0,.95fr) minmax(0,1.15fr);align-items:start}
+.test-workspace>.card{min-width:0}
+.test-section-title{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.test-section-title h2{margin:0 0 4px!important}.test-section-title p{margin:0;font-size:12px;color:var(--muted);line-height:1.6}
+.test-section-icon{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;background:#edf7f0;border:1px solid #dcebe2;border-radius:13px;color:#23734f;font-size:23px}
+.test-workspace .compose-card textarea{min-height:205px;background:#fbfdfc}
+.test-workspace .compose-card input:focus-visible,.test-workspace .compose-card textarea:focus-visible{outline:3px solid #bce4ce;outline-offset:2px;border-color:#379466}
+.test-workspace .test-send-button,.test-workspace .test-roundtrip-button{width:100%;min-height:46px;margin:8px 0 0;border-radius:11px}
+.test-workspace .test-footnote{font-size:12px;line-height:1.7;color:#75857b}
+.conversation-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #e6eee8}
+.test-refresh-note{font-size:11px;color:#7d8c82}.conversation-toolbar .ui-button{font-size:12px;padding:8px 12px}
+.conversation-feed{display:flex;flex-direction:column;gap:12px;min-height:290px;max-height:520px;overflow-y:auto;padding:16px 4px;background:linear-gradient(#fff,#fafcfb);border-radius:12px}
+#chat-messages .chat-bubble{padding:12px 15px;max-width:90%;border:1px solid #e1e9e4;background:#f6f8f7;border-radius:14px 14px 14px 4px;align-self:flex-start;line-height:1.6;box-sizing:border-box}
+#chat-messages .chat-bubble.outgoing{align-self:flex-end;background:#eaf6ed;border-color:#cfe7d7;border-radius:14px 14px 4px 14px}
+.chat-bubble strong{display:block;font-size:10px;color:#63816e;font-weight:600;letter-spacing:.02em}
+.chat-bubble p{margin:6px 0 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}.chat-bubble small{display:block;margin-top:8px;font-size:10px;color:#819087}
+.conversation-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:32px 20px;color:#809087}
+.conversation-empty>span{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#eef5f0;font-size:30px;color:#69927a;margin-bottom:16px}
+.conversation-empty strong{font-size:15px;font-weight:600;color:#4b6756}.conversation-empty p{font-size:12px;line-height:1.8;max-width:240px;margin:8px 0}
+.test-workspace>.test-result,.test-workspace>.test-tools{grid-column:1/-1}
+.test-tools h3{font-size:14px;margin-top:22px}.test-tools p{font-size:13px;line-height:1.7;color:var(--muted)}
+@media(max-width:700px){.test-workspace{grid-template-columns:minmax(0,1fr)}.test-overview{padding:22px 18px}.conversation-feed{min-height:240px}.test-overview .whatsapp-heading>div{min-width:0;flex-basis:100%}}

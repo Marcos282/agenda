@@ -54,6 +54,17 @@ class ConsoleTests(BookingFixture, TestCase):
 
 @override_settings(WHATSAPP_TESTS_PIN='1031')
 class ProtectedConsoleTests(ConsoleTests):
+    @patch('whatsapp.console.get_provider')
+    def test_panel_route_keeps_pin_and_current_tenant(self, provider):
+        url = '/painel/testes/'
+        self.assertContains(self.client.get(url, HTTP_HOST='marcos.localhost'), 'PIN de acesso')
+        self.assertEqual(self.client.get(url+'?mensagens=1', HTTP_HOST='marcos.localhost').status_code, 403)
+        self.assertEqual(self.client.post(url, {'pin': '1031'}, HTTP_HOST='marcos.localhost').url, url)
+        response = self.client.post(url, {'whatsapp': '21990921092', 'mensagem': 'Mensagem livre'}, HTTP_HOST='marcos.localhost')
+        self.assertEqual(response.url, url)
+        provider.return_value.send_text.assert_called_once_with(self.tenant, '+5521990921092', 'Mensagem livre')
+        self.assertEqual(self.client.get(url, HTTP_HOST='wanessa.localhost').status_code, 403)
+
     def setUp(self):
         super().setUp()
         from django.core.cache import cache

@@ -1,39 +1,35 @@
 {% extends 'painel/base.html' %}
 {% load static %}
-{% block title %}Teste de WhatsApp{% endblock %}
-{% block layout_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'whatsapp/layout.css' %}?v=1">{% endblock %}
+{% block title %}Conversa de WhatsApp{% endblock %}
+{% block layout_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'whatsapp/layout.css' %}?v=conversation-3">{% endblock %}
 {% block painel_content %}
-<div class="whatsapp-overview"><div class="whatsapp-heading"><h1>Teste de WhatsApp</h1><span id="whatsapp-connection" class="connection-status unknown" role="status">Verificando conexão…</span></div>
-<p>Envie uma mensagem pelo número do estabelecimento e acompanhe a conversa em um só lugar.</p>
-<p id="whatsapp-connection-number" class="connection-number"></p><a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}">Configurar WhatsApp ↗</a></div>
-<div class="whatsapp-stack">
-{% if protected %}<section class="card"><h2>Diagnóstico da conexão</h2>
-<button type="button" id="diagnose-whatsapp">Verificar conexão e configuração</button>
-<p id="diagnosis-status" role="status">Clique para consultar a Evolution.</p>
-<form method="post">{% csrf_token %}<button name="acao" value="bloquear">Bloquear área de testes</button></form>
-</section>{% endif %}
-<section class="card"><h2>Enviar mensagem</h2>
-<p>Escreva livremente a mensagem que deseja enviar. As respostas do cliente aparecem na conversa abaixo; não precisam conter um código de teste.</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Enviar mensagem</button>
-{% if protected %}<button type="submit" name="acao" value="teste_completo">Testar envio e recebimento</button>{% endif %}</form>
+<header class="whatsapp-overview test-overview">
+<div class="whatsapp-heading"><div><span class="test-eyebrow">WHATSAPP · {{ request.tenant.nome }}</span><h1>Uma conversa mais perto.</h1><p>Envie uma mensagem e acompanhe as respostas dos seus clientes.</p></div><span id="whatsapp-connection" class="connection-status unknown" role="status">Verificando conexão…</span></div>
+<div class="test-overview-bottom"><p id="whatsapp-connection-number" class="connection-number"></p><a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}">Configurar WhatsApp ↗</a></div>
+</header>
+<div class="whatsapp-stack test-workspace">
+<section class="card compose-card"><div class="test-section-title"><span class="test-section-icon" aria-hidden="true">↗</span><div><h2>Nova mensagem</h2><p>Escolha o destino e escreva do seu jeito.</p></div></div>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="test-send-button" type="submit">Enviar mensagem ↗</button>
+{% if protected %}<button class="ui-button ui-button-secondary test-roundtrip-button" type="submit" name="acao" value="teste_completo">Testar envio e recebimento</button>{% endif %}</form>
+<p class="test-footnote">As respostas aparecem na conversa ao lado. Mensagens comuns não precisam de código.</p>
 </section>
-{% if protected %}<section class="card"><h2>Resultado do teste completo</h2>
-<p>O teste envia a mensagem com um código único. Responda pelo celular de destino com esse código para confirmar o caminho de ida e volta.</p>
+<section class="card conversation-card"><div class="test-section-title"><span class="test-section-icon" aria-hidden="true">☏</span><div><h2>Sua conversa</h2><p>Enviadas e recebidas, em um só lugar.</p></div></div>
+<div class="conversation-toolbar"><span class="test-refresh-note">Atualização a cada 10 segundos</span><button class="ui-button ui-button-secondary" type="button" id="refresh-chat">Atualizar ↻</button></div>
+<p id="chat-status" role="status" class="test-footnote"></p>
+<div id="chat-messages" class="conversation-feed" aria-live="polite" aria-label="Mensagens da conversa">{% for message in received_messages %}<article class="chat-bubble incoming"><strong>Recebida · {{ message.number }}</strong><p>{{ message.text }}</p><small>{{ message.received_at }}</small></article>{% empty %}<div class="conversation-empty"><span aria-hidden="true">☏</span><strong>Sua conversa começa aqui</strong><p>Envie uma mensagem e responda pelo celular para acompanhar a conversa.</p></div>{% endfor %}</div>
+</section>
+{% if protected %}<section class="card test-result"><h2>Teste de envio e recebimento</h2>
 <p id="roundtrip-status" role="status">{% if test_run.status == 'confirmado' %}Envio e recebimento confirmados pela resposta do celular.{% elif test_run.status == 'falha' %}Falha no envio: {{ test_run.error }}{% elif test_run %}Mensagem aceita pela API. Aguardando resposta com {{ test_run.token }}.{% else %}Nenhum teste completo executado nesta sessão.{% endif %}</p>
-<p>Sem uma resposta correspondente, o recebimento permanece pendente. Configure o webhook abaixo para gravar as respostas no SQLite.</p>
+<p>Ao usar “Testar envio e recebimento”, responda com o código recebido para confirmar o teste completo.</p>
 </section>{% endif %}
-<section class="card"><h2>Recebimento em SQLite</h2>
-<p>Mensagens recebidas pelo webhook ficam salvas e podem ser consultadas mesmo quando a Evolution estiver indisponível.</p>
-<details><summary>Configurar recebimento na Evolution</summary>
-<p>Use esta URL no webhook da instância deste estabelecimento, com o evento MESSAGES_UPSERT. Preserve os destinos de webhook já usados por outras integrações.</p>
-<input type="text" value="{{ webhook_url }}" readonly aria-label="URL de recebimento" style="width:100%;box-sizing:border-box">
-<p>O endereço precisa ser alcançável pela Evolution. Esta URL contém uma chave de acesso exclusiva do estabelecimento.</p></details>
-</section>
-<section class="card"><h2>Mensagens recebidas</h2>
-<p>Informe o destino acima e responda pelo celular. As mensagens salvas no SQLite e disponíveis na Evolution serão consultadas a cada 10 segundos.</p>
-<button type="button" id="refresh-chat">Atualizar conversa</button>
-<p id="chat-status" role="status"></p><div id="chat-messages">{% for message in received_messages %}<article><strong>{{ message.number }}</strong><p>{{ message.text }}</p><small>{{ message.received_at }}</small></article>{% empty %}<p>Nenhuma mensagem recebida ainda.</p>{% endfor %}</div>
-</section>
+<section class="card test-tools"><details><summary>Conexão e recebimento</summary>
+{% if protected %}<h3>Diagnóstico da conexão</h3><button class="ui-button ui-button-secondary" type="button" id="diagnose-whatsapp">Verificar conexão</button><p id="diagnosis-status" role="status">Clique para consultar a conexão.</p>{% endif %}
+<h3>Configurar recebimento</h3><p>Mensagens recebidas ficam salvas e podem ser consultadas mesmo quando a conexão estiver indisponível.</p>
+<p>Configure esta URL no webhook da instância deste estabelecimento, com o evento MESSAGES_UPSERT. Preserve os destinos usados por outras integrações.</p>
+<input type="text" value="{{ webhook_url }}" readonly aria-label="URL de recebimento">
+<p class="test-footnote">Esta URL contém uma chave exclusiva do estabelecimento. O endereço precisa ser alcançável pela Evolution.</p>
+{% if protected %}<form method="post">{% csrf_token %}<button class="ui-button ui-button-quiet" name="acao" value="bloquear">Bloquear área de testes</button></form>{% endif %}
+</details></section>
 </div>
 {% endblock %}
-{% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/testezap.js' %}?v=connection-2" defer></script>{% endblock %}
+{% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/testezap.js' %}?v=conversation-3" defer></script>{% endblock %}
