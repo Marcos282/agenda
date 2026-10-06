@@ -11,7 +11,7 @@ Ambos incluem agendamentos online, WhatsApp, histórico de clientes, loja online
 
 ## Troca de plano
 
-A seleção inicia a cobrança e preserva o plano atual até a confirmação do pagamento. Os dois botões “Escolher este plano” abrem diretamente o checkout existente do Mercado Pago com o valor do plano escolhido. A abertura do checkout não acrescenta dias: a renovação depende de pagamento avulso confirmado, sem cobrança automática. O bloqueio de downgrade é validado antes de criar a cobrança.
+A seleção inicia a cobrança e preserva o plano atual até a confirmação do pagamento. Os dois botões “Escolher este plano” mostram primeiro a prévia do JSON com o valor do plano escolhido, sem enviar a cobrança. O botão “Enviar ao Mercado Pago” envia a cobrança e abre o checkout. A abertura do checkout não acrescenta dias: a renovação depende de pagamento avulso confirmado, sem cobrança automática. O bloqueio de downgrade é validado antes de criar a cobrança.
 
 Para trocar para o Individual com vários profissionais ativos, abra `/painel/profissionais/`, escolha quem continuará ativo e desative os demais. A troca será recusada enquanto houver mais de um ativo. Nenhum cadastro, agenda ou histórico é excluído. Profissionais inativos podem continuar cadastrados; o limite se aplica à criação de profissionais ativos e à ativação de cadastros existentes.
 

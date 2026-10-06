@@ -65,7 +65,7 @@ def mensalidade(request):
         if request.POST.get('acao') not in ('pagar', 'enviar', 'comprar_plano', 'escolher_plano'):
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
-        preparar = request.POST.get('acao') == 'pagar'
+        preparar = comprar_plano or request.POST.get('acao') == 'pagar'
         previa = request.session.get('checkout_previa', {})
         if not preparar and not comprar_plano and (previa.get('tenant_id') != request.tenant.pk or not previa.get('checkout_id')):
             messages.error(request, 'Confira o JSON da cobrança antes de enviar.')

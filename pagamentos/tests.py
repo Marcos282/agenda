@@ -121,19 +121,28 @@ class CheckoutProTests(TestCase):
         self.assertEqual(checkout.plano, 'INDIVIDUAL')
         self.assertEqual(checkout.valor, Decimal('30.00'))
 
-    def test_both_plan_buttons_open_checkout_with_server_price(self):
+    def test_both_plan_buttons_preview_json_then_send_checkout_with_server_price(self):
         for plano, amount in [('ILIMITADO', 50), ('INDIVIDUAL', 30)]:
             with self.subTest(plano=plano):
                 response = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': plano,
                     'valor': '0.01', 'tenant_id': self.other.pk}, **self.host)
+                self.assertEqual(response.status_code, 200)
+                self.assertTemplateUsed(response, 'painel/checkout_previa.html')
+                self.sdk.preference.return_value.create.assert_not_called()
+                preview = json.loads(response.context['previa_json'])['requisicao']['corpo']
+                self.assertEqual(preview['items'][0]['unit_price'], amount)
+                self.assertFalse(CheckoutAcesso.objects.get(pk=self.client.session['checkout_previa']['checkout_id']).preferencia_id)
+                response = self.client.post(self.url, {'acao': 'enviar', 'valor': '0.01', 'plano': 'INVALIDO'}, **self.host)
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.url.startswith('https://www.mercadopago.com.br/'))
                 payload = self.sdk.preference.return_value.create.call_args.args[0]
+                self.assertEqual(payload, preview)
                 self.assertEqual(payload['items'][0]['unit_price'], amount)
                 self.tenant.refresh_from_db()
                 self.other.refresh_from_db()
                 self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
                 self.assertEqual(self.other.plano, 'INDIVIDUAL')
+                self.sdk.preference.return_value.create.reset_mock()
 
     def test_buy_individual_with_multiple_professionals_cannot_start_checkout(self):
         from profissionais.models import Profissional
