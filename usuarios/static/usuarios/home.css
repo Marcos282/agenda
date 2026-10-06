@@ -17,5 +17,5 @@ html{scroll-behavior:smooth;scroll-padding-top:24px}body{background:#fcfcfa}.lan
 .service-card-heading>.service-avatar{position:absolute;top:0;right:0;aspect-ratio:1;box-sizing:border-box;border:2px solid var(--brand-border)}
 .service-card-title{min-width:0;flex:1}
 .service-card-heading h3{margin:10px 0 0}
-.service-card-heading>.service-icon{width:56px;height:56px;border-width:2px;opacity:1}
+.service-card-heading>.service-icon{display:grid;place-items:center;width:56px;height:56px;border:2px solid #c9dcd4;border-radius:50%;background:#eef4f1;color:#205d43;opacity:1}
 .service-icon svg{width:32px;height:32px;display:block}
