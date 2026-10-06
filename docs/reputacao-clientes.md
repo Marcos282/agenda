@@ -11,7 +11,9 @@ A identidade é `(tenant, WhatsApp normalizado)`, usando a função existente `u
 - **Desmarcou / DESMARCOU:** 2 pontos, pelo fluxo existente de cancelamento antes do início; o horário é liberado.
 - **Cliente ausente / AUSENTE:** 1 ponto, pelo fluxo existente de falta após o início.
 
-O projeto não possui status de conclusão ou confirmação de presença. Portanto, o término de um atendimento confirmado sem exceção registrada representa comparecimento presumido. O administrador deve registrar ausência ou atraso; pode corrigir a avaliação automática posteriormente, alterando a mesma ocorrência em vez de duplicá-la. Não se confirma presença física por WhatsApp.
+O término de um atendimento confirmado sem exceção registrada representa comparecimento presumido para a reputação. O administrador deve registrar ausência ou atraso; pode corrigir a avaliação automática posteriormente, alterando a mesma ocorrência em vez de duplicá-la. Não se confirma presença física por WhatsApp.
+
+Para os [lembretes de retorno de 30 dias](lembretes-retorno-30-dias.md), existe uma confirmação explícita e separada: na agenda, após o término, escolha **Confirmar atendimento realizado**. Essa ação registra `Agendamento.conclusao_confirmada_em` e grava/reutiliza a avaliação positiva, preservando um atraso já registrado. A conclusão presumida automática não preenche esse campo e não habilita o lembrete de retorno por si só.
 
 A atualização automática ocorre ao abrir Clientes, seu histórico e a agenda administrativa. Para processar sem acesso ao painel, execute `python manage.py atualizar_reputacoes`; o comando é idempotente e pode ser chamado pelo agendador da implantação. Nenhum cron é instalado automaticamente. Reservas antigas canceladas, com falta ou confirmadas já encerradas também são avaliadas; registros legados sem WhatsApp válido permanecem sem avaliação.
 

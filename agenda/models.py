@@ -117,6 +117,7 @@ class Agendamento(models.Model):
     atualizado_em = models.DateTimeField(auto_now=True)
     cancelado_em = models.DateTimeField(null=True, blank=True)
     nao_compareceu_em = models.DateTimeField(null=True, blank=True)
+    conclusao_confirmada_em = models.DateTimeField(null=True, blank=True)
     objects = TenantQuerySet.as_manager()
 
     class Meta:

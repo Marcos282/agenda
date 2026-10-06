@@ -18,10 +18,11 @@
   <form method="post" class="owner-profile-card" style="margin-bottom:20px">
     {% csrf_token %}
     <input type="hidden" name="acao" value="limite_agendamentos">
-    <h2>Limite diário por WhatsApp</h2>
-    <p class="owner-profile-help">Números iguais de WhatsApp identificam o mesmo cliente, mesmo que o nome seja diferente. Defina 1 para permitir apenas um agendamento por dia. O limite soma todos os serviços e profissionais deste estabelecimento.</p>
+    <h2>Limite de agendamentos por dia</h2>
+    <p class="owner-profile-help">O limite vale para cada número de WhatsApp e soma as reservas do dia em todos os serviços e profissionais do estabelecimento, mesmo que sejam feitas com nomes diferentes.</p>
     {{ limite_form.as_p }}
-    <button type="submit">Salvar limite de agendamentos</button>
+    <p class="owner-profile-help">Também existe um limite de {{ request.tenant.limite_agendamentos_cliente_futuros }} agendamento{{ request.tenant.limite_agendamentos_cliente_futuros|pluralize }} futuro{{ request.tenant.limite_agendamentos_cliente_futuros|pluralize }} por WhatsApp, somando todas as datas. Esse limite continua valendo ao alterar o limite diário.</p>
+    <button type="submit">Salvar limite diário</button>
   </form>
 
   <form method="post" class="owner-profile-card">

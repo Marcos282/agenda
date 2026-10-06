@@ -93,3 +93,25 @@ def registrar_atraso(*, tenant, administrador, agendamento_id):
     if booking.status != 'CONFIRMADO' or booking.inicio > timezone.now():
         raise ValidationError('O atraso só pode ser registrado em atendimento confirmado que já começou.')
     return gravar_avaliacao(booking, 'ATRASADO', corrigir=True)
+
+
+@transaction.atomic
+def confirmar_conclusao(*, tenant, administrador, agendamento_id):
+    """Explicit confirmation of a performed visit, separate from presumed ratings."""
+    from tenants.models import Tenant
+    if not administrador.is_active or administrador.tipo != 'ADMIN' or administrador.tenant_id != tenant.pk:
+        raise PermissionDenied('Apenas administradores deste estabelecimento podem confirmar o atendimento.')
+    tenant = Tenant.objects.select_for_update().get(pk=tenant.pk)
+    booking = Agendamento.objects.for_tenant(tenant).get(pk=agendamento_id)
+    Profissional.objects.for_tenant(tenant).select_for_update().get(pk=booking.profissional_id)
+    booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk)
+    if booking.status != 'CONFIRMADO' or booking.fim > timezone.now():
+        raise ValidationError('Só é possível confirmar a conclusão de um atendimento confirmado após seu término.')
+    # Preserve a manual late outcome while correcting any stale presumed rating.
+    tipo = 'ATRASADO' if ReputacaoCliente.objects.for_tenant(tenant).filter(
+        agendamento=booking, tipo='ATRASADO').exists() else 'CONCLUIDO'
+    rating = gravar_avaliacao(booking, tipo, corrigir=True)
+    if not booking.conclusao_confirmada_em:
+        booking.conclusao_confirmada_em = timezone.now()
+        booking.save(update_fields=['conclusao_confirmada_em', 'atualizado_em'])
+    return rating

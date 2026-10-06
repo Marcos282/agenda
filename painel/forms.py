@@ -14,8 +14,8 @@ from usuarios.validators import normalizar_whatsapp
 
 class LimiteAgendamentosForm(forms.Form):
     limite_agendamentos_cliente_dia = forms.IntegerField(
-        label='Máximo de agendamentos por WhatsApp por dia', min_value=1, max_value=32767,
-        help_text='Escolha 1 para impedir duas ou mais reservas do mesmo WhatsApp no mesmo dia, mesmo com nomes, serviços ou profissionais diferentes. Reservas canceladas não contam.',
+        label='Agendamentos permitidos por dia para o mesmo WhatsApp', min_value=1, max_value=32767,
+        help_text='Exemplo: 1 permite uma reserva por dia; 2 permite duas. Reservas canceladas não entram na contagem.',
         widget=forms.NumberInput(attrs={'min': 1, 'max': 32767}))
 
 

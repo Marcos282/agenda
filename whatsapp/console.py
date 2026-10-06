@@ -34,7 +34,7 @@ def testezap(request):
 
 
 def console(request, *, route, protected=False):
-    if protected and request.GET.get('diagnostico') == '1':
+    if request.GET.get('diagnostico') == '1':
         return JsonResponse(diagnose(request.tenant))
     if request.GET.get('mensagens') == '1' and request.method == 'GET':
         try:

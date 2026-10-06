@@ -1,9 +1,12 @@
 {% extends 'painel/base.html' %}
 {% load static %}
 {% block title %}Teste de WhatsApp{% endblock %}
+{% block layout_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'whatsapp/layout.css' %}?v=1">{% endblock %}
 {% block painel_content %}
-<h1>Teste de WhatsApp</h1>
-<p>Use o WhatsApp já conectado deste estabelecimento para enviar uma mensagem e acompanhar a resposta.</p>
+<div class="whatsapp-overview"><div class="whatsapp-heading"><h1>Teste de WhatsApp</h1><span id="whatsapp-connection" class="connection-status unknown" role="status">Verificando conexão…</span></div>
+<p>Envie uma mensagem pelo número do estabelecimento e acompanhe a conversa em um só lugar.</p>
+<p id="whatsapp-connection-number" class="connection-number"></p><a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}">Configurar WhatsApp ↗</a></div>
+<div class="whatsapp-stack">
 {% if protected %}<section class="card"><h2>Diagnóstico da conexão</h2>
 <button type="button" id="diagnose-whatsapp">Verificar conexão e configuração</button>
 <p id="diagnosis-status" role="status">Clique para consultar a Evolution.</p>
@@ -30,5 +33,6 @@
 <button type="button" id="refresh-chat">Atualizar conversa</button>
 <p id="chat-status" role="status"></p><div id="chat-messages">{% for message in received_messages %}<article><strong>{{ message.number }}</strong><p>{{ message.text }}</p><small>{{ message.received_at }}</small></article>{% empty %}<p>Nenhuma mensagem recebida ainda.</p>{% endfor %}</div>
 </section>
+</div>
 {% endblock %}
-{% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/testezap.js' %}" defer></script>{% endblock %}
+{% block scripts %}{{ block.super }}<script src="{% static 'whatsapp/testezap.js' %}?v=connection-2" defer></script>{% endblock %}

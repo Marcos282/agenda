@@ -168,3 +168,30 @@ def atraso(request, pk):
             return redirect(voltar)
     return render(request, 'painel/agendamento_atraso.html', {'agendamento': booking, 'voltar': voltar, 'erro': erro,
         'pode_marcar': booking.status == 'CONFIRMADO' and booking.inicio <= timezone.now()}, status=409 if erro else 200)
+
+
+@admin_tenant_required
+@require_http_methods(['GET', 'POST'])
+def concluir(request, pk):
+    from django.http import Http404
+    from django.shortcuts import get_object_or_404
+    from agenda.models import Agendamento
+    from agenda.reputation import confirmar_conclusao
+    if pk > 9223372036854775807:
+        raise Http404
+    booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant), pk=pk)
+    dia = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
+    voltar = agenda_url(booking.profissional_id, dia)
+    erro = None
+    if request.method == 'POST':
+        try:
+            confirmar_conclusao(tenant=request.tenant, administrador=request.user, agendamento_id=booking.pk)
+        except ValidationError as exc:
+            erro = ' '.join(exc.messages)
+        else:
+            messages.success(request, 'Atendimento confirmado como realizado.')
+            return redirect(voltar)
+    return render(request, 'painel/agendamento_concluir.html', {
+        'agendamento': booking, 'voltar': voltar, 'erro': erro,
+        'pode_marcar': booking.status == 'CONFIRMADO' and booking.fim <= timezone.now(),
+    }, status=409 if erro else 200)

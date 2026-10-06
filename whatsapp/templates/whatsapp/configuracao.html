@@ -1,9 +1,9 @@
 {% extends 'painel/base.html' %}
 {% load static %}
 {% block title %}WhatsApp{% endblock %}
+{% block layout_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'whatsapp/layout.css' %}?v=1">{% endblock %}
 {% block extra_css %}{{ block.super }}
 .whatsapp-stack{display:grid;gap:20px}.whatsapp-stack textarea,.whatsapp-stack input[type=number]{width:100%;box-sizing:border-box}.whatsapp-stack textarea{resize:vertical;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font:inherit;line-height:1.6;min-height:170px}.whatsapp-stack textarea:focus-visible{outline:3px solid var(--focus);outline-offset:3px}.whatsapp-stack .helptext{display:block;color:var(--muted);font-size:.9rem;margin-top:6px}.whatsapp-stack code{display:inline-block;padding:4px 7px;background:var(--brand-soft);border-radius:6px;margin:3px}.whatsapp-qr{width:280px;max-width:100%;height:auto}.send-row{padding:14px 16px;border-top:1px solid var(--line);overflow-wrap:anywhere}.errorlist{color:#a52323}
-.connection-status{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:30px;background:#f0eded;color:#695252;font-weight:650}.connection-status::before{content:"";width:8px;height:8px;background:currentColor;border-radius:50%}.connection-status.online{background:var(--brand-soft);color:var(--brand-ink)}.connection-status.pending{background:#fff3dc;color:#77500a}.connection-number{overflow-wrap:anywhere}
 .send-list{border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .send-row:first-child{border-top:0}.send-row:nth-child(odd){background:rgba(106,196,145,.13)}
 .send-row:nth-child(even){background:transparent}.send-row:hover{background:rgba(106,196,145,.22)}
@@ -19,7 +19,7 @@
 {% block painel_content %}
 <div class="whatsapp-overview">
 <span class="eyebrow">LEMBRETES PARA SEUS CLIENTES</span>
-<h1>WhatsApp</h1><a class="ui-button ui-button-secondary" href="{% url 'testes' %}">Testar envio e recebimento</a><p>Conecte o número do estabelecimento e personalize os lembretes dos seus clientes.</p>
+<div class="whatsapp-heading"><h1>WhatsApp</h1><span class="connection-status {{ connection.kind }}" role="status">{{ connection.label }}</span></div><p>Conecte o número do estabelecimento e personalize os lembretes dos seus clientes.</p><a class="ui-button ui-button-secondary" href="{% url 'testes' %}">Testar envio e recebimento ↗</a>
 <ol class="whatsapp-guide">
 <li><strong>1. Conecte seu número</strong><p>Gere o QR code, escaneie pelo WhatsApp e use “Verificar conexão” para conferir se o número está conectado.</p></li>
 <li><strong>2. Prepare os lembretes</strong><p>Ative os lembretes, escolha a antecedência e personalize a mensagem com nome, serviço, data e horário. Depois, salve as configurações.</p></li>
@@ -49,6 +49,13 @@
 </form><h3>Prévia da mensagem</h3><p class="helptext">Exemplo com dados fictícios do cliente. A data usa o fuso do estabelecimento.</p><pre id="confirmation-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit" aria-live="polite"></pre>
 {{ preview_values|json_script:"confirmation-values" }}
 <p class="helptext">O WhatsApp da loja precisa estar conectado. O envio ocorre após salvar a reserva; falhas no envio não cancelam o agendamento.</p></section>
+<section class="card"><h2>Lembrete de retorno</h2>
+<form method="post">{% csrf_token %}{{ retorno_form.as_p }}
+<p class="helptext">Quando ativado, clientes que completarem 30 dias desde o último atendimento poderão receber automaticamente esta mensagem pelo WhatsApp.</p>
+<p>Variáveis disponíveis:</p><p><code>{nome}</code> <code>{estabelecimento}</code> <code>{profissional}</code> <code>{ultimo_atendimento}</code></p>
+<p class="helptext">Uma mensagem por último atendimento concluído. Um novo atendimento inicia outro ciclo de 30 dias. A data usa o fuso do estabelecimento.</p>
+<p class="helptext">Na agenda, confirme o atendimento como realizado após o término. O simples fim do horário não habilita o lembrete de retorno.</p>
+<button name="acao" value="salvar_retorno">Salvar lembrete de retorno</button></form></section>
 <section class="card"><h2>Lembrete do agendamento</h2><p>Um lembrete por agendamento confirmado, para o WhatsApp cadastrado pelo cliente ou no painel. Agendamentos cancelados não recebem lembretes.</p>
 <form method="post">{% csrf_token %}{{ form.as_p }}
 <p>Variáveis disponíveis:</p><p><code>{cliente}</code> <code>{servico}</code> <code>{profissional}</code> <code>{empresa}</code> <code>{data}</code> <code>{horario}</code></p>
@@ -62,6 +69,14 @@
 <span>Página {{ confirmacoes.number }} de {{ confirmacoes.paginator.num_pages }}</span>
 {% if confirmacoes.has_next %}<a href="?confirmacoes_page={{ confirmacoes.next_page_number }}&amp;page={{ envios.number }}">Próxima</a>{% endif %}</nav>{% endif %}
 <p class="helptext">Aceito pela API não confirma entrega. Envios incertos não são repetidos automaticamente.</p>
+</section>
+<section class="card" id="retornos"><h2>Últimos lembretes de retorno</h2>
+<div class="send-list">{% for envio in retornos %}<div class="send-row"><strong>{{ envio.agendamento.cliente_nome }}</strong> · {{ envio.destinatario }}<br>Atendimento #{{ envio.agendamento_id }} · {{ envio.agendamento.fim|date:'d/m/Y H:i' }}<br>{{ envio.get_status_display }} · {% if envio.enviado_em %}{{ envio.enviado_em|date:'d/m/Y H:i' }}{% else %}{{ envio.criado_em|date:'d/m/Y H:i' }}{% endif %}{% if envio.erro %}<p>{{ envio.erro }}</p>{% endif %}</div>{% empty %}<p>Nenhum lembrete de retorno processado ainda.</p>{% endfor %}</div>
+{% if retornos.has_other_pages %}<nav class="send-pagination" aria-label="Páginas de lembretes de retorno">
+{% if retornos.has_previous %}<a href="?retornos_page={{ retornos.previous_page_number }}#retornos">Anterior</a>{% endif %}
+<span>Página {{ retornos.number }} de {{ retornos.paginator.num_pages }}</span>
+{% if retornos.has_next %}<a href="?retornos_page={{ retornos.next_page_number }}#retornos">Próxima</a>{% endif %}</nav>{% endif %}
+<p class="helptext">Aceito pela API não confirma entrega ao celular. Envios iniciados ou incertos precisam de conferência e não são repetidos automaticamente.</p>
 </section>
 <section class="card" id="ultimos-lembretes"><h2>Últimos lembretes</h2>
 <div class="send-list">

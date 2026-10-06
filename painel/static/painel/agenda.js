@@ -91,6 +91,11 @@
           const late = document.createElement('a'); late.className = 'ui-button ui-button-secondary';
           late.href = appointment.lateUrl; late.textContent = 'Chegou atrasado'; dialog.append(late);
         }
+        if (appointment.completeUrl) {
+          const complete = document.createElement('a');
+          complete.className = 'ui-button ui-button-secondary';
+          complete.href = appointment.completeUrl; complete.textContent = 'Confirmar atendimento realizado'; dialog.append(complete);
+        }
         if (appointment.noShowUrl) {
           const noShow = document.createElement('a'); noShow.className = 'ui-button ui-button-secondary';
           noShow.href = appointment.noShowUrl; noShow.textContent = 'Cliente ausente'; dialog.append(noShow);

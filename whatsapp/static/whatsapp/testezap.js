@@ -33,19 +33,36 @@
     }
     document.getElementById('refresh-chat').addEventListener('click', update);
     const diagnose = document.getElementById('diagnose-whatsapp');
-    if (diagnose) diagnose.addEventListener('click', async () => {
+    async function checkConnection() {
+        if (document.hidden || (diagnose && diagnose.disabled)) return;
         const output = document.getElementById('diagnosis-status');
-        diagnose.disabled = true;
-        output.textContent = 'Verificando…';
+        const badge = document.getElementById('whatsapp-connection');
+        const connectedNumber = document.getElementById('whatsapp-connection-number');
+        if (diagnose) diagnose.disabled = true;
+        if (output) output.textContent = 'Verificando…';
         try {
             const url = new URL(window.location.href);
             url.search = new URLSearchParams({diagnostico: '1'});
             const response = await fetch(url, {headers: {'Accept': 'application/json'}});
             const data = await response.json();
-            output.textContent = data.error || `${data.instance}: ${data.status}. ${data.detail || ''}`;
-        } catch (_) { output.textContent = 'Não foi possível consultar o diagnóstico. Verifique sua conexão ou entre novamente.'; }
-        finally { diagnose.disabled = false; }
-    });
+            if (!response.ok) throw new Error('Não foi possível consultar a conexão.');
+            const online = data.status === 'open' && !data.error;
+            const pending = data.status === 'connecting' && !data.error;
+            const offline = data.configured === false || ['close', 'closed', 'missing'].includes(data.status);
+            badge.className = `connection-status ${online ? 'online' : pending ? 'pending' : offline ? 'offline' : 'unknown'}`;
+            badge.textContent = online ? 'WhatsApp conectado' : pending ? 'Conectando…' : offline ? 'WhatsApp desconectado' : 'Status indisponível';
+            connectedNumber.textContent = online && data.number ? `Número conectado: ${data.number}` : '';
+            if (output) output.textContent = data.error || `${data.instance}: ${data.status}. ${data.detail || ''}`;
+        } catch (_) {
+            badge.className = 'connection-status unknown';
+            badge.textContent = 'Status indisponível';
+            connectedNumber.textContent = '';
+            if (output) output.textContent = 'Não foi possível consultar o diagnóstico. Verifique sua conexão ou entre novamente.';
+        } finally { if (diagnose) diagnose.disabled = false; }
+    }
+    if (diagnose) diagnose.addEventListener('click', checkConnection);
+    setInterval(checkConnection, 30000);
+    checkConnection();
     setInterval(update, 10000);
     update();
 })();

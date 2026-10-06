@@ -32,6 +32,7 @@ def timeline_payload(profissional, data, periodos):
             'inicio': a.inicio.isoformat(), 'fim': a.fim.isoformat(), 'valor': str(a.valor),
             'cancelUrl': reverse('painel:agendamento_cancelar', args=[a.pk]) if a.status == 'CONFIRMADO' and a.inicio > timezone.now() else None,
             'noShowUrl': reverse('painel:agendamento_falta', args=[a.pk]) if a.status == 'CONFIRMADO' and a.inicio <= timezone.now() else None,
+            'completeUrl': reverse('painel:agendamento_concluir', args=[a.pk]) if a.status == 'CONFIRMADO' and a.fim <= timezone.now() and not a.conclusao_confirmada_em else None,
             'statusLabel': a.get_status_display(), 'status': a.status, 'inicio_label': a.inicio.astimezone(ZoneInfo(profissional.tenant.timezone)).strftime('%H:%M'),
             'fim_label': a.fim.astimezone(ZoneInfo(profissional.tenant.timezone)).strftime('%H:%M')} for a in bookings],
     }

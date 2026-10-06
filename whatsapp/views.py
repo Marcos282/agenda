@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from painel.decorators import admin_tenant_required
-from .models import Configuracao, Lembrete, Confirmacao
+from .models import Configuracao, Lembrete, Confirmacao, LembreteRetorno
 from .services import message_values
 from . import evolution
 
@@ -27,16 +27,30 @@ class ConfirmacaoForm(forms.ModelForm):
         widgets = {'mensagem_confirmacao': forms.Textarea(attrs={'rows': 6})}
 
 
+class RetornoForm(forms.ModelForm):
+    class Meta:
+        model = Configuracao
+        fields = ['retornos_ativos', 'mensagem_retorno']
+        widgets = {'mensagem_retorno': forms.Textarea(attrs={'rows': 4})}
+
+
 @admin_tenant_required
 @require_http_methods(['GET', 'POST'])
 def configuracao_whatsapp(request):
     config, _ = Configuracao.objects.get_or_create(tenant=request.tenant)
     form = ConfiguracaoForm(instance=config)
     confirmacao_form = ConfirmacaoForm(instance=config)
+    retorno_form = RetornoForm(instance=config)
     qr, status = '', ''
     if request.method == 'POST':
         action = request.POST.get('acao')
-        if action == 'salvar_confirmacao':
+        if action == 'salvar_retorno':
+            retorno_form = RetornoForm(request.POST, instance=config)
+            if retorno_form.is_valid():
+                retorno_form.save()
+                messages.success(request, 'Configuração do lembrete de retorno salva.')
+                return redirect('painel:whatsapp')
+        elif action == 'salvar_confirmacao':
             confirmacao_form = ConfirmacaoForm(request.POST, instance=config)
             if confirmacao_form.is_valid():
                 confirmacao_form.save()
@@ -70,13 +84,17 @@ def configuracao_whatsapp(request):
             elif info['state'] == 'connecting':
                 connection.update(label='Conectando', kind='pending')
             elif info['state'] not in {'close', 'closed', 'missing'}:
-                connection.update(label='Status indisponível', kind='pending')
+                connection.update(label='Status indisponível', kind='unknown')
         except evolution.EvolutionError:
-            connection.update(label='Status indisponível', kind='pending')
+            connection.update(label='Status indisponível', kind='unknown')
     example = SimpleNamespace(tenant_id=request.tenant.pk, inicio=timezone.now(),
                               cliente_nome='Maria', servico_nome='Serviço escolhido',
                               profissional_nome='Profissional escolhido')
     return render(request, 'whatsapp/configuracao.html', {
+        'retorno_form': retorno_form,
+        'retornos': Paginator(LembreteRetorno.objects.filter(agendamento__tenant=request.tenant)
+            .select_related('agendamento').order_by('-criado_em', '-pk'), 10
+        ).get_page(request.GET.get('retornos_page')),
         'preview_values': message_values(request.tenant, example),
         'confirmacoes': Paginator(Confirmacao.objects.filter(agendamento__tenant=request.tenant)
             .select_related('agendamento').order_by('-criado_em', '-pk'), 10

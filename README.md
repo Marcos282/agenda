@@ -1,5 +1,7 @@
 # Agendamento — fundação e gestão do estabelecimento
 
+Lembretes automáticos de retorno: veja [configuração, confirmação de atendimento realizado e agendamento diário](docs/lembretes-retorno-30-dias.md).
+
 Django + PostgreSQL compartilhado, isolamento explícito por tenant e autenticação por e-mail. As Etapas 1 e 2 entregam autenticação, profissionais, catálogo, preço/duração por profissional e janelas de disponibilidade. O agendamento do cliente é uma etapa futura.
 
 Veja o [guia da agenda diária](docs/agenda-diaria.md) para usar `/painel/agenda/` e o [guia da Etapa 2](docs/etapa-2.md) para os demais cadastros em `/painel/`.
