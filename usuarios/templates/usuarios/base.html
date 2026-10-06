@@ -13,7 +13,7 @@
 <body class="{% block body_class %}{% if not request.tenant %}public-site{% endif %}{% endblock %}">
 {% block public_header %}{% if not request.tenant %}{% include 'usuarios/public_header.html' %}{% endif %}{% endblock %}
 <main class="{% block main_class %}{% if not request.tenant %}public-card{% endif %}{% endblock %}">
-  <div class="eyebrow">{{ request.tenant.nome|default:"Plataforma de agendamento" }}</div>
+  <div class="eyebrow">{{ request.tenant.nome|default:"Plataforma de agendamento" }}{% block establishment_plan %}{% endblock %}</div>
   {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
   {% if user.is_authenticated and user.tipo == 'CLIENTE' and not user.whatsapp and request.resolver_match.url_name != 'conta' %}<p class="notice">Cadastre seu WhatsApp para fazer novos agendamentos. <a class="ui-button ui-button-secondary" href="{% url 'conta' %}">Completar cadastro</a></p>{% endif %}
   {% block content %}{% endblock %}

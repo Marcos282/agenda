@@ -6,6 +6,7 @@
 {% block public_footer %}{% endblock %}
 {% block layout_head %}<link rel="stylesheet" href="{% static 'painel/painel.css' %}"><link rel="stylesheet" href="{% static 'painel/reputacao.css' %}?v=2"><script src="{% static 'painel/reputacao.js' %}?v=2" defer></script>{% endblock %}
 {% block title %}Painel · {{ request.tenant.nome }}{% endblock %}
+{% block establishment_plan %}{% if request.tenant %} <span class="establishment-plan">- {% if request.tenant.plano == "INDIVIDUAL" %}Individual{% else %}Profissional{% endif %}</span>{% endif %}{% endblock %}
 {% block extra_css %}
 main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:20px 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.card{border:1px solid var(--line);border-radius:14px;padding:24px}

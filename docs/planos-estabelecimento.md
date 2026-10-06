@@ -2,6 +2,8 @@
 
 A página `/painel/mensalidade/` permite ao administrador escolher o plano do seu próprio estabelecimento:
 
+No topo esquerdo do painel, o nome do estabelecimento aparece acompanhado de “Individual” ou “Profissional”, conforme o plano atual. Uma cobrança pendente não altera essa identificação.
+
 | Identificador | Nome exibido | Valor / 30 dias | Profissionais ativos |
 | --- | --- | --- | --- |
 | `INDIVIDUAL` | Plano Individual | R$ 30,00 | Até 1 |
