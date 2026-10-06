@@ -11,11 +11,11 @@ Ambos incluem agendamentos online, WhatsApp, histórico de clientes, loja online
 
 ## Troca de plano
 
-A seleção libera os recursos imediatamente e preserva a data de expiração. Escolher um plano não efetua pagamento nem acrescenta dias: a renovação continua no checkout existente do Mercado Pago, por pagamento avulso confirmado, sem cobrança automática.
+A seleção inicia a cobrança e preserva o plano atual até a confirmação do pagamento. Os dois botões “Escolher este plano” abrem diretamente o checkout existente do Mercado Pago com o valor do plano escolhido. A abertura do checkout não acrescenta dias: a renovação depende de pagamento avulso confirmado, sem cobrança automática. O bloqueio de downgrade é validado antes de criar a cobrança.
 
 Para trocar para o Individual com vários profissionais ativos, abra `/painel/profissionais/`, escolha quem continuará ativo e desative os demais. A troca será recusada enquanto houver mais de um ativo. Nenhum cadastro, agenda ou histórico é excluído. Profissionais inativos podem continuar cadastrados; o limite se aplica à criação de profissionais ativos e à ativação de cadastros existentes.
 
-O checkout guarda o identificador do plano e o valor da compra. Uma prévia de checkout de outro plano não é reutilizada depois da troca. A confirmação de um pagamento anterior preserva o plano atualmente escolhido e acrescenta somente os dias comprados. `PLATFORM_ACCESS_PRICE` não define mais o preço de renovação dos tenants.
+O checkout guarda o identificador do plano e o valor da compra. Uma prévia de checkout de outro plano não é reutilizada depois da troca. A confirmação validada de cada pagamento aplica o plano registrado no checkout e acrescenta os dias comprados, uma única vez. Pagamentos pendentes ou recusados não mudam o plano. O limite de profissionais é verificado novamente na confirmação; se surgirem profissionais extras durante um checkout Individual, a aplicação fica pendente até a desativação deles e uma nova confirmação. `PLATFORM_ACCESS_PRICE` não define mais o preço de renovação dos tenants.
 
 ## Proteção no backend
 
@@ -47,7 +47,7 @@ Aplicar as migrations antes de reiniciar é necessário para evitar erro de colu
 TENANT_BASE_DOMAIN=localhost DJANGO_DEBUG=true myenv/bin/python manage.py test tenants.test_plans tenants.tests painel.test_mensalidade pagamentos painel.tests agenda.tests whatsapp.test_returns --noinput
 ```
 
-Os testes de planos cobrem criação/ativação, requisições diretas, isolamento, upgrade imediato, downgrade sem exclusão, preços e prévias de checkout, gravações em lote e concorrência.
+Os testes de planos cobrem criação/ativação, requisições diretas, isolamento, upgrade após pagamento, downgrade sem exclusão, preços e prévias de checkout, gravações em lote e concorrência.
 
 ## Arquivos da implementação
 

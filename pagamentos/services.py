@@ -13,6 +13,7 @@ from mercadopago.config import RequestOptions
 from mercadopago.errors.exceptions import MercadoPagoError
 from requests.exceptions import RequestException
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -122,12 +123,18 @@ def valid_checkout_url(value):
         return False
 
 
-def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, checkout_id=None):
+def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, checkout_id=None, plano=None):
     if not configurado():
         raise CheckoutError('O pagamento online ainda não está configurado.')
     # Serialize repeated clicks for this tenant. A timeout never grants access.
     with transaction.atomic():
         tenant = Tenant.objects.select_for_update().get(pk=tenant_id, ativo=True)
+        if plano is not None:
+            tenant.plano = plano
+        try:
+            tenant.full_clean()
+        except ValidationError as exc:
+            raise CheckoutError(' '.join(exc.messages)) from exc
         amount = tenant.valor_plano
         checkouts = CheckoutAcesso.objects.filter(
             tenant_id=tenant_id, plano=tenant.plano, valor=amount, producao=settings.MERCADO_PAGO_LIVE_MODE,
@@ -298,9 +305,14 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
         if record.creditado_em is None or status not in {'pending', 'in_process', 'authorized'}:
             record.status = status
         if status == 'approved' and record.creditado_em is None:
+            tenant.plano = checkout.plano
+            try:
+                tenant.full_clean()
+            except ValidationError as exc:
+                raise CheckoutError('Pagamento recebido, mas a troca de plano aguarda a desativação dos profissionais extras. ' + ' '.join(exc.messages)) from exc
             today = timezone.localdate(timezone=ZoneInfo(tenant.timezone))
             tenant.expira_em = max(today, tenant.data_expiracao) + timedelta(days=checkout.dias)
-            tenant.save(update_fields=['expira_em'])
+            tenant.save(update_fields=['expira_em', 'plano', 'atualizado_em'])
             record.creditado_em = timezone.now()
         record.save(update_fields=['status', 'creditado_em', 'atualizado_em'])
         return record

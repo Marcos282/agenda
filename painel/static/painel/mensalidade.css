@@ -22,7 +22,7 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
 .billing-details-list div{display:flex;justify-content:space-between;gap:12px}
 .billing-details-list dt{color:var(--billing-muted);font-size:12px}
 .billing-details-list dd{margin:0;color:var(--text);font-size:12px;font-weight:600;text-align:right}
-.billing-payment{display:flex;flex-direction:column}
+.billing-payment{display:none}
 .billing-payment-copy{margin:16px 0}
 .billing-pay{display:flex;width:100%;min-height:43px;align-items:center;justify-content:center;gap:7px;margin:9px 0 2px;border-radius:9px;text-align:center;font-size:13px}
 .billing-pay:disabled{background:#edf0ee;color:#69746e;cursor:not-allowed}

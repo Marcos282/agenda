@@ -41,29 +41,33 @@ def mensalidade(request):
     if request.method == 'GET' and request.GET.get('atualizar') == '1':
         # Poll only our database; do not call the provider every few seconds.
         return JsonResponse({'versao': versao_pagamentos(request.tenant)})
-    if request.method == 'POST' and request.POST.get('acao') == 'escolher_plano':
+    comprar_plano = request.method == 'POST' and request.POST.get('acao') == 'comprar_plano'
+    if request.method == 'POST' and request.POST.get('acao') in ('escolher_plano', 'comprar_plano'):
         form = EscolhaPlanoForm(request.POST)
         if form.is_valid():
             try:
                 with transaction.atomic():
                     tenant = Tenant.objects.select_for_update().get(pk=request.tenant.pk)
                     tenant.plano = form.cleaned_data['plano']
-                    tenant.save(update_fields=['plano', 'atualizado_em'])
+                    tenant.full_clean()
             except ValidationError as exc:
                 messages.error(request, ' '.join(exc.messages))
+                return redirect('painel:mensalidade')
             else:
                 request.session.pop('checkout_previa', None)
-                messages.success(request, f'{tenant.get_plano_display()} selecionado. Os recursos já estão disponíveis. A data de expiração foi preservada.')
+                comprar_plano = True
         else:
             messages.error(request, 'Escolha um plano válido.')
-        return redirect('painel:mensalidade')
+            return redirect('painel:mensalidade')
+        if not comprar_plano:
+            return redirect('painel:mensalidade')
     if request.method == 'POST':
-        if request.POST.get('acao') not in ('pagar', 'enviar'):
+        if request.POST.get('acao') not in ('pagar', 'enviar', 'comprar_plano', 'escolher_plano'):
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
         preparar = request.POST.get('acao') == 'pagar'
         previa = request.session.get('checkout_previa', {})
-        if not preparar and (previa.get('tenant_id') != request.tenant.pk or not previa.get('checkout_id')):
+        if not preparar and not comprar_plano and (previa.get('tenant_id') != request.tenant.pk or not previa.get('checkout_id')):
             messages.error(request, 'Confira o JSON da cobrança antes de enviar.')
             return redirect('painel:mensalidade')
         diagnostico = {}
@@ -78,7 +82,8 @@ def mensalidade(request):
             checkout = criar_checkout(tenant_id=request.tenant.pk,
                                       retorno_url=origin + reverse('painel:mensalidade'),
                                       diagnostico=diagnostico, preparar=preparar,
-                                      checkout_id=None if preparar else previa['checkout_id'])
+                                      checkout_id=None if preparar or comprar_plano else previa['checkout_id'],
+                                      plano=form.cleaned_data['plano'] if comprar_plano else previa.get('plano') if not preparar else None)
         except CheckoutError as exc:
             messages.error(request, str(exc))
             if diagnostico is not None:
@@ -88,7 +93,7 @@ def mensalidade(request):
             return redirect('painel:mensalidade')
         if preparar:
             request.session['checkout_previa'] = {
-                'tenant_id': request.tenant.pk, 'checkout_id': str(checkout.pk),
+                'tenant_id': request.tenant.pk, 'checkout_id': str(checkout.pk), 'plano': checkout.plano,
             }
             return render(request, 'painel/checkout_previa.html', {
                 'previa_json': json.dumps(diagnostico, ensure_ascii=False, indent=2),

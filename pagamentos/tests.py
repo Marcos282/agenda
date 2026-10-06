@@ -84,10 +84,10 @@ class CheckoutProTests(TestCase):
         )
 
     def test_professional_plan_charges_fifty_and_credits_thirty_days(self):
-        self.tenant.plano = Tenant.Plano.ILIMITADO
-        self.tenant.save(update_fields=['plano'])
         expiry = self.tenant.expira_em
-        checkout = self.checkout()
+        checkout = criar_checkout(tenant_id=self.tenant.pk, retorno_url=f'https://marcos.localhost{self.url}', plano='ILIMITADO')
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
         payload = self.sdk.preference.return_value.create.call_args.args[0]
         self.assertEqual(payload['items'][0]['unit_price'], 50)
         self.assertIn('Plano Profissional', payload['items'][0]['title'])
@@ -98,7 +98,16 @@ class CheckoutProTests(TestCase):
         self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
         self.assertEqual(self.tenant.plano, 'ILIMITADO')
 
-    def test_old_payment_preserves_newly_selected_plan(self):
+    def test_pending_payment_does_not_change_plan_or_expiration(self):
+        expiry = self.tenant.expira_em
+        checkout = criar_checkout(tenant_id=self.tenant.pk, retorno_url=f'https://marcos.localhost{self.url}', plano='ILIMITADO')
+        self.payment(checkout, transaction_amount=50, status='pending')
+        confirmar_pagamento('789')
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
+        self.assertEqual(self.tenant.expira_em, expiry)
+
+    def test_confirmed_payment_applies_checkout_plan(self):
         checkout = self.checkout()
         expiry = self.tenant.expira_em
         self.tenant.plano = Tenant.Plano.ILIMITADO
@@ -106,11 +115,37 @@ class CheckoutProTests(TestCase):
         self.payment(checkout)
         confirmar_pagamento('789')
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+        self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
         self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
         checkout.refresh_from_db()
         self.assertEqual(checkout.plano, 'INDIVIDUAL')
         self.assertEqual(checkout.valor, Decimal('30.00'))
+
+    def test_both_plan_buttons_open_checkout_with_server_price(self):
+        for plano, amount in [('ILIMITADO', 50), ('INDIVIDUAL', 30)]:
+            with self.subTest(plano=plano):
+                response = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': plano,
+                    'valor': '0.01', 'tenant_id': self.other.pk}, **self.host)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.url.startswith('https://www.mercadopago.com.br/'))
+                payload = self.sdk.preference.return_value.create.call_args.args[0]
+                self.assertEqual(payload['items'][0]['unit_price'], amount)
+                self.tenant.refresh_from_db()
+                self.other.refresh_from_db()
+                self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
+                self.assertEqual(self.other.plano, 'INDIVIDUAL')
+
+    def test_buy_individual_with_multiple_professionals_cannot_start_checkout(self):
+        from profissionais.models import Profissional
+        self.tenant.plano = 'ILIMITADO'
+        self.tenant.save(update_fields=['plano'])
+        for name in ('Ana', 'Bia'):
+            Profissional.objects.create(tenant=self.tenant, nome=name)
+        page = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': 'INDIVIDUAL'}, follow=True, **self.host)
+        self.assertContains(page, 'escolha qual profissional permanecerá ativo')
+        self.sdk_class.assert_not_called()
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.plano, 'ILIMITADO')
 
     def test_checkout_uses_server_price_and_one_off_preference(self):
         response = self.enviar_checkout({'acao': 'pagar', 'valor': '0.01', 'tenant': self.other.pk})
@@ -337,8 +372,8 @@ class CheckoutProTests(TestCase):
 
     @override_settings(MERCADO_PAGO_ACCESS_TOKEN='')
     def test_missing_configuration_disables_payments(self):
-        response = self.client.post(self.url, {'acao': 'pagar'}, follow=True, **self.host)
-        self.assertContains(response, 'Pagamento ainda indisponível')
+        response = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': 'ILIMITADO'}, follow=True, **self.host)
+        self.assertContains(response, 'O pagamento online ainda não está configurado.')
         self.sdk.preference.return_value.create.assert_not_called()
 
     @override_settings(DEBUG=True, DEV_PUBLIC_HOST='checkout.ngrok-free.dev', DEV_TENANT_SUBDOMAIN='marcos')
@@ -474,8 +509,9 @@ class CheckoutProTests(TestCase):
         self.client.post(self.url, {'acao': 'enviar'}, **self.host)
         self.sdk_class.assert_not_called()
         self.client.post(self.url, {'acao': 'pagar'}, **self.host)
-        self.tenant.plano = Tenant.Plano.ILIMITADO
-        self.tenant.save(update_fields=['plano'])
+        session = self.client.session
+        session['checkout_previa'] = {**session['checkout_previa'], 'plano': 'ILIMITADO'}
+        session.save()
         page = self.client.post(self.url, {'acao': 'enviar'}, follow=True, **self.host)
         self.assertContains(page, 'Confira uma nova prévia')
         self.sdk_class.assert_not_called()

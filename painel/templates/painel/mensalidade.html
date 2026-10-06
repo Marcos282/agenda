@@ -1,6 +1,6 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Acesso ao sistema · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-4">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-5">{% endblock %}
 {% block painel_content %}
 <div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
@@ -18,11 +18,11 @@
       <ul class="billing-features">
         <li>{{ plano.agenda }}</li><li>Agendamentos online</li><li>WhatsApp</li><li>Histórico de clientes</li><li>Loja online e QR Code</li>
       </ul>
-      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="escolher_plano"><input type="hidden" name="plano" value="{{ plano.id }}"><button class="ui-button billing-pay" type="submit">Escolher este plano</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="comprar_plano"><input type="hidden" name="plano" value="{{ plano.id }}"><button class="ui-button billing-pay" type="submit">Escolher este plano</button></form>
     </section>
     {% endfor %}
   </div>
-  <p class="billing-plan-note">A mudança de plano preserva a validade atual. Para escolher o Individual, mantenha apenas um profissional ativo.</p>
+  <p class="billing-plan-note">O plano será atualizado após a confirmação do pagamento. A renovação adiciona 30 dias à validade. Para escolher o Individual, mantenha apenas um profissional ativo.</p>
   <div class="billing-grid billing-summary-grid">
     <section class="billing-card billing-plan" aria-labelledby="plan-title">
       <div class="billing-card-heading">

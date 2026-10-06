@@ -40,21 +40,22 @@ class PlanoTests(TestCase):
         self.assertEqual(Profissional.objects.filter(tenant=self.tenant, ativo=True).count(), 1)
         Profissional.objects.create(tenant=self.other, nome='Outra Ana')
 
-    def test_upgrade_is_immediate_scoped_and_preserves_expiration(self):
+    def test_selection_does_not_upgrade_before_payment(self):
         expiry = self.tenant.expira_em
         page = self.choose('ILIMITADO', tenant_id=self.other.pk, valor='0.01')
         self.assertContains(page, 'Seu plano atual')
         self.tenant.refresh_from_db()
         self.other.refresh_from_db()
-        self.assertEqual(self.tenant.plano, Tenant.Plano.ILIMITADO)
-        self.assertEqual(self.tenant.valor_plano, Decimal('50.00'))
+        self.assertEqual(self.tenant.plano, Tenant.Plano.INDIVIDUAL)
+        self.assertEqual(self.tenant.valor_plano, Decimal('30.00'))
         self.assertEqual(self.tenant.expira_em, expiry)
         self.assertEqual(self.other.plano, Tenant.Plano.INDIVIDUAL)
-        for name in ('Bia', 'Cris'):
-            Profissional.objects.create(tenant=self.tenant, nome=name)
+        with self.assertRaises(ValidationError):
+            Profissional.objects.create(tenant=self.tenant, nome='Bia')
 
     def test_downgrade_requires_one_active_and_never_deletes(self):
-        self.choose('ILIMITADO')
+        self.tenant.plano = 'ILIMITADO'
+        self.tenant.save(update_fields=['plano'])
         second = Profissional.objects.create(tenant=self.tenant, nome='Bia')
         page = self.choose('INDIVIDUAL')
         self.assertContains(page, 'escolha qual profissional permanecerá ativo')
@@ -65,7 +66,7 @@ class PlanoTests(TestCase):
         second.save()
         self.choose('INDIVIDUAL')
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
+        self.assertEqual(self.tenant.plano, 'ILIMITADO')
         self.assertEqual(Profissional.objects.filter(tenant=self.tenant).count(), 2)
 
     def test_direct_professional_posts_cannot_bypass_limit(self):
@@ -93,7 +94,8 @@ class PlanoTests(TestCase):
         inactive = Profissional.objects.create(tenant=self.tenant, nome='Bia', ativo=False)
         with self.assertRaises(IntegrityError), transaction.atomic():
             Profissional.objects.filter(pk=inactive.pk).update(ativo=True)
-        self.choose('ILIMITADO')
+        self.tenant.plano = 'ILIMITADO'
+        self.tenant.save(update_fields=['plano'])
         Profissional.objects.filter(pk=inactive.pk).update(ativo=True)
         with self.assertRaises(IntegrityError), transaction.atomic():
             Tenant.objects.filter(pk=self.tenant.pk).update(plano='INDIVIDUAL')
@@ -103,7 +105,8 @@ class PlanoTests(TestCase):
         first = criar_checkout(tenant_id=self.tenant.pk, retorno_url='https://salao.localhost/painel/mensalidade/', preparar=True)
         self.assertEqual(first.valor, Decimal('30.00'))
         self.assertEqual(first.plano, 'INDIVIDUAL')
-        self.choose('ILIMITADO')
+        self.tenant.plano = 'ILIMITADO'
+        self.tenant.save(update_fields=['plano'])
         from pagamentos.services import CheckoutError
         with self.assertRaises(CheckoutError):
             criar_checkout(tenant_id=self.tenant.pk, retorno_url=first.retorno_url, preparar=True, checkout_id=first.pk)
