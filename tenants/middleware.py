@@ -62,10 +62,12 @@ class TenantMiddleware:
             if request.tenant is not None:
                 if user.tenant_id != request.tenant.pk:
                     return HttpResponseForbidden("Acesso negado a este estabelecimento.")
+            elif request.path_info in {'/pagamentos/mercadopago/webhook/', '/pagamentos/mercadopago/sucesso/', '/pagamentos/mercadopago/pendente/', '/pagamentos/mercadopago/falha/'}:
+                pass  # These endpoints authenticate signatures or redirect to a scoped tenant panel.
             elif not (user.is_superuser and user.tenant_id is None):
                 return HttpResponseForbidden("Acesse o subdomínio do seu estabelecimento.")
         if request.tenant is not None and request.tenant.acesso_expirado:
-            if request.path_info.startswith('/painel/') and request.path_info.rstrip('/') != '/painel/mensalidade':
+            if request.path_info.startswith('/painel/') and request.path_info.rstrip('/') != '/painel/mensalidade' and not request.path_info.startswith('/painel/mensalidade/comprovantes/'):
                 if user.is_authenticated:
                     if user.tipo == 'ADMIN':
                         return redirect('painel:mensalidade')

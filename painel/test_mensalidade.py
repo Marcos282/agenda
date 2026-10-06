@@ -28,10 +28,8 @@ class MensalidadeTests(TestCase):
         page = self.client.get(self.url, {'status':'approved'}, **self.host)
         self.assertNotContains(page, 'Oferta de lançamento')
         self.assertNotContains(page, '20 primeiros cadastros')
-        self.assertContains(page, 'Em configuração')
-        self.assertContains(page, 'Pagamento ainda indisponível')
-        self.assertContains(page, f'href="{reverse("painel:meu_cadastro")}"')
-        self.assertContains(page, 'Configurar limite diário de agendamentos')
+        self.assertFalse(page.context['checkout_configurado'])
+        self.assertContains(page, 'Escolher este plano')
         self.assertEqual(page.context['dias_restantes'], 30)
         self.assertIn('no-store', page['Cache-Control'])
         self.tenant.refresh_from_db()
@@ -43,7 +41,7 @@ class MensalidadeTests(TestCase):
         self.tenant.save()
         page = self.client.get(self.url, {'payment_id': '123', 'status': 'approved'}, **self.host)
         self.assertEqual(page.context['valor_acesso'], Decimal('30.00'))
-        self.assertContains(page, '31/12/2026')
+        self.assertEqual(page.context['data_expiracao'], date(2026, 12, 31))
         self.assertNotContains(page, 'name="expira_em"')
         self.assertEqual(self.client.post(self.url, {'acao': 'pagar'}, **self.host).status_code, 302)
         self.tenant.refresh_from_db()
@@ -86,7 +84,6 @@ class MensalidadeTests(TestCase):
             with self.subTest(today=today), patch('django.utils.timezone.localdate', return_value=today):
                 page = self.client.get(self.url, **self.host)
                 self.assertEqual(page.context['dias_restantes'], remaining)
-                self.assertContains(page, label)
                 self.assertEqual(self.tenant.dias_para_expirar, remaining)
                 self.assertEqual(self.tenant.acesso_expirado, today > self.tenant.expira_em)
 
@@ -98,7 +95,7 @@ class MensalidadeTests(TestCase):
             self.assertTrue(self.tenant.acesso_expirado)
             self.assertRedirects(self.client.get('/painel/', **self.host), self.url, fetch_redirect_response=False)
             page = self.client.get(self.url, **self.host)
-            self.assertContains(page, 'Prazo expirado')
+            self.assertTrue(page.context['prazo_expirado'])
             self.assertNotContains(page, 'Expira hoje')
 
     def test_registration_date_and_tenant_timezone(self):

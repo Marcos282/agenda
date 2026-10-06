@@ -2,7 +2,7 @@ from barbe.admin import site
 from django.urls import path, include
 from usuarios import views, registro, login_transfer
 from django.views.generic import TemplateView
-from pagamentos.views import webhook
+from pagamentos.views import webhook, retorno
 from whatsapp.console import testezap, testes
 from whatsapp.inbox_views import receive
 
@@ -14,7 +14,11 @@ urlpatterns = [
     path('testes/', testes),
     path('testezap', testezap, name='testezap'),
     path('testezap/', testezap),
-    path('integracoes/mercado-pago/webhook/', webhook, name='mercado_pago_webhook'),
+    path('pagamentos/mercadopago/webhook/', webhook, name='mercado_pago_webhook'),
+    path('integracoes/mercado-pago/webhook/', webhook, name='mercado_pago_webhook_legado'),
+    path('pagamentos/mercadopago/sucesso/', retorno, name='mercado_pago_sucesso'),
+    path('pagamentos/mercadopago/pendente/', retorno, name='mercado_pago_pendente'),
+    path('pagamentos/mercadopago/falha/', retorno, name='mercado_pago_falha'),
     path('registro', registro.registro, name='registro'),
     path('registro/', registro.registro),
     path('registro/concluido/', registro.registro_concluido, name='registro_concluido'),

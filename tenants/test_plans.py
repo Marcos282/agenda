@@ -14,7 +14,7 @@ from tenants.models import Tenant
 from usuarios.models import User
 
 
-@override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost', 'localhost'])
+@override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost', 'localhost'], MERCADO_PAGO_ACCESS_TOKEN='', MERCADO_PAGO_WEBHOOK_SECRET='')
 class PlanoTests(TestCase):
     def setUp(self):
         self.tenant = Tenant.objects.create(nome='Salão', subdomain='salao')
@@ -42,7 +42,7 @@ class PlanoTests(TestCase):
 
     def test_selection_does_not_upgrade_before_payment(self):
         expiry = self.tenant.expira_em
-        page = self.choose('ILIMITADO', tenant_id=self.other.pk, valor='0.01')
+        page = self.choose('PROFISSIONAL', tenant_id=self.other.pk, valor='0.01')
         self.assertContains(page, 'Seu plano atual')
         self.tenant.refresh_from_db()
         self.other.refresh_from_db()
@@ -54,19 +54,19 @@ class PlanoTests(TestCase):
             Profissional.objects.create(tenant=self.tenant, nome='Bia')
 
     def test_downgrade_requires_one_active_and_never_deletes(self):
-        self.tenant.plano = 'ILIMITADO'
+        self.tenant.plano = 'PROFISSIONAL'
         self.tenant.save(update_fields=['plano'])
         second = Profissional.objects.create(tenant=self.tenant, nome='Bia')
         page = self.choose('INDIVIDUAL')
         self.assertContains(page, 'escolha qual profissional permanecerá ativo')
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+        self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
         self.assertEqual(Profissional.objects.filter(tenant=self.tenant).count(), 2)
         second.ativo = False
         second.save()
         self.choose('INDIVIDUAL')
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+        self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
         self.assertEqual(Profissional.objects.filter(tenant=self.tenant).count(), 2)
 
     def test_direct_professional_posts_cannot_bypass_limit(self):
@@ -83,7 +83,7 @@ class PlanoTests(TestCase):
         self.choose('30')
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
-        page = self.client.post(self.url, {'acao': 'escolher_plano', 'plano': 'ILIMITADO'}, HTTP_HOST='outro.localhost')
+        page = self.client.post(self.url, {'acao': 'escolher_plano', 'plano': 'PROFISSIONAL'}, HTTP_HOST='outro.localhost')
         self.assertEqual(page.status_code, 403)
         self.other.refresh_from_db()
         self.assertEqual(self.other.plano, 'INDIVIDUAL')
@@ -94,7 +94,7 @@ class PlanoTests(TestCase):
         inactive = Profissional.objects.create(tenant=self.tenant, nome='Bia', ativo=False)
         with self.assertRaises(IntegrityError), transaction.atomic():
             Profissional.objects.filter(pk=inactive.pk).update(ativo=True)
-        self.tenant.plano = 'ILIMITADO'
+        self.tenant.plano = 'PROFISSIONAL'
         self.tenant.save(update_fields=['plano'])
         Profissional.objects.filter(pk=inactive.pk).update(ativo=True)
         with self.assertRaises(IntegrityError), transaction.atomic():
@@ -105,14 +105,14 @@ class PlanoTests(TestCase):
         first = criar_checkout(tenant_id=self.tenant.pk, retorno_url='https://salao.localhost/painel/mensalidade/', preparar=True)
         self.assertEqual(first.valor, Decimal('30.00'))
         self.assertEqual(first.plano, 'INDIVIDUAL')
-        self.tenant.plano = 'ILIMITADO'
+        self.tenant.plano = 'PROFISSIONAL'
         self.tenant.save(update_fields=['plano'])
         from pagamentos.services import CheckoutError
         with self.assertRaises(CheckoutError):
             criar_checkout(tenant_id=self.tenant.pk, retorno_url=first.retorno_url, preparar=True, checkout_id=first.pk)
         second = criar_checkout(tenant_id=self.tenant.pk, retorno_url=first.retorno_url, preparar=True)
         self.assertEqual(second.valor, Decimal('50.00'))
-        self.assertEqual(second.plano, 'ILIMITADO')
+        self.assertEqual(second.plano, 'PROFISSIONAL')
         self.assertEqual(CheckoutAcesso.objects.filter(tenant=self.tenant).count(), 2)
 
 
@@ -164,7 +164,7 @@ class PlanoMigrationTests(TransactionTestCase):
             ])
         finally:
             MigrationExecutor(connection).migrate(latest)
-        self.assertEqual(Tenant.objects.get(pk=team.pk).plano, 'ILIMITADO')
+        self.assertEqual(Tenant.objects.get(pk=team.pk).plano, 'PROFISSIONAL')
         self.assertEqual(Tenant.objects.get(pk=single.pk).plano, 'INDIVIDUAL')
         self.assertEqual(Tenant.objects.get(pk=team.pk).expira_em, date(2027, 1, 15))
         self.assertEqual(Profissional.objects.filter(ativo=True).count(), 3)

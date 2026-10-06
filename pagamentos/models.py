@@ -7,7 +7,7 @@ from tenants.models import Tenant
 class CheckoutAcesso(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT, related_name='checkouts_acesso')
-    plano = models.CharField(max_length=10, choices=Tenant.Plano.choices, default=Tenant.Plano.INDIVIDUAL)
+    plano = models.CharField(max_length=12, choices=Tenant.Plano.choices, default=Tenant.Plano.INDIVIDUAL)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     dias = models.PositiveSmallIntegerField(default=30)
     producao = models.BooleanField(default=False)
@@ -21,7 +21,7 @@ class CheckoutAcesso(models.Model):
     class Meta:
         ordering = ['-criado_em']
         constraints = [
-            models.CheckConstraint(condition=models.Q(plano__in=['INDIVIDUAL', 'ILIMITADO']), name='checkout_acesso_plano_valido'),
+            models.CheckConstraint(condition=models.Q(plano__in=['INDIVIDUAL', 'PROFISSIONAL']), name='checkout_acesso_plano_valido'),
             models.CheckConstraint(condition=models.Q(valor__gt=0), name='checkout_acesso_valor_positivo'),
             models.CheckConstraint(condition=models.Q(dias=30), name='checkout_acesso_trinta_dias'),
         ]
@@ -32,6 +32,10 @@ class PagamentoAcesso(models.Model):
     checkout = models.ForeignKey(CheckoutAcesso, on_delete=models.PROTECT, related_name='pagamentos')
     status = models.CharField(max_length=40)
     creditado_em = models.DateTimeField(null=True, blank=True)
+    aprovado_em = models.DateTimeField(null=True, blank=True)
+    validade_anterior = models.DateField(null=True, blank=True)
+    nova_validade = models.DateField(null=True, blank=True)
+    dias_concedidos = models.PositiveSmallIntegerField(default=0)
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:

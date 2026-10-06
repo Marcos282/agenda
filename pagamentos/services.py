@@ -16,6 +16,8 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.urls import reverse
 
 from tenants.models import Tenant
 from .models import CheckoutAcesso, PagamentoAcesso
@@ -159,13 +161,18 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, 
                 tenant_id=tenant_id, plano=tenant.plano, valor=amount, retorno_url=retorno_url,
                 producao=settings.MERCADO_PAGO_LIVE_MODE, expira_em=timezone.now() + timedelta(hours=24),
             )
-        return_url = f'{retorno_url}?checkout={checkout.pk}'
+        callback_origin = public_url()
         payload = {
             'items': [{'id': 'acesso-30-dias', 'title': f'Tá Combinado — {tenant.get_plano_display()} por 30 dias',
                        'description': 'Pagamento avulso, sem renovação automática.',
                        'quantity': 1, 'currency_id': 'BRL', 'unit_price': float(amount)}],
             'external_reference': str(checkout.pk),
-            'back_urls': {state: return_url for state in ('success', 'pending', 'failure')},
+            'notification_url': callback_origin + reverse('mercado_pago_webhook'),
+            'back_urls': {
+                'success': callback_origin + reverse('mercado_pago_sucesso'),
+                'pending': callback_origin + reverse('mercado_pago_pendente'),
+                'failure': callback_origin + reverse('mercado_pago_falha'),
+            },
             'auto_return': 'approved',
             'expires': True,
             'expiration_date_to': checkout.expira_em.isoformat(timespec='seconds'),
@@ -311,8 +318,16 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
             except ValidationError as exc:
                 raise CheckoutError('Pagamento recebido, mas a troca de plano aguarda a desativação dos profissionais extras. ' + ' '.join(exc.messages)) from exc
             today = timezone.localdate(timezone=ZoneInfo(tenant.timezone))
-            tenant.expira_em = max(today, tenant.data_expiracao) + timedelta(days=checkout.dias)
+            record.validade_anterior = tenant.data_expiracao
+            tenant.expira_em = max(today, record.validade_anterior) + timedelta(days=checkout.dias)
+            record.nova_validade = tenant.expira_em
+            record.dias_concedidos = checkout.dias
             tenant.save(update_fields=['expira_em', 'plano', 'atualizado_em'])
             record.creditado_em = timezone.now()
-        record.save(update_fields=['status', 'creditado_em', 'atualizado_em'])
+            try:
+                approved = parse_datetime(str(payment.get('date_approved', '')))
+            except ValueError:
+                approved = None
+            record.aprovado_em = approved if approved and timezone.is_aware(approved) else record.creditado_em
+        record.save(update_fields=['status', 'creditado_em', 'atualizado_em', 'aprovado_em', 'validade_anterior', 'nova_validade', 'dias_concedidos'])
         return record

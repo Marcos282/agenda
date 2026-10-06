@@ -65,7 +65,7 @@ def mensalidade(request):
         if request.POST.get('acao') not in ('pagar', 'enviar', 'comprar_plano', 'escolher_plano'):
             messages.error(request, 'Solicitação de pagamento inválida.')
             return redirect('painel:mensalidade')
-        preparar = comprar_plano or request.POST.get('acao') == 'pagar'
+        preparar = request.POST.get('acao') == 'pagar'
         previa = request.session.get('checkout_previa', {})
         if not preparar and not comprar_plano and (previa.get('tenant_id') != request.tenant.pk or not previa.get('checkout_id')):
             messages.error(request, 'Confira o JSON da cobrança antes de enviar.')
@@ -183,7 +183,7 @@ def mensalidade(request):
         'valor_acesso': request.tenant.valor_plano,
         'planos': [
             {'id': Tenant.Plano.INDIVIDUAL, 'nome': 'Plano Individual', 'valor': '30,00', 'agenda': '1 agenda / profissional ativo'},
-            {'id': Tenant.Plano.ILIMITADO, 'nome': 'Plano Profissional', 'valor': '50,00', 'agenda': 'Profissionais e agendas ilimitados'},
+            {'id': Tenant.Plano.PROFISSIONAL, 'nome': 'Plano Profissional', 'valor': '50,00', 'agenda': 'Profissionais e agendas ilimitados'},
         ],
         'checkout_configurado': configurado(),
         'modo_teste': not settings.MERCADO_PAGO_LIVE_MODE,
@@ -210,3 +210,16 @@ def mensalidade(request):
             tenant=request.tenant, expira_em__gt=timezone.now(),
         ).exclude(pagamentos__creditado_em__isnull=False).exists(),
     })
+
+
+@admin_tenant_required
+@never_cache
+@require_http_methods(['GET'])
+def comprovante(request, payment_id):
+    from django.shortcuts import get_object_or_404
+    pagamento = get_object_or_404(
+        PagamentoAcesso.objects.select_related('checkout'),
+        payment_id=payment_id, checkout__tenant=request.tenant,
+        status='approved', creditado_em__isnull=False,
+    )
+    return render(request, 'painel/comprovante_pagamento.html', {'pagamento': pagamento})

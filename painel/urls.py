@@ -7,6 +7,7 @@ from whatsapp.console import testes
 
 app_name = 'painel'
 urlpatterns = [
+    path('mensalidade/comprovantes/<str:payment_id>/', mensalidade_views.comprovante, name='comprovante_pagamento'),
     path('mensalidade/', mensalidade_views.mensalidade, name='mensalidade'),
     path('meu-cadastro/', views.meu_cadastro, name='meu_cadastro'),
     path('loja/qr/', loja_qrcode_views.loja_qrcode, name='loja_qrcode'),

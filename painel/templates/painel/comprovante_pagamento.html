@@ -1,0 +1,22 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Comprovante de pagamento{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-6">{% endblock %}
+{% block painel_content %}
+<div class="billing-page"><section class="billing-card">
+<h1>Comprovante de pagamento</h1>
+{% if not pagamento.checkout.producao %}<p>Comprovante de teste — sem valor financeiro.</p>{% endif %}
+<p class="billing-receipt-approved">Pagamento aprovado — +{{ pagamento.dias_concedidos|default:pagamento.checkout.dias }} dias adicionados</p>
+<dl class="billing-details-list">
+<div><dt>Estabelecimento</dt><dd>{{ request.tenant.nome }}</dd></div>
+<div><dt>Plano adquirido</dt><dd>{{ pagamento.checkout.get_plano_display }}</dd></div>
+<div><dt>Valor</dt><dd>R$ {{ pagamento.checkout.valor|floatformat:2 }}</dd></div>
+<div><dt>Data do pagamento</dt><dd>{{ pagamento.aprovado_em|default:pagamento.creditado_em|date:"d/m/Y H:i" }}</dd></div>
+<div><dt>ID Mercado Pago</dt><dd>{{ pagamento.payment_id }}</dd></div>
+<div><dt>Status</dt><dd>Pagamento aprovado</dd></div>
+<div><dt>Validade anterior</dt><dd>{{ pagamento.validade_anterior|date:"d/m/Y"|default:"Não registrada no pagamento antigo" }}</dd></div>
+<div><dt>Nova validade</dt><dd>{{ pagamento.nova_validade|date:"d/m/Y"|default:"Não registrada no pagamento antigo" }}</dd></div>
+</dl>
+{% if pagamento.nova_validade %}<p>Próximo vencimento: {{ pagamento.nova_validade|date:"d/m/Y" }}</p>{% endif %}
+<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}">Voltar aos planos</a>
+</section></div>
+{% endblock %}

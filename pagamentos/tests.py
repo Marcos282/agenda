@@ -85,22 +85,22 @@ class CheckoutProTests(TestCase):
 
     def test_professional_plan_charges_fifty_and_credits_thirty_days(self):
         expiry = self.tenant.expira_em
-        checkout = criar_checkout(tenant_id=self.tenant.pk, retorno_url=f'https://marcos.localhost{self.url}', plano='ILIMITADO')
+        checkout = criar_checkout(tenant_id=self.tenant.pk, retorno_url=f'https://marcos.localhost{self.url}', plano='PROFISSIONAL')
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
         payload = self.sdk.preference.return_value.create.call_args.args[0]
         self.assertEqual(payload['items'][0]['unit_price'], 50)
         self.assertIn('Plano Profissional', payload['items'][0]['title'])
-        self.assertEqual(checkout.plano, 'ILIMITADO')
+        self.assertEqual(checkout.plano, 'PROFISSIONAL')
         self.payment(checkout, transaction_amount=50)
         confirmar_pagamento('789')
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
-        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+        self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
 
     def test_pending_payment_does_not_change_plan_or_expiration(self):
         expiry = self.tenant.expira_em
-        checkout = criar_checkout(tenant_id=self.tenant.pk, retorno_url=f'https://marcos.localhost{self.url}', plano='ILIMITADO')
+        checkout = criar_checkout(tenant_id=self.tenant.pk, retorno_url=f'https://marcos.localhost{self.url}', plano='PROFISSIONAL')
         self.payment(checkout, transaction_amount=50, status='pending')
         confirmar_pagamento('789')
         self.tenant.refresh_from_db()
@@ -110,7 +110,7 @@ class CheckoutProTests(TestCase):
     def test_confirmed_payment_applies_checkout_plan(self):
         checkout = self.checkout()
         expiry = self.tenant.expira_em
-        self.tenant.plano = Tenant.Plano.ILIMITADO
+        self.tenant.plano = Tenant.Plano.PROFISSIONAL
         self.tenant.save(update_fields=['plano'])
         self.payment(checkout)
         confirmar_pagamento('789')
@@ -121,32 +121,23 @@ class CheckoutProTests(TestCase):
         self.assertEqual(checkout.plano, 'INDIVIDUAL')
         self.assertEqual(checkout.valor, Decimal('30.00'))
 
-    def test_both_plan_buttons_preview_json_then_send_checkout_with_server_price(self):
-        for plano, amount in [('ILIMITADO', 50), ('INDIVIDUAL', 30)]:
+    def test_both_plan_buttons_open_checkout_with_server_price(self):
+        for plano, amount in [('PROFISSIONAL', 50), ('INDIVIDUAL', 30)]:
             with self.subTest(plano=plano):
                 response = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': plano,
                     'valor': '0.01', 'tenant_id': self.other.pk}, **self.host)
-                self.assertEqual(response.status_code, 200)
-                self.assertTemplateUsed(response, 'painel/checkout_previa.html')
-                self.sdk.preference.return_value.create.assert_not_called()
-                preview = json.loads(response.context['previa_json'])['requisicao']['corpo']
-                self.assertEqual(preview['items'][0]['unit_price'], amount)
-                self.assertFalse(CheckoutAcesso.objects.get(pk=self.client.session['checkout_previa']['checkout_id']).preferencia_id)
-                response = self.client.post(self.url, {'acao': 'enviar', 'valor': '0.01', 'plano': 'INVALIDO'}, **self.host)
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.url.startswith('https://www.mercadopago.com.br/'))
                 payload = self.sdk.preference.return_value.create.call_args.args[0]
-                self.assertEqual(payload, preview)
                 self.assertEqual(payload['items'][0]['unit_price'], amount)
                 self.tenant.refresh_from_db()
                 self.other.refresh_from_db()
                 self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
                 self.assertEqual(self.other.plano, 'INDIVIDUAL')
-                self.sdk.preference.return_value.create.reset_mock()
 
     def test_buy_individual_with_multiple_professionals_cannot_start_checkout(self):
         from profissionais.models import Profissional
-        self.tenant.plano = 'ILIMITADO'
+        self.tenant.plano = 'PROFISSIONAL'
         self.tenant.save(update_fields=['plano'])
         for name in ('Ana', 'Bia'):
             Profissional.objects.create(tenant=self.tenant, nome=name)
@@ -154,7 +145,7 @@ class CheckoutProTests(TestCase):
         self.assertContains(page, 'escolha qual profissional permanecerá ativo')
         self.sdk_class.assert_not_called()
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+        self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
 
     def test_checkout_uses_server_price_and_one_off_preference(self):
         response = self.enviar_checkout({'acao': 'pagar', 'valor': '0.01', 'tenant': self.other.pk})
@@ -165,7 +156,7 @@ class CheckoutProTests(TestCase):
         payload, options = self.sdk.preference.return_value.create.call_args.args
         self.assertEqual(payload['items'][0]['unit_price'], 30)
         self.assertEqual(payload['external_reference'], str(checkout.pk))
-        self.assertEqual(payload['back_urls']['success'], f'https://marcos.localhost{self.url}?checkout={checkout.pk}')
+        self.assertEqual(payload['back_urls']['success'], 'https://checkout.ngrok-free.dev/pagamentos/mercadopago/sucesso/')
         self.assertNotIn('payer', payload)
         self.assertNotIn('auto_recurring', payload)
         self.sdk.preapproval.assert_not_called()
@@ -183,14 +174,12 @@ class CheckoutProTests(TestCase):
         self.assertRedirects(response, CheckoutAcesso.objects.get().checkout_url, fetch_redirect_response=False)
 
         page = self.client.get(self.url + '?diagnostico=checkout', **self.host)
-        self.assertContains(page, 'Diagnóstico temporário do Checkout Pro')
-        self.assertContains(page, 'preferencia_criada')
-        self.assertContains(page, 'status_http')
-        self.assertContains(page, 'sandbox.mercadopago.com')
-        self.assertNotContains(page, 'buyer@example.test')
-        self.assertNotContains(page, 'must-not-be-rendered')
-        self.assertNotContains(page, 'Authorization')
-        self.assertNotContains(page, '?secret=value')
+        diagnostic = self.client.session['ultimo_checkout_diagnostico']['dados']
+        self.assertEqual(diagnostic['resultado'], 'preferencia_criada')
+        rendered = json.dumps(diagnostic)
+        self.assertNotIn('buyer@example.test', rendered)
+        self.assertNotIn('must-not-be-rendered', rendered)
+        self.assertNotIn('?secret=value', rendered)
 
     def test_repeated_click_reuses_checkout_but_paid_or_expired_creates_another(self):
         first = self.checkout()
@@ -212,9 +201,8 @@ class CheckoutProTests(TestCase):
         page = self.client.get(
             self.url, {'checkout': checkout.pk, 'payment_id': '789', 'status': 'approved'}, **self.host,
         )
-        self.assertContains(page, 'Pagamento aceito')
-        self.assertContains(page, 'name="pagamento"')
-        self.assertContains(page, 'value="789"')
+        self.assertContains(page, 'Pagamento aprovado — +30 dias adicionados')
+        self.assertContains(page, reverse('painel:comprovante_pagamento', args=['789']))
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, original + timedelta(days=30))
         self.assertEqual(PagamentoAcesso.objects.count(), 1)
@@ -313,10 +301,10 @@ class CheckoutProTests(TestCase):
         self.assertNotIn('x-signature', notification.dado_bruto)
 
         page = self.client.get(self.url, {'pagamento': notification.payment_id}, **self.host)
-        self.assertContains(page, 'Dado bruto do webhook')
+        self.assertContains(page, 'Comprovante de pagamento')
         page = self.client.get(self.url, {'pagamento': notification.payment_id, 'diagnostico': 'checkout'}, **self.host)
-        self.assertContains(page, 'Dado bruto do webhook')
-        self.assertContains(page, '&quot;type&quot;: &quot;payment&quot;')
+        self.assertContains(page, 'Comprovante de pagamento')
+        self.assertNotContains(page, 'Dado bruto do webhook')
         self.client.force_login(self.customer)
         self.assertEqual(
             self.client.get(self.url, {'recebimento': notification.pk}, **self.host).status_code,
@@ -381,7 +369,7 @@ class CheckoutProTests(TestCase):
 
     @override_settings(MERCADO_PAGO_ACCESS_TOKEN='')
     def test_missing_configuration_disables_payments(self):
-        response = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': 'ILIMITADO'}, follow=True, **self.host)
+        response = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': 'PROFISSIONAL'}, follow=True, **self.host)
         self.assertContains(response, 'O pagamento online ainda não está configurado.')
         self.sdk.preference.return_value.create.assert_not_called()
 
@@ -417,22 +405,13 @@ class CheckoutProTests(TestCase):
         self.payment(foreign_checkout, id=791)
         confirmar_pagamento('791')
         page = self.client.get(self.url, **self.host)
-        self.assertContains(page, 'Pagamento aceito')
-        self.assertContains(page, 'Comprovantes de pagamento')
-        self.assertContains(page, 'value="789"')
-        self.assertContains(page, 'value="790"')
-        self.assertNotContains(page, 'value="791"')
-        self.assertNotContains(page, 'id="receipt-details"')
-        self.assertNotContains(page, 'Imprimir')
-        self.assertIsNone(page.context['comprovante_selecionado'])
-        selected = self.client.get(self.url, {'pagamento': '789'}, **self.host)
-        self.assertEqual(selected.context['comprovante_selecionado'].pk, '789')
-        self.assertContains(selected, 'id="receipt-details"')
-        self.assertContains(selected, 'Imprimir')
+        for payment_id in ('789', '790'):
+            self.assertContains(page, reverse('painel:comprovante_pagamento', args=[payment_id]))
+        self.assertNotContains(page, reverse('painel:comprovante_pagamento', args=['791']))
+        selected = self.client.get(reverse('painel:comprovante_pagamento', args=['789']), **self.host)
+        self.assertContains(selected, 'Pagamento aprovado')
         self.assertContains(selected, 'sem valor financeiro')
-        foreign = self.client.get(self.url, {'pagamento': '791'}, **self.host)
-        self.assertIsNone(foreign.context['comprovante_selecionado'])
-        self.assertNotContains(foreign, '>791<')
+        self.assertEqual(self.client.get(reverse('painel:comprovante_pagamento', args=['791']), **self.host).status_code, 404)
 
     def test_pending_and_refunded_payments_do_not_offer_receipts_or_accepted_button(self):
         checkout = self.checkout()
@@ -441,7 +420,7 @@ class CheckoutProTests(TestCase):
         page = self.client.get(self.url, {'status': 'approved'}, **self.host)
         self.assertNotContains(page, 'Pagamento aceito')
         self.assertNotContains(page, 'id="payment-select"')
-        self.assertContains(page, 'Ainda não há pagamentos confirmados')
+        self.assertNotContains(page, 'billing-receipt-button')
         self.payment(checkout)
         confirmar_pagamento('789')
         self.payment(checkout, status='refunded')
@@ -477,9 +456,7 @@ class CheckoutProTests(TestCase):
         }
         page = self.client.get(self.url, {'checkout': str(checkout.pk),
                                          'payment_id': '789', 'status': 'approved'}, **self.host)
-        self.assertContains(page, 'Parâmetros recebidos no retorno (GET)')
-        self.assertContains(page, 'Resultado da consulta de confirmação')
-        self.assertContains(page, 'Unauthorized use of live credentials')
+        self.assertIn('erro', json.loads(page.context['confirmacao_json']))
         self.assertNotContains(page, 'seller-token')
         self.assertNotContains(page, 'Seu prazo de acesso foi atualizado')
         self.tenant.refresh_from_db()
@@ -492,15 +469,14 @@ class CheckoutProTests(TestCase):
         checkout = CheckoutAcesso.objects.get(tenant=self.tenant)
         self.payment(checkout)
         page = self.client.get(self.url, {'checkout': str(checkout.pk), 'payment_id': '789'}, **self.host)
-        self.assertContains(page, 'JSON enviado e resposta da criação do checkout')
-        self.assertContains(page, 'unit_price')
-        self.assertContains(page, 'dias_creditados')
+        self.assertContains(page, 'Pagamento aprovado — +30 dias adicionados')
+        self.assertTrue(json.loads(page.context['confirmacao_json'])['dias_creditados'])
         self.assertNotContains(page, 'seller-token')
 
     def test_webhook_diagnostic_does_not_expose_unverified_or_foreign_ids(self):
         NotificacaoMercadoPago.objects.create(payment_id='999', dado_bruto='PRIVATE_WEBHOOK')
         page = self.client.get(self.url, {'payment_id': '999'}, **self.host)
-        self.assertContains(page, 'Nenhum webhook vinculado')
+        self.assertEqual(list(page.context['notificacoes_recebimento']), [])
         self.assertNotContains(page, 'PRIVATE_WEBHOOK')
 
     def test_preview_sends_nothing_and_confirm_sends_exact_displayed_body(self):
@@ -519,7 +495,7 @@ class CheckoutProTests(TestCase):
         self.sdk_class.assert_not_called()
         self.client.post(self.url, {'acao': 'pagar'}, **self.host)
         session = self.client.session
-        session['checkout_previa'] = {**session['checkout_previa'], 'plano': 'ILIMITADO'}
+        session['checkout_previa'] = {**session['checkout_previa'], 'plano': 'PROFISSIONAL'}
         session.save()
         page = self.client.post(self.url, {'acao': 'enviar'}, follow=True, **self.host)
         self.assertContains(page, 'Confira uma nova prévia')

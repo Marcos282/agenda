@@ -1,3 +1,12 @@
+from uuid import UUID
+from urllib.parse import urlencode
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views.decorators.http import require_GET
+from .models import CheckoutAcesso
+
 import json
 
 from django.conf import settings
@@ -62,3 +71,26 @@ def webhook(request):
         notification.estado = NotificacaoMercadoPago.Estado.PROCESSADA
         notification.save(update_fields=['pagamento', 'estado'])
     return HttpResponse(status=200)
+
+
+@require_GET
+def retorno(request):
+    # A return status is never evidence of payment. The authenticated tenant
+    # panel may consult the provider; the signed webhook is the primary path.
+    try:
+        reference = UUID(request.GET.get('external_reference') or request.GET.get('checkout', ''))
+    except (TypeError, ValueError):
+        raise Http404('Cobrança não encontrada.')
+    checkout = CheckoutAcesso.objects.select_related('tenant').filter(pk=reference, tenant__ativo=True).first()
+    if checkout is None:
+        raise Http404('Cobrança não encontrada.')
+    if request.user.is_authenticated and request.user.tenant_id != checkout.tenant_id:
+        raise PermissionDenied
+    parameters = {'checkout': str(checkout.pk)}
+    payment_id = request.GET.get('payment_id') or request.GET.get('collection_id', '')
+    if valid_payment_id(payment_id):
+        parameters['payment_id'] = payment_id
+    origin = f'https://{checkout.tenant.subdomain}.{settings.TENANT_BASE_DOMAIN}'
+    if settings.DEBUG and settings.DEV_PUBLIC_HOST and settings.DEV_TENANT_SUBDOMAIN == checkout.tenant.subdomain:
+        origin = f'https://{settings.DEV_PUBLIC_HOST}'
+    return redirect(origin + reverse('painel:mensalidade') + '?' + urlencode(parameters))

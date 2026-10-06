@@ -26,7 +26,7 @@ DAY = timezone.localdate() + timedelta(days=1)
 class PanelTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.marcos = Tenant.objects.create(nome='Marcos', subdomain='marcos', plano=Tenant.Plano.ILIMITADO)
+        cls.marcos = Tenant.objects.create(nome='Marcos', subdomain='marcos', plano=Tenant.Plano.PROFISSIONAL)
         cls.wanessa = Tenant.objects.create(nome='Wanessa', subdomain='wanessa')
         cls.admin = User.objects.create_user('admin@marcos.test', PASSWORD, tenant=cls.marcos, tipo='ADMIN')
         cls.outro_admin = User.objects.create_user('admin@wanessa.test', PASSWORD, tenant=cls.wanessa, tipo='ADMIN')

@@ -25,13 +25,13 @@ def validate_timezone(value):
 class Tenant(models.Model):
     class Plano(models.TextChoices):
         INDIVIDUAL = 'INDIVIDUAL', 'Plano Individual'
-        ILIMITADO = 'ILIMITADO', 'Plano Profissional'
+        PROFISSIONAL = 'PROFISSIONAL', 'Plano Profissional'
 
-    plano = models.CharField(max_length=10, choices=Plano.choices, default=Plano.INDIVIDUAL)
+    plano = models.CharField(max_length=12, choices=Plano.choices, default=Plano.INDIVIDUAL)
 
     @property
     def valor_plano(self):
-        return {self.Plano.INDIVIDUAL: Decimal('30.00'), self.Plano.ILIMITADO: Decimal('50.00')}[self.plano]
+        return {self.Plano.INDIVIDUAL: Decimal('30.00'), self.Plano.PROFISSIONAL: Decimal('50.00')}[self.plano]
 
     def clean(self):
         super().clean()
@@ -57,7 +57,7 @@ class Tenant(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=models.Q(plano__in=["INDIVIDUAL", "ILIMITADO"]), name="tenant_plano_valido"),
+            models.CheckConstraint(condition=models.Q(plano__in=["INDIVIDUAL", "PROFISSIONAL"]), name="tenant_plano_valido"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_futuros__gte=1), name="tenant_limite_agendamentos_futuros_positivo"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_dia__gte=1), name="tenant_limite_ag_dia_positivo"),
             models.CheckConstraint(condition=models.Q(intervalo_grade_minutos__gt=0), name="tenant_grade_positiva"),

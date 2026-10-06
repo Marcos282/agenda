@@ -5,13 +5,13 @@ A página `/painel/mensalidade/` permite ao administrador escolher o plano do se
 | Identificador | Nome exibido | Valor / 30 dias | Profissionais ativos |
 | --- | --- | --- | --- |
 | `INDIVIDUAL` | Plano Individual | R$ 30,00 | Até 1 |
-| `ILIMITADO` | Plano Profissional | R$ 50,00 | Sem limite |
+| `PROFISSIONAL` | Plano Profissional | R$ 50,00 | Sem limite |
 
 Ambos incluem agendamentos online, WhatsApp, histórico de clientes, loja online e QR Code. O plano fica no campo `Tenant.plano`, representado por `TextChoices`. O preço é calculado no servidor a partir do identificador; valores ou IDs de estabelecimento enviados pelo navegador não alteram essa regra.
 
 ## Troca de plano
 
-A seleção inicia a cobrança e preserva o plano atual até a confirmação do pagamento. Os dois botões “Escolher este plano” mostram primeiro a prévia do JSON com o valor do plano escolhido, sem enviar a cobrança. O botão “Enviar ao Mercado Pago” envia a cobrança e abre o checkout. A abertura do checkout não acrescenta dias: a renovação depende de pagamento avulso confirmado, sem cobrança automática. O bloqueio de downgrade é validado antes de criar a cobrança.
+A seleção inicia a cobrança e preserva o plano atual até a confirmação do pagamento. Os dois botões “Escolher este plano” criam a preferência com o valor do plano escolhido e abrem o checkout. A abertura do checkout não acrescenta dias: a renovação depende de pagamento avulso confirmado, sem cobrança automática. O bloqueio de downgrade é validado antes de criar a cobrança.
 
 Para trocar para o Individual com vários profissionais ativos, abra `/painel/profissionais/`, escolha quem continuará ativo e desative os demais. A troca será recusada enquanto houver mais de um ativo. Nenhum cadastro, agenda ou histórico é excluído. Profissionais inativos podem continuar cadastrados; o limite se aplica à criação de profissionais ativos e à ativação de cadastros existentes.
 
@@ -25,7 +25,7 @@ Consultas, contagens e alterações usam o tenant autenticado. Só administrador
 
 ## Migração dos estabelecimentos existentes
 
-A migração atribui `ILIMITADO` aos estabelecimentos que já possuem mais de um profissional ativo. Os demais recebem `INDIVIDUAL`. Não altera a validade nem desativa profissionais. Checkouts históricos recebem `INDIVIDUAL` como identificação legada, sem mudar seus valores ou os pagamentos anteriores.
+A migração original atribui `ILIMITADO` (posteriormente renomeado para `PROFISSIONAL`) aos estabelecimentos que já possuem mais de um profissional ativo. Os demais recebem `INDIVIDUAL`. Não altera a validade nem desativa profissionais. Checkouts históricos recebem `INDIVIDUAL` como identificação legada, sem mudar seus valores ou os pagamentos anteriores.
 
 ## Publicação
 
@@ -66,3 +66,5 @@ Os testes de planos cobrem criação/ativação, requisições diretas, isolamen
 ### Resultado da validação
 
 Passaram 115 testes das áreas afetadas e mais 3 testes de migração e confirmação de pagamentos (118 no total). A verificação ampliada encontrou 9 falhas em testes antigos de login de clientes, agendamento e limite diário. As mesmas 9 falhas foram reproduzidas em uma cópia do commit anterior à implementação; não foram introduzidas pelos planos.
+
+A implementação atual de callbacks e comprovantes está em [pagamentos-mensalidade.md](pagamentos-mensalidade.md).

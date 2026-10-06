@@ -138,3 +138,5 @@ Em **Painel → Meu cadastro → Agendamentos por cliente**, o administrador def
 A reserva registra o WhatsApp utilizado para preservar a identificação mesmo que o cadastro mude depois. As migrações preenchem as reservas anteriores com o número disponível no cadastro. Ao atingir o limite, o cliente recebe uma mensagem para escolher outra data ou cancelar uma reserva.
 
 - [Planos por estabelecimento e publicação](docs/planos-estabelecimento.md)
+
+- [Mensalidade, confirmação Mercado Pago e comprovantes](docs/pagamentos-mensalidade.md)

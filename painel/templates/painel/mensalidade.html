@@ -1,6 +1,6 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Acesso ao sistema · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-5">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-6">{% endblock %}
 {% block painel_content %}
 <div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
@@ -22,6 +22,16 @@
     </section>
     {% endfor %}
   </div>
+  {% if pagamentos_registrados %}
+  <section class="billing-card billing-receipts" aria-label="Histórico de pagamentos">
+    <h2>Histórico de pagamentos</h2>
+    <ul class="billing-history-list">
+      {% for pagamento in pagamentos_registrados %}
+      <li><div><strong>{% if pagamento.status == "approved" and pagamento.creditado_em %}Pagamento aprovado — +{{ pagamento.dias_concedidos|default:pagamento.checkout.dias }} dias adicionados{% elif pagamento.status == "refunded" %}Pagamento reembolsado{% elif pagamento.status == "charged_back" %}Pagamento contestado{% elif pagamento.status == "rejected" %}Pagamento recusado{% elif pagamento.status == "cancelled" %}Pagamento cancelado{% else %}Aguardando confirmação do pagamento{% endif %}</strong><p>{{ pagamento.checkout.get_plano_display }} · R$ {{ pagamento.checkout.valor|floatformat:2 }} · {{ pagamento.aprovado_em|default:pagamento.checkout.criado_em|date:"d/m/Y H:i" }}</p>{% if pagamento.nova_validade %}<p>Próximo vencimento: {{ pagamento.nova_validade|date:"d/m/Y" }}</p>{% endif %}</div>{% if pagamento.status == "approved" and pagamento.creditado_em %}<a class="ui-button billing-receipt-button" href="{% url 'painel:comprovante_pagamento' pagamento.payment_id %}">Comprovante de pagamento</a>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 </div>
 {% endblock %}
 
