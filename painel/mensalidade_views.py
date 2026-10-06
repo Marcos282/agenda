@@ -105,9 +105,6 @@ def mensalidade(request):
         request.session['ultimo_checkout_diagnostico'] = {
             'tenant_id': request.tenant.pk, 'checkout_id': str(checkout.pk), 'dados': diagnostico,
         }
-        if interromper_checkout:
-            request.session['checkout_diagnostico'] = diagnostico
-            return redirect(f"{reverse('painel:mensalidade')}?diagnostico=checkout")
         return redirect(checkout.checkout_url)
 
     diagnostico = None

@@ -180,9 +180,9 @@ class CheckoutProTests(TestCase):
             'sandbox_init_point': 'https://sandbox.mercadopago.com/checkout?secret=value',
         })
         response = self.enviar_checkout({'acao': 'pagar', 'diagnostico': 'checkout'})
-        self.assertRedirects(response, f'{self.url}?diagnostico=checkout', fetch_redirect_response=False)
+        self.assertRedirects(response, CheckoutAcesso.objects.get().checkout_url, fetch_redirect_response=False)
 
-        page = self.client.get(response.url, **self.host)
+        page = self.client.get(self.url + '?diagnostico=checkout', **self.host)
         self.assertContains(page, 'Diagnóstico temporário do Checkout Pro')
         self.assertContains(page, 'preferencia_criada')
         self.assertContains(page, 'status_http')
