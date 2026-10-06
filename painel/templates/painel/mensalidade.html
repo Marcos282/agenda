@@ -1,6 +1,6 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Acesso ao sistema · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-1">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-2">{% endblock %}
 {% block painel_content %}
 <div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
