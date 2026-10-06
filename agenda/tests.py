@@ -16,7 +16,7 @@ from .services import configurar_dia, revisao_dia
 class DailyAgendaTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.tenant = Tenant.objects.create(nome='Marcos', subdomain='marcos')
+        cls.tenant = Tenant.objects.create(nome='Marcos', subdomain='marcos', plano=Tenant.Plano.ILIMITADO)
         cls.other = Tenant.objects.create(nome='Wanessa', subdomain='wanessa')
         cls.admin = User.objects.create_user('daily@example.test', 'Strong!Example_2026', tenant=cls.tenant, tipo='ADMIN')
         cls.prof = Profissional.objects.create(tenant=cls.tenant, nome='João')

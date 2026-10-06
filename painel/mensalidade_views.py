@@ -3,6 +3,10 @@ from hashlib import sha256
 from uuid import UUID
 
 from django.conf import settings
+from django import forms
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from tenants.models import Tenant
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -14,16 +18,20 @@ from tenants.domains import is_development_public_host
 
 from pagamentos.models import CheckoutAcesso, NotificacaoMercadoPago, PagamentoAcesso
 from pagamentos.services import (
-    CheckoutError, confirmar_pagamento, configurado, criar_checkout, preco_acesso,
+    CheckoutError, confirmar_pagamento, configurado, criar_checkout,
 )
 from .decorators import admin_tenant_required
+
+
+class EscolhaPlanoForm(forms.Form):
+    plano = forms.ChoiceField(choices=Tenant.Plano.choices)
 
 
 def versao_pagamentos(tenant):
     registros = list(PagamentoAcesso.objects.filter(checkout__tenant=tenant).values_list(
         'payment_id', 'status', 'creditado_em',
     )[:30])
-    return sha256(repr((tenant.expira_em, registros)).encode()).hexdigest()
+    return sha256(repr((tenant.expira_em, tenant.plano, registros)).encode()).hexdigest()
 
 
 @admin_tenant_required
@@ -33,6 +41,22 @@ def mensalidade(request):
     if request.method == 'GET' and request.GET.get('atualizar') == '1':
         # Poll only our database; do not call the provider every few seconds.
         return JsonResponse({'versao': versao_pagamentos(request.tenant)})
+    if request.method == 'POST' and request.POST.get('acao') == 'escolher_plano':
+        form = EscolhaPlanoForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    tenant = Tenant.objects.select_for_update().get(pk=request.tenant.pk)
+                    tenant.plano = form.cleaned_data['plano']
+                    tenant.save(update_fields=['plano', 'atualizado_em'])
+            except ValidationError as exc:
+                messages.error(request, ' '.join(exc.messages))
+            else:
+                request.session.pop('checkout_previa', None)
+                messages.success(request, f'{tenant.get_plano_display()} selecionado. Os recursos já estão disponíveis. A data de expiração foi preservada.')
+        else:
+            messages.error(request, 'Escolha um plano válido.')
+        return redirect('painel:mensalidade')
     if request.method == 'POST':
         if request.POST.get('acao') not in ('pagar', 'enviar'):
             messages.error(request, 'Solicitação de pagamento inválida.')
@@ -154,7 +178,11 @@ def mensalidade(request):
         payment_id__in=pagamentos_notificacoes.values('payment_id'),
     )[:20]
     return render(request, 'painel/mensalidade.html', {
-        'valor_acesso': preco_acesso(),
+        'valor_acesso': request.tenant.valor_plano,
+        'planos': [
+            {'id': Tenant.Plano.INDIVIDUAL, 'nome': 'Plano Individual', 'valor': '30,00', 'agenda': '1 agenda / profissional ativo'},
+            {'id': Tenant.Plano.ILIMITADO, 'nome': 'Plano Profissional', 'valor': '50,00', 'agenda': 'Profissionais e agendas ilimitados'},
+        ],
         'checkout_configurado': configurado(),
         'modo_teste': not settings.MERCADO_PAGO_LIVE_MODE,
         'payment_status': payment_status,

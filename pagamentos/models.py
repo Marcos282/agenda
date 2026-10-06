@@ -1,11 +1,13 @@
 from uuid import uuid4
 
 from django.db import models
+from tenants.models import Tenant
 
 
 class CheckoutAcesso(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT, related_name='checkouts_acesso')
+    plano = models.CharField(max_length=10, choices=Tenant.Plano.choices, default=Tenant.Plano.INDIVIDUAL)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     dias = models.PositiveSmallIntegerField(default=30)
     producao = models.BooleanField(default=False)
@@ -19,6 +21,7 @@ class CheckoutAcesso(models.Model):
     class Meta:
         ordering = ['-criado_em']
         constraints = [
+            models.CheckConstraint(condition=models.Q(plano__in=['INDIVIDUAL', 'ILIMITADO']), name='checkout_acesso_plano_valido'),
             models.CheckConstraint(condition=models.Q(valor__gt=0), name='checkout_acesso_valor_positivo'),
             models.CheckConstraint(condition=models.Q(dias=30), name='checkout_acesso_trinta_dias'),
         ]

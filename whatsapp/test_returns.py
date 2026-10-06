@@ -24,7 +24,7 @@ from .views import RetornoForm
 
 class ReturnFixture:
     def setup_returns(self):
-        self.tenant = Tenant.objects.create(nome='Tá Combinado', subdomain='marcos', timezone='America/Araguaina')
+        self.tenant = Tenant.objects.create(nome='Tá Combinado', subdomain='marcos', timezone='America/Araguaina', plano=Tenant.Plano.ILIMITADO)
         self.other = Tenant.objects.create(nome='Outra loja', subdomain='outra')
         self.contact = ContatoCliente.objects.create(tenant=self.tenant, nome='Marcos', whatsapp='11999991234')
         self.prof = Profissional.objects.create(tenant=self.tenant, nome='João')

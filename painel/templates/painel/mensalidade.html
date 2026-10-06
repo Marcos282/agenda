@@ -1,18 +1,32 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Acesso ao sistema · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-1">{% endblock %}
 {% block painel_content %}
 <div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
     <span class="billing-eyebrow">CONTA DO ESTABELECIMENTO</span>
-    <h1>Acesso ao sistema</h1>
+    <h1>Escolha o plano do seu estabelecimento</h1>
     <p>Renove por 30 dias quando precisar. Sem assinatura ou cobrança automática.</p>
   </header>
 
+  <div class="billing-plan-grid">
+    {% for plano in planos %}
+    <section class="billing-card billing-choice {% if request.tenant.plano == plano.id %}billing-choice-selected{% endif %}">
+      <div class="billing-card-heading"><h2>{{ plano.nome }}</h2>{% if request.tenant.plano == plano.id %}<span class="billing-status-label">Seu plano atual</span>{% endif %}</div>
+      <p class="billing-price">R$ {{ plano.valor }}<span> / 30 dias</span></p>
+      <p class="billing-plan-description">{{ plano.agenda }}</p>
+      <ul class="billing-features">
+        <li>{{ plano.agenda }}</li><li>Agendamentos online</li><li>WhatsApp</li><li>Histórico de clientes</li><li>Loja online e QR Code</li>
+      </ul>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="escolher_plano"><input type="hidden" name="plano" value="{{ plano.id }}"><button class="ui-button billing-pay" type="submit">Escolher este plano</button></form>
+    </section>
+    {% endfor %}
+  </div>
+  <p class="billing-plan-note">A mudança de plano preserva a validade atual. Para escolher o Individual, mantenha apenas um profissional ativo.</p>
   <div class="billing-grid">
     <section class="billing-card billing-plan" aria-labelledby="plan-title">
       <div class="billing-card-heading">
-        <div><span class="billing-eyebrow">PLANO DO ESTABELECIMENTO</span><h2 id="plan-title">Tá Combinado</h2></div>
+        <div><span class="billing-eyebrow">PLANO DO ESTABELECIMENTO</span><h2 id="plan-title">{{ request.tenant.get_plano_display }}</h2></div>
         <span class="billing-status-label {% if prazo_expirado or expira_hoje %}billing-status-due{% endif %}">{% if prazo_expirado %}Prazo expirado{% elif expira_hoje %}Expira hoje{% else %}{{ dias_restantes }} dia{{ dias_restantes|pluralize }} para expirar{% endif %}</span>
       </div>
 
@@ -25,7 +39,7 @@
       <p class="billing-plan-description">Tudo o que você precisa para organizar e divulgar seus atendimentos.</p>
       <ul class="billing-features">
         <li>Agenda e agendamentos online</li>
-        <li>Gestão de profissionais e serviços</li>
+        <li>{% if request.tenant.plano == "INDIVIDUAL" %}1 profissional ativo{% else %}Profissionais e agendas ilimitados{% endif %}</li>
         <li>Histórico de clientes pelo WhatsApp</li>
         <li>Loja online e QR Code para divulgação</li>
       </ul>

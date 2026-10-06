@@ -15,6 +15,7 @@ from .forms import LimiteAgendamentosForm, CadastroResponsavelForm, Profissional
 
 
 CONFLICTS = {
+    'prof_plano_individual_limite': 'O Plano Individual permite apenas um profissional ativo. Escolha o Plano Profissional para liberar agendas ilimitadas.',
     'disp_sem_sobreposicao': 'Já existe um período ativo sobreposto. Confira os horários.',
     'prof_servico_tenant_unique': 'Este serviço já está vinculado ao profissional. Edite o vínculo existente.',
     'ps_prof_same_tenant_fk': 'Profissional inválido para este estabelecimento.',

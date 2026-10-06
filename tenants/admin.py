@@ -4,7 +4,7 @@ from .models import Tenant
 
 @admin.register(Tenant, site=site)
 class TenantAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'subdomain', 'ativo', 'timezone', 'expira_em')
+    list_display = ('nome', 'subdomain', 'plano', 'ativo', 'timezone', 'expira_em')
     exclude = ('intervalo_grade_minutos',)
-    list_filter = ('ativo', 'expira_em')
+    list_filter = ('plano', 'ativo', 'expira_em')
     search_fields = ('nome', 'subdomain')

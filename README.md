@@ -136,3 +136,5 @@ O botão **Acesso ao sistema**, ao lado do QR Code da loja, permite comprar 30 d
 Em **Painel → Meu cadastro → Agendamentos por cliente**, o administrador define o máximo de reservas por WhatsApp por data de atendimento (padrão: 2). O limite soma os serviços de todos os profissionais do estabelecimento no fuso local. Reservas confirmadas e faltas contam; canceladas liberam espaço. Outros dias e estabelecimentos têm contagens independentes.
 
 A reserva registra o WhatsApp utilizado para preservar a identificação mesmo que o cadastro mude depois. As migrações preenchem as reservas anteriores com o número disponível no cadastro. Ao atingir o limite, o cliente recebe uma mensagem para escolher outra data ou cancelar uma reserva.
+
+- [Planos por estabelecimento e publicação](docs/planos-estabelecimento.md)

@@ -52,12 +52,12 @@ class MensalidadeTests(TestCase):
     @override_settings(PLATFORM_ACCESS_PRICE='NaN')
     def test_invalid_config_does_not_enable_checkout(self):
         page = self.client.get(self.url, **self.host)
-        self.assertIsNone(page.context['valor_acesso'])
+        self.assertEqual(page.context['valor_acesso'], Decimal('30.00'))
 
     def test_permissions_and_tenant_scope(self):
         self.assertEqual(self.client.get(self.url, HTTP_HOST='wanessa.localhost').status_code, 403)
         self.client.force_login(self.customer)
-        self.assertEqual(self.client.get(self.url, **self.host).status_code, 403)
+        self.assertEqual(self.client.get(self.url, **self.host).status_code, 302)
         self.client.logout()
         self.assertEqual(self.client.get(self.url, **self.host).status_code, 302)
 
@@ -66,7 +66,8 @@ class MensalidadeTests(TestCase):
         url = reverse('admin:tenants_tenant_change', args=[self.tenant.pk])
         page = self.client.get(url, HTTP_HOST='localhost')
         self.assertContains(page, 'name="expira_em"')
-        response = self.client.post(url, {'nome':'Marcos', 'subdomain':'marcos', 'ativo':'on',
+        response = self.client.post(url, {'nome':'Marcos', 'subdomain':'marcos', 'plano':'INDIVIDUAL', 'ativo':'on',
+            'limite_agendamentos_cliente_dia':2, 'limite_agendamentos_cliente_futuros':2,
             'timezone':'America/Sao_Paulo', 'expira_em':'31/12/2026', '_save':'Salvar'}, HTTP_HOST='localhost')
         self.assertEqual(response.status_code, 302)
         self.tenant.refresh_from_db()

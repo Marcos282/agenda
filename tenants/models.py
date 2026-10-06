@@ -1,11 +1,12 @@
 from datetime import timedelta
+from decimal import Decimal
 from django.utils import timezone as django_timezone
 
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 
 
 subdomain_validator = RegexValidator(
@@ -22,6 +23,23 @@ def validate_timezone(value):
 
 
 class Tenant(models.Model):
+    class Plano(models.TextChoices):
+        INDIVIDUAL = 'INDIVIDUAL', 'Plano Individual'
+        ILIMITADO = 'ILIMITADO', 'Plano Profissional'
+
+    plano = models.CharField(max_length=10, choices=Plano.choices, default=Plano.INDIVIDUAL)
+
+    @property
+    def valor_plano(self):
+        return {self.Plano.INDIVIDUAL: Decimal('30.00'), self.Plano.ILIMITADO: Decimal('50.00')}[self.plano]
+
+    def clean(self):
+        super().clean()
+        if self.pk and self.plano == self.Plano.INDIVIDUAL:
+            from profissionais.models import Profissional
+            if Profissional.objects.filter(tenant_id=self.pk, ativo=True).count() > 1:
+                raise ValidationError('Para escolher o Plano Individual, escolha qual profissional permanecerá ativo e desative os demais. Nenhum cadastro será excluído.')
+
     nome = models.CharField(max_length=150)
     subdomain = models.CharField(max_length=100, unique=True, validators=[subdomain_validator])
     timezone = models.CharField(max_length=50, default="America/Sao_Paulo", validators=[validate_timezone])
@@ -39,6 +57,7 @@ class Tenant(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(condition=models.Q(plano__in=["INDIVIDUAL", "ILIMITADO"]), name="tenant_plano_valido"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_futuros__gte=1), name="tenant_limite_agendamentos_futuros_positivo"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_dia__gte=1), name="tenant_limite_ag_dia_positivo"),
             models.CheckConstraint(condition=models.Q(intervalo_grade_minutos__gt=0), name="tenant_grade_positiva"),
@@ -69,8 +88,11 @@ class Tenant(models.Model):
             if kwargs.get('update_fields') is not None:
                 kwargs['update_fields'] = set(kwargs['update_fields']) | {'expira_em'}
         self.subdomain = self.subdomain.strip().lower()
-        self.full_clean()
-        return super().save(*args, **kwargs)
+        with transaction.atomic():
+            if self.pk:
+                type(self).objects.select_for_update().filter(pk=self.pk).first()
+            self.full_clean()
+            return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nome

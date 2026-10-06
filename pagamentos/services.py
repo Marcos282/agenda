@@ -60,7 +60,7 @@ def public_url():
 
 def configurado():
     return bool(settings.MERCADO_PAGO_ACCESS_TOKEN and settings.MERCADO_PAGO_WEBHOOK_SECRET
-                and public_url() and preco_acesso() is not None)
+                and public_url())
 
 
 def sdk():
@@ -125,12 +125,12 @@ def valid_checkout_url(value):
 def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, checkout_id=None):
     if not configurado():
         raise CheckoutError('O pagamento online ainda não está configurado.')
-    amount = preco_acesso()
     # Serialize repeated clicks for this tenant. A timeout never grants access.
     with transaction.atomic():
-        Tenant.objects.select_for_update().get(pk=tenant_id, ativo=True)
+        tenant = Tenant.objects.select_for_update().get(pk=tenant_id, ativo=True)
+        amount = tenant.valor_plano
         checkouts = CheckoutAcesso.objects.filter(
-            tenant_id=tenant_id, valor=amount, producao=settings.MERCADO_PAGO_LIVE_MODE,
+            tenant_id=tenant_id, plano=tenant.plano, valor=amount, producao=settings.MERCADO_PAGO_LIVE_MODE,
             retorno_url=retorno_url, expira_em__gt=timezone.now(),
         ).exclude(pagamentos__creditado_em__isnull=False)
         checkout = checkouts.filter(pk=checkout_id).first() if checkout_id else checkouts.first()
@@ -149,12 +149,12 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, 
             return checkout
         if checkout is None:
             checkout = CheckoutAcesso.objects.create(
-                tenant_id=tenant_id, valor=amount, retorno_url=retorno_url,
+                tenant_id=tenant_id, plano=tenant.plano, valor=amount, retorno_url=retorno_url,
                 producao=settings.MERCADO_PAGO_LIVE_MODE, expira_em=timezone.now() + timedelta(hours=24),
             )
         return_url = f'{retorno_url}?checkout={checkout.pk}'
         payload = {
-            'items': [{'id': 'acesso-30-dias', 'title': 'Tá Combinado — acesso por 30 dias',
+            'items': [{'id': 'acesso-30-dias', 'title': f'Tá Combinado — {tenant.get_plano_display()} por 30 dias',
                        'description': 'Pagamento avulso, sem renovação automática.',
                        'quantity': 1, 'currency_id': 'BRL', 'unit_price': float(amount)}],
             'external_reference': str(checkout.pk),

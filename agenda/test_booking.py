@@ -21,7 +21,7 @@ from .services import configurar_dia, revisao_dia
 
 class BookingFixture:
     def setup_booking(self):
-        self.tenant = Tenant.objects.create(nome='Marcos', subdomain='marcos')
+        self.tenant = Tenant.objects.create(nome='Marcos', subdomain='marcos', plano=Tenant.Plano.ILIMITADO)
         self.other = Tenant.objects.create(nome='Wanessa', subdomain='wanessa')
         self.user = User.objects.create_user('booking@example.test', 'Booking!Password2026', tenant=self.tenant, whatsapp='+5511999991234')
         self.second = User.objects.create_user('second@example.test', 'Booking!Password2026', tenant=self.tenant, whatsapp='+5511999995678')

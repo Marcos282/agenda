@@ -83,6 +83,35 @@ class CheckoutProTests(TestCase):
             HTTP_X_SIGNATURE=f'ts=1742505638683,v1={digest}' if signature else 'invalid',
         )
 
+    def test_professional_plan_charges_fifty_and_credits_thirty_days(self):
+        self.tenant.plano = Tenant.Plano.ILIMITADO
+        self.tenant.save(update_fields=['plano'])
+        expiry = self.tenant.expira_em
+        checkout = self.checkout()
+        payload = self.sdk.preference.return_value.create.call_args.args[0]
+        self.assertEqual(payload['items'][0]['unit_price'], 50)
+        self.assertIn('Plano Profissional', payload['items'][0]['title'])
+        self.assertEqual(checkout.plano, 'ILIMITADO')
+        self.payment(checkout, transaction_amount=50)
+        confirmar_pagamento('789')
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
+        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+
+    def test_old_payment_preserves_newly_selected_plan(self):
+        checkout = self.checkout()
+        expiry = self.tenant.expira_em
+        self.tenant.plano = Tenant.Plano.ILIMITADO
+        self.tenant.save(update_fields=['plano'])
+        self.payment(checkout)
+        confirmar_pagamento('789')
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.plano, 'ILIMITADO')
+        self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
+        checkout.refresh_from_db()
+        self.assertEqual(checkout.plano, 'INDIVIDUAL')
+        self.assertEqual(checkout.valor, Decimal('30.00'))
+
     def test_checkout_uses_server_price_and_one_off_preference(self):
         response = self.enviar_checkout({'acao': 'pagar', 'valor': '0.01', 'tenant': self.other.pk})
         checkout = CheckoutAcesso.objects.get()
@@ -247,7 +276,7 @@ class CheckoutProTests(TestCase):
         self.client.force_login(self.customer)
         self.assertEqual(
             self.client.get(self.url, {'recebimento': notification.pk}, **self.host).status_code,
-            403,
+            302,
         )
 
     def test_malformed_webhook_is_rejected(self):
@@ -290,7 +319,7 @@ class CheckoutProTests(TestCase):
         csrf_client.force_login(self.admin)
         self.assertEqual(csrf_client.post(self.url, {'acao': 'pagar'}, **self.host).status_code, 403)
         self.client.force_login(self.customer)
-        self.assertEqual(self.client.post(self.url, {'acao': 'pagar'}, **self.host).status_code, 403)
+        self.assertEqual(self.client.post(self.url, {'acao': 'pagar'}, **self.host).status_code, 302)
         self.client.force_login(self.admin)
         self.assertEqual(self.client.post(self.url, {'acao': 'pagar'}, HTTP_HOST='wanessa.localhost').status_code, 403)
         self.payment(self.checkout(self.other))
@@ -300,13 +329,11 @@ class CheckoutProTests(TestCase):
         self.client.get(self.url, **self.host)
         self.sdk.payment.return_value.get.assert_not_called()
 
-    def test_invalid_price_disables_checkout(self):
+    def test_legacy_price_cannot_override_plan_price(self):
         for value in ('NaN', '-1', '0', '30.001', 'Infinity', '9999999'):
             with self.subTest(value=value), self.settings(PLATFORM_ACCESS_PRICE=value):
                 self.assertIsNone(preco_acesso())
-                with self.assertRaises(CheckoutError):
-                    self.checkout()
-        self.sdk.preference.return_value.create.assert_not_called()
+                self.assertEqual(self.checkout().valor, Decimal('30.00'))
 
     @override_settings(MERCADO_PAGO_ACCESS_TOKEN='')
     def test_missing_configuration_disables_payments(self):
@@ -394,7 +421,7 @@ class CheckoutProTests(TestCase):
         self.assertNotEqual(changed.json()['versao'], original.json()['versao'])
         self.sdk.payment.return_value.get.assert_not_called()
         self.client.force_login(self.customer)
-        self.assertEqual(self.client.get(self.url, {'atualizar': '1'}, **self.host).status_code, 403)
+        self.assertEqual(self.client.get(self.url, {'atualizar': '1'}, **self.host).status_code, 302)
 
     def test_return_diagnostic_shows_api_failure_without_granting_days(self):
         checkout = self.checkout()
@@ -447,8 +474,9 @@ class CheckoutProTests(TestCase):
         self.client.post(self.url, {'acao': 'enviar'}, **self.host)
         self.sdk_class.assert_not_called()
         self.client.post(self.url, {'acao': 'pagar'}, **self.host)
-        with self.settings(PLATFORM_ACCESS_PRICE='40.00'):
-            page = self.client.post(self.url, {'acao': 'enviar'}, follow=True, **self.host)
+        self.tenant.plano = Tenant.Plano.ILIMITADO
+        self.tenant.save(update_fields=['plano'])
+        page = self.client.post(self.url, {'acao': 'enviar'}, follow=True, **self.host)
         self.assertContains(page, 'Confira uma nova prévia')
         self.sdk_class.assert_not_called()
 
