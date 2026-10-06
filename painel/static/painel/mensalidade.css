@@ -51,7 +51,8 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
   @page{margin:18mm}
   body{background:#fff}
   body>main{max-width:none;margin:0;padding:0;border:0;box-shadow:none}
-  main>*:not(.billing-page),.billing-page>*:not(#comprovante){display:none!important}
+  main>*:not(.billing-page),.billing-page>*:not(.billing-summary-grid),.billing-summary-grid>*:not(#comprovante){display:none!important}
+  .billing-summary-grid{display:block}
   #comprovante{margin:0;border:1px solid #ccd5df;break-inside:avoid}
   #comprovante .billing-print{display:none}
 }
@@ -62,3 +63,5 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
 @media print{#comprovante .billing-receipt-form{display:none}}
 
 .billing-plan-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));align-items:stretch;gap:20px;margin:24px 0 12px;overflow-x:auto;padding-bottom:8px}.billing-choice{display:flex;flex-direction:column}.billing-choice form{margin-top:auto}.billing-choice-selected{border:2px solid #267756;background:linear-gradient(145deg,#f2f9f5,#fff)}.billing-plan-note{color:#647872;font-size:14px;margin:12px 0 24px}.billing-choice h2{color:#1d674d}@media(max-width:650px){.billing-plan-grid{gap:12px}.billing-choice .billing-card-heading{flex-wrap:wrap}}
+
+.billing-summary-grid>.billing-receipts{margin-top:0}
