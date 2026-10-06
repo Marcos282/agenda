@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, re_path
+from django.views.generic import RedirectView
 from . import views, agenda_views, agendamento_views, cliente_views, loja_qrcode_views, mensalidade_views
 
 from whatsapp.views import configuracao_whatsapp
@@ -13,6 +14,7 @@ urlpatterns = [
     path('loja/profissional/<int:profissional_id>/qr.png', loja_qrcode_views.profissional_qrcode_imagem, name='profissional_qrcode_imagem'),
     path('whatsapp/', configuracao_whatsapp, name='whatsapp'),
     path('testes/', testes, {'route': 'painel:testes'}, name='testes'),
+    re_path(r'^whatsapp/testes/?$', RedirectView.as_view(pattern_name='painel:testes', query_string=True)),
     path('', views.inicio, name='inicio'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),
     path('agendamentos/<int:pk>/cancelar/', agendamento_views.cancelar_agendamento, name='agendamento_cancelar'),
