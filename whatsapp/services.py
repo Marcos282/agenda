@@ -22,3 +22,20 @@ def renderizar_mensagem_agendamento(booking, template, *, tenant=None):
 def enviar_confirmacao_agendamento(*, tenant_id, agendamento_id):
     from .confirmations import send_confirmation
     return send_confirmation(tenant_id=tenant_id, agendamento_id=agendamento_id)
+
+
+def consultar_conversa(tenant, numero):
+    """Reuse the tenant-scoped inbox and Evolution conversation in UI and CLI."""
+    from . import evolution, inbox
+    from usuarios.validators import normalizar_whatsapp
+    numero = normalizar_whatsapp(numero) if numero else None
+    local = inbox.messages_for(tenant.pk, numero)
+    warning = ''
+    try:
+        remote = evolution.find_messages(tenant, numero) if numero else []
+    except evolution.EvolutionError as exc:
+        remote = []
+        warning = str(exc)
+    messages = local + [message for message in remote
+        if not any(item['text'] == message['text'] and not message['sent'] for item in local)]
+    return messages, warning

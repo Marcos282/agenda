@@ -10,12 +10,61 @@ DEFAULT_MESSAGE = (
 )
 
 
+def mostrar_conversa(tenant, numero):
+    from whatsapp.services import consultar_conversa
+    messages, warning = consultar_conversa(tenant, numero)
+    if not messages:
+        print('Nenhuma mensagem disponível para esse número.')
+    for message in messages:
+        direction = 'Enviada' if message.get('sent') else 'Recebida'
+        print(f'{direction}: {message["text"]}')
+    if warning:
+        print(f'Consulta da Evolution: {warning}', file=sys.stderr)
+
+
+def enviar_texto(tenant, numero, mensagem):
+    from django.core.exceptions import ValidationError
+    from whatsapp.evolution import EvolutionError
+    from whatsapp.providers import get_provider
+    if not mensagem.strip() or len(mensagem) > 2000:
+        raise ValidationError('Informe uma mensagem de 1 a 2.000 caracteres.')
+    result = get_provider().send_text(tenant, numero, mensagem)
+    if not isinstance(result, dict) or not result.get('message_id'):
+        raise EvolutionError('Envio sem confirmação. Confira a conversa antes de repetir.')
+    print(f'Mensagem aceita pela API. ID: {result["message_id"]}. Confira o recebimento no celular.')
+
+
+def conversar(tenant, numero):
+    from django.core.exceptions import ValidationError
+    from whatsapp.evolution import EvolutionError
+    print('Digite qualquer mensagem para enviar. Use /receber para consultar respostas e /sair para terminar.')
+    while True:
+        try:
+            text = input('Mensagem> ')
+        except (EOFError, KeyboardInterrupt):
+            print('\nConversa encerrada.')
+            return
+        if text.strip() == '/sair':
+            return
+        if not text.strip():
+            continue
+        try:
+            if text.strip() == '/receber':
+                mostrar_conversa(tenant, numero)
+            else:
+                enviar_texto(tenant, numero, text)
+        except (ValidationError, EvolutionError) as exc:
+            print(str(exc), file=sys.stderr)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tenant', default='marcos', help='Subdomínio do estabelecimento (padrão: marcos).')
     parser.add_argument('--numero', default='21990921092', help='WhatsApp de destino com DDD.')
     parser.add_argument('--mensagem', default=DEFAULT_MESSAGE)
     parser.add_argument('--enviar', action='store_true', help='Enviar uma mensagem; sem esta opção, apenas verificar a conexão.')
+    parser.add_argument('--receber', action='store_true', help='Consultar mensagens enviadas e recebidas do número informado.')
+    parser.add_argument('--interativo', action='store_true', help='Escrever mensagens livremente e consultar respostas no terminal.')
     args = parser.parse_args(argv)
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'barbe.settings')
@@ -26,13 +75,13 @@ def main(argv=None):
     from tenants.models import Tenant
     from usuarios.validators import normalizar_whatsapp
     from whatsapp.evolution import EvolutionError, configured, connection_info
-    from whatsapp.providers import get_provider
 
     try:
         numero = normalizar_whatsapp(args.numero)
-        if not args.mensagem.strip() or len(args.mensagem) > 2000:
-            raise ValidationError('Informe uma mensagem de 1 a 2.000 caracteres.')
         tenant = Tenant.objects.get(subdomain=args.tenant, ativo=True)
+        if args.receber and not args.enviar and not args.interativo:
+            mostrar_conversa(tenant, numero)
+            return 0
         if not configured():
             raise EvolutionError('Configure a integração Evolution no ambiente da aplicação.')
         info = connection_info(tenant)
@@ -41,13 +90,15 @@ def main(argv=None):
         print(f'Estabelecimento: {tenant.nome} ({tenant.subdomain})')
         print(f'WhatsApp conectado: {info["number"] or "número não informado"}')
         print(f'Destino: {numero}')
+        if args.interativo:
+            conversar(tenant, numero)
+            return 0
         if not args.enviar:
             print('Conexão verificada. Use --enviar para enviar uma única mensagem.')
             return 0
-        result = get_provider().send_text(tenant, numero, args.mensagem)
-        if not isinstance(result, dict) or not result.get('message_id'):
-            raise EvolutionError('Envio sem confirmação. Confira a conversa antes de repetir.')
-        print(f'Mensagem aceita pela API. ID: {result["message_id"]}. Confira o recebimento no celular.')
+        enviar_texto(tenant, numero, args.mensagem)
+        if args.receber:
+            mostrar_conversa(tenant, numero)
         return 0
     except Tenant.DoesNotExist:
         print(f'Estabelecimento ativo "{args.tenant}" não encontrado neste banco. '

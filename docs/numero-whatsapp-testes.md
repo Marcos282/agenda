@@ -27,3 +27,22 @@ sudo systemctl restart combinado
 ```
 
 Arquivos: `barbe/settings.py`, `usuarios/validators.py`, `agenda/booking.py`, `agenda/test_numero_teste.py` e esta documentação.
+
+## Mensagens livres
+
+Em `/teste/`, escreva o texto no campo Mensagem e use **Enviar mensagem**. Qualquer resposta de texto aparece na conversa; o código único só é necessário para validar o botão opcional **Testar envio e recebimento**.
+
+No servidor, o script também permite conversar com qualquer texto:
+
+```bash
+venv/bin/python zapp.py --tenant marcos --numero 21990921092 --interativo
+```
+
+Digite o texto e pressione Enter para enviar. `/receber` consulta as mensagens existentes; `/sair` encerra. O recebimento reutiliza o SQLite do webhook e o histórico da Evolution, como a tela `/teste/`. Sem webhook/histórico disponível, o script não pode recuperar respostas não armazenadas.
+
+Para um envio ou consulta avulsa:
+
+```bash
+venv/bin/python zapp.py --tenant marcos --numero 21990921092 --enviar --mensagem "Olá! Esta é minha mensagem."
+venv/bin/python zapp.py --tenant marcos --numero 21990921092 --receber
+```

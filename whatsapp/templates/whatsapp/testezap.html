@@ -13,6 +13,7 @@
 <form method="post">{% csrf_token %}<button name="acao" value="bloquear">Bloquear área de testes</button></form>
 </section>{% endif %}
 <section class="card"><h2>Enviar mensagem</h2>
+<p>Escreva livremente a mensagem que deseja enviar. As respostas do cliente aparecem na conversa abaixo; não precisam conter um código de teste.</p>
 <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Enviar mensagem</button>
 {% if protected %}<button type="submit" name="acao" value="teste_completo">Testar envio e recebimento</button>{% endif %}</form>
 </section>

@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 from painel.decorators import admin_tenant_required
 from usuarios.validators import normalizar_whatsapp
 from .providers import get_provider
+from .services import consultar_conversa
 from . import evolution, inbox
 from .inbox_views import webhook_url
 
@@ -43,15 +44,7 @@ def console(request, *, route, protected=False):
         except forms.ValidationError:
             return JsonResponse({'error': 'Informe um WhatsApp válido.'}, status=400)
         try:
-            local_messages = inbox.messages_for(request.tenant.pk, number)
-            warning = ''
-            try:
-                remote_messages = evolution.find_messages(request.tenant, number) if number else []
-            except evolution.EvolutionError as exc:
-                remote_messages = []
-                warning = str(exc)
-            conversation = local_messages + [message for message in remote_messages
-                if not any(local['text'] == message['text'] and not message['sent'] for local in local_messages)]
+            conversation, warning = consultar_conversa(request.tenant, number)
             run = current_test(request)
             if run and run['number'] == number and run['status'] == 'aguardando_resposta':
                 if any(not item['sent'] and run['token'] in item['text'] for item in conversation):
