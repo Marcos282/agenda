@@ -19,7 +19,7 @@
 {% block painel_content %}
 <div class="whatsapp-overview">
 <span class="eyebrow">LEMBRETES PARA SEUS CLIENTES</span>
-<div class="whatsapp-heading"><h1>WhatsApp</h1><span class="connection-status {{ connection.kind }}" role="status">{{ connection.label }}</span></div><p>Conecte o número do estabelecimento e personalize os lembretes dos seus clientes.</p><a class="ui-button ui-button-secondary" href="{% url 'testes' %}">Testar envio e recebimento ↗</a>
+<div class="whatsapp-heading"><h1>WhatsApp</h1>{% include 'whatsapp/connection_badge.html' %}</div><p>Conecte o número do estabelecimento e personalize os lembretes dos seus clientes.</p><a class="ui-button ui-button-secondary" href="{% url 'testes' %}">Testar envio e recebimento ↗</a>
 <ol class="whatsapp-guide">
 <li><strong>1. Conecte seu número</strong><p>Gere o QR code, escaneie pelo WhatsApp e use “Verificar conexão” para conferir se o número está conectado.</p></li>
 <li><strong>2. Prepare os lembretes</strong><p>Ative os lembretes, escolha a antecedência e personalize a mensagem com nome, serviço, data e horário. Depois, salve as configurações.</p></li>
@@ -28,7 +28,7 @@
 </div>
 <div class="whatsapp-stack">
 <section class="card"><h2>Conexão</h2>
-<div aria-live="polite"><span class="connection-status {{ connection.kind }}">{{ connection.label }}</span>
+<div aria-live="polite" style="text-align:center;padding:16px 0">{% include 'whatsapp/connection_badge.html' %}
 <p class="connection-number"><strong>Telefone:</strong> {% if connection.number %}{{ connection.number }}{% elif connection.kind == 'online' %}Número não informado pela API.{% elif connection.label == 'Status indisponível' %}Indisponível no momento.{% else %}Nenhum número conectado.{% endif %}</p>
 {% if connection.label == 'Status indisponível' %}<p>Não foi possível consultar a conexão. Tente verificar novamente.</p>{% endif %}</div>
 {% if api_configurada %}

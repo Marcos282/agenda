@@ -1,0 +1,4 @@
+<span class="connection-status connection-status-icon {{ connection.kind }}" role="status" style="display:inline-flex;align-items:center;gap:9px">
+<svg width="28" height="28" viewBox="0 0 12 12" aria-hidden="true" focusable="false" style="flex-shrink:0"><circle cx="6" cy="6" r="5" fill="{% if connection.kind == 'online' %}#22c55e{% elif connection.kind == 'offline' %}#dc2626{% elif connection.kind == 'pending' %}#eab308{% else %}#94a3b8{% endif %}"/></svg>
+{{ connection.label }}
+</span>
