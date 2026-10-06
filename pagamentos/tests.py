@@ -408,7 +408,7 @@ class CheckoutProTests(TestCase):
         confirmar_pagamento('791')
         page = self.client.get(self.url, **self.host)
         for payment_id in ('789', '790'):
-            self.assertContains(page, reverse('painel:comprovante_pagamento', args=[payment_id]))
+            self.assertContains(page, f'value="{payment_id}"')
         self.assertNotContains(page, reverse('painel:comprovante_pagamento', args=['791']))
         selected = self.client.get(reverse('painel:comprovante_pagamento', args=['789']), **self.host)
         self.assertContains(selected, 'Pagamento aprovado')
