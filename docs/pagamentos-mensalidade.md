@@ -43,7 +43,7 @@ A nova validade é `max(data atual no timezone do tenant, validade atual) + 30 d
 
 ## Downgrade
 
-O Individual exige até um profissional ativo. A validação ocorre antes de criar a cobrança e novamente ao confirmar. O estabelecimento deve escolher quem continuará ativo e desativar os demais; nenhum cadastro ou histórico é excluído.
+O Individual exige até um profissional ativo. O checkout pode ser aberto mesmo com vários profissionais ativos. A validação ocorre ao confirmar o pagamento; a aplicação do plano fica pendente até o estabelecimento escolher quem permanecerá ativo. Não depende de quais usuários estão logados. O estabelecimento deve escolher quem continuará ativo e desativar os demais; nenhum cadastro ou histórico é excluído.
 
 Se profissionais extras surgirem entre checkout e aprovação, a confirmação não altera plano nem validade; o webhook retorna 503 para permitir reenvio. Após desativar os extras, uma nova confirmação processa a cobrança uma única vez. O retorno do painel também pode reconsultar o pagamento. A regra de continuar com múltiplos profissionais até deslogar não está implementada.
 

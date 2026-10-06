@@ -135,15 +135,17 @@ class CheckoutProTests(TestCase):
                 self.assertEqual(self.tenant.plano, 'INDIVIDUAL')
                 self.assertEqual(self.other.plano, 'INDIVIDUAL')
 
-    def test_buy_individual_with_multiple_professionals_cannot_start_checkout(self):
+    def test_buy_individual_with_multiple_professionals_opens_checkout_without_changing_plan(self):
         from profissionais.models import Profissional
         self.tenant.plano = 'PROFISSIONAL'
         self.tenant.save(update_fields=['plano'])
         for name in ('Ana', 'Bia'):
             Profissional.objects.create(tenant=self.tenant, nome=name)
-        page = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': 'INDIVIDUAL'}, follow=True, **self.host)
-        self.assertContains(page, 'escolha qual profissional permanecerá ativo')
-        self.sdk_class.assert_not_called()
+        page = self.client.post(self.url, {'acao': 'comprar_plano', 'plano': 'INDIVIDUAL'}, **self.host)
+        self.assertEqual(page.status_code, 302)
+        self.assertEqual(page.url, CheckoutAcesso.objects.get().checkout_url)
+        self.assertEqual(CheckoutAcesso.objects.get().plano, 'INDIVIDUAL')
+        self.assertEqual(self.sdk.preference.return_value.create.call_args.args[0]['items'][0]['unit_price'], 30)
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
 

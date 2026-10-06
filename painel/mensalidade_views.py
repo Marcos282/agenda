@@ -4,8 +4,6 @@ from uuid import UUID
 
 from django.conf import settings
 from django import forms
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from tenants.models import Tenant
 from django.contrib import messages
 from django.http import JsonResponse
@@ -45,17 +43,8 @@ def mensalidade(request):
     if request.method == 'POST' and request.POST.get('acao') in ('escolher_plano', 'comprar_plano'):
         form = EscolhaPlanoForm(request.POST)
         if form.is_valid():
-            try:
-                with transaction.atomic():
-                    tenant = Tenant.objects.select_for_update().get(pk=request.tenant.pk)
-                    tenant.plano = form.cleaned_data['plano']
-                    tenant.full_clean()
-            except ValidationError as exc:
-                messages.error(request, ' '.join(exc.messages))
-                return redirect('painel:mensalidade')
-            else:
-                request.session.pop('checkout_previa', None)
-                comprar_plano = True
+            request.session.pop('checkout_previa', None)
+            comprar_plano = True
         else:
             messages.error(request, 'Escolha um plano válido.')
             return redirect('painel:mensalidade')

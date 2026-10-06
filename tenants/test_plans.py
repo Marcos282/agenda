@@ -58,7 +58,7 @@ class PlanoTests(TestCase):
         self.tenant.save(update_fields=['plano'])
         second = Profissional.objects.create(tenant=self.tenant, nome='Bia')
         page = self.choose('INDIVIDUAL')
-        self.assertContains(page, 'escolha qual profissional permanecerá ativo')
+        self.assertNotContains(page, 'escolha qual profissional permanecerá ativo')
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
         self.assertEqual(Profissional.objects.filter(tenant=self.tenant).count(), 2)

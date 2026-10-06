@@ -133,10 +133,8 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, 
         tenant = Tenant.objects.select_for_update().get(pk=tenant_id, ativo=True)
         if plano is not None:
             tenant.plano = plano
-        try:
-            tenant.full_clean()
-        except ValidationError as exc:
-            raise CheckoutError(' '.join(exc.messages)) from exc
+        if tenant.plano not in Tenant.Plano.values:
+            raise CheckoutError('Escolha um plano válido.')
         amount = tenant.valor_plano
         checkouts = CheckoutAcesso.objects.filter(
             tenant_id=tenant_id, plano=tenant.plano, valor=amount, producao=settings.MERCADO_PAGO_LIVE_MODE,
