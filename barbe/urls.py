@@ -5,8 +5,11 @@ from django.views.generic import TemplateView
 from pagamentos.views import webhook, retorno
 from whatsapp.console import testezap, testes
 from whatsapp.inbox_views import receive
+from usuarios.seo import robots, sitemap
 
 urlpatterns = [
+    path('robots.txt', robots, name='robots'),
+    path('sitemap.xml', sitemap, name='sitemap'),
     path('teste/', testes, {'route': 'teste'}, name='teste'),
     path('teste/receber/', receive, name='whatsapp_test_receive_single'),
     path('testes/whatsapp/receber', receive, name='whatsapp_test_receive'),

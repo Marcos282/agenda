@@ -36,6 +36,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 TENANT_BASE_DOMAIN = os.environ.get("TENANT_BASE_DOMAIN", "localhost").lower()
 # Public address used when sharing a store, including from local development.
 STORE_BASE_DOMAIN = os.environ.get("STORE_BASE_DOMAIN", "tacombinado.net").strip().lower()
+PLATFORM_PUBLIC_URL = os.environ.get('PLATFORM_PUBLIC_URL', f'https://{STORE_BASE_DOMAIN}').strip()
 ALLOWED_HOSTS = [TENANT_BASE_DOMAIN, "." + TENANT_BASE_DOMAIN, "localhost", "127.0.0.1", "[::1]"]
 DEV_PUBLIC_HOST = os.environ.get('DEV_PUBLIC_HOST', LOCAL.get('DEV_PUBLIC_HOST', '')).strip().lower()
 DEV_TENANT_SUBDOMAIN = os.environ.get('DEV_TENANT_SUBDOMAIN', LOCAL.get('DEV_TENANT_SUBDOMAIN', '')).strip().lower()
@@ -70,6 +71,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'usuarios.seo.SearchIndexMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
