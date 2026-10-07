@@ -9,6 +9,7 @@
   <style>{% block extra_css %}{% endblock %}</style>
 {% block extra_head %}{% endblock %}
 {% block layout_head %}{% endblock %}
+<link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
 </head>
 <body class="{% block body_class %}{% if not request.tenant %}public-site{% endif %}{% endblock %}">
 {% block public_header %}{% if not request.tenant %}{% include 'usuarios/public_header.html' %}{% endif %}{% endblock %}

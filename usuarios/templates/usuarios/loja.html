@@ -1,7 +1,8 @@
 {% load static %}
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if item %}{{ item.servico.nome }} · {% endif %}Loja · {{ request.tenant.nome }}</title>
-<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/loja.css' %}"><link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"></head><body class="public-booking-page">
+<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/loja.css' %}"><link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"><link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
+</head><body class="public-booking-page">
 <div class="shop-announcement">Seu cuidado, do seu jeito. Conheça os serviços de {{ request.tenant.nome }}.</div>
 <header class="shop-header"><a class="shop-brand" href="{% url 'loja' %}"><span aria-hidden="true">✦</span>{{ request.tenant.nome }}<small>LOJA DE SERVIÇOS</small></a>
 <nav aria-label="Navegação da loja"><a class="ui-button ui-button-secondary" href="{% url 'home' %}">Início</a>{% if user.is_authenticated %}<a class="ui-button" href="{% url 'conta' %}">Minha conta ↗</a>{% else %}<a class="ui-button" href="{% url 'agenda:meus' %}">Meus agendamentos ↗</a>{% endif %}</nav></header>
@@ -19,4 +20,4 @@
 {% if ofertas.has_other_pages %}<nav class="shop-pagination" aria-label="Páginas da loja">{% if ofertas.has_previous %}<a class="ui-button ui-button-secondary" href="?{{ filtros }}&amp;page={{ ofertas.previous_page_number }}#catalogo">← Anterior</a>{% endif %}<span>{{ ofertas.number }} / {{ ofertas.paginator.num_pages }}</span>{% if ofertas.has_next %}<a class="ui-button ui-button-secondary" href="?{{ filtros }}&amp;page={{ ofertas.next_page_number }}#catalogo">Próxima →</a>{% endif %}</nav>{% endif %}
 <p class="shop-booking-note">Selecione um serviço para consultar os horários e confirmar seu agendamento.</p></div></div></section>
 <section class="shop-invite"><div><h2>Mais perto de quem cuida de você.</h2><p>Agende com nome e WhatsApp, sem criar uma conta.</p></div><a class="ui-button" href="{% url 'agenda:meus' %}">Meus agendamentos →</a></section>
-</main><footer class="shop-footer"><strong>{{ request.tenant.nome }} <span>✦</span></strong><p>Serviços profissionais. Cuidado de verdade.</p><a class="ui-button ui-button-quiet" href="{% url 'home' %}">Conhecer o estabelecimento ↗</a></footer>{% include 'usuarios/mobile_booking.html' %}</body></html>
+</main><footer class="shop-footer"><strong>{{ request.tenant.nome }} <span>✦</span></strong><p>Serviços profissionais. Cuidado de verdade.</p><a class="ui-button ui-button-quiet" href="{% url 'home' %}">Conhecer o estabelecimento ↗</a>{% include 'usuarios/footer_contact.html' %}</footer>{% include 'usuarios/mobile_booking.html' %}</body></html>
