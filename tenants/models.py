@@ -41,6 +41,10 @@ class Tenant(models.Model):
                 raise ValidationError('Para escolher o Plano Individual, escolha qual profissional permanecerá ativo e desative os demais. Nenhum cadastro será excluído.')
 
     nome = models.CharField(max_length=150)
+    razao_social = models.CharField("Razão social", max_length=200, blank=True, default="")
+    telefone = models.CharField("Telefone de contato", max_length=20, blank=True, default="")
+    cnpj = models.CharField("CNPJ", max_length=18, blank=True, default="")
+    endereco_publico = models.CharField("Endereço do estabelecimento", max_length=400, blank=True, default="")
     subdomain = models.CharField(max_length=100, unique=True, validators=[subdomain_validator])
     timezone = models.CharField(max_length=50, default="America/Sao_Paulo", validators=[validate_timezone])
     # Legacy setting retained for compatibility; not used by the daily agenda.
@@ -63,6 +67,27 @@ class Tenant(models.Model):
             models.CheckConstraint(condition=models.Q(intervalo_grade_minutos__gt=0), name="tenant_grade_positiva"),
             models.CheckConstraint(condition=models.Q(subdomain__regex=r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"), name="tenant_subdomain_valid"),
         ]
+
+    @property
+    def cpf_publico(self):
+        if self.cnpj or not self.pk:
+            return ''
+        from usuarios.models import User
+        cpf = (User.objects.filter(tenant_id=self.pk, tipo=User.Tipo.ADMIN)
+               .exclude(cpf='').order_by('pk').values_list('cpf', flat=True).first())
+        if not cpf:
+            return ''
+        return f'{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}'
+
+    @property
+    def whatsapp_url(self):
+        from usuarios.validators import normalizar_whatsapp
+        if not self.telefone:
+            return ''
+        try:
+            return 'https://wa.me/' + normalizar_whatsapp(self.telefone).lstrip('+')
+        except ValidationError:
+            return ''
 
     @property
     def data_expiracao(self):

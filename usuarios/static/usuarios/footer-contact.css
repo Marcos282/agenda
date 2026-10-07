@@ -1,0 +1,8 @@
+.public-footer,.site-footer,.future-footer,.shop-footer{flex-wrap:wrap}
+.footer-contact{flex:1 0 100%;min-width:0;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.footer-contact p{margin:0 0 8px;line-height:1.6;overflow-wrap:anywhere}
+.footer-contact-links{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.footer-contact-links>a{color:inherit;overflow-wrap:anywhere}
+.footer-contact-links .footer-whatsapp{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#25d366;border-radius:50%}
+.footer-whatsapp:hover{background:#25d36618}
+.footer-contact-links a:focus-visible{outline:2px solid currentColor;outline-offset:3px}

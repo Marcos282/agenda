@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#090d19">
 <title>Tá Combinado · Seu próximo horário começa aqui</title>
 <link rel="stylesheet" href="{% static 'usuarios/plataforma-futuro.css' %}">
+<link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
 </head>
 <body class="platform-future">
 <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
@@ -27,5 +28,5 @@
 <section class="future-section container faq-section"><div class="section-heading"><span class="eyebrow">ANTES DE COMBINAR</span><h2>Vamos tirar<br><span>suas dúvidas.</span></h2></div><div class="faq-list"><details><summary>Meu cliente precisa criar uma conta?</summary><p>Não. Ele escolhe o serviço e o horário e informa nome e WhatsApp para reservar.</p></details><details><summary>Posso trabalhar com vários profissionais?</summary><p>Sim. Cada profissional tem seus próprios serviços, valores, durações e horários.</p></details><details><summary>Como funcionam os lembretes pelo WhatsApp?</summary><p>Conecte o WhatsApp no painel, ative os lembretes e configure a mensagem e a antecedência. O envio depende da conexão e do processamento automático do servidor.</p></details><details><summary>Quanto custa depois do período grátis?</summary><p>Os primeiros 30 dias são grátis. Depois, o plano Individual custa R$ 30,00 por mês e o plano Equipe custa R$ 50,00 por mês.</p></details></div></section>
 <section class="closing-cta container"><span class="eyebrow">SEU TEMPO MERECE ESSE CUIDADO.</span><h2>Vamos deixar<br><span>tudo combinado?</span></h2><a class="button button-primary" href="{% url 'registro' %}">Criar meu estabelecimento ↗</a></section>
 <section class="store-access container" id="acesso"><div><h2>Já tem um estabelecimento?</h2><p>Encontre sua loja pelo endereço cadastrado.</p></div><form method="get" action="#acesso"><label for="id_estabelecimento">Endereço do estabelecimento</label><div><input id="id_estabelecimento" name="estabelecimento" placeholder="Ex.: marcos" required maxlength="63" value="{{ estabelecimento_form.estabelecimento.value|default:'' }}"><button class="button button-outline" type="submit">Encontrar loja →</button></div>{{ estabelecimento_form.estabelecimento.errors }}</form></section>
-</main><footer class="future-footer container"><a class="future-brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">✦</span>tá combinado<span class="brand-dot">.</span></a><p>Tecnologia para organizar.<br>Tempo para cuidar.</p><span>© {% now 'Y' %} Tá Combinado</span></footer>
+</main><footer class="future-footer container"><a class="future-brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">✦</span>tá combinado<span class="brand-dot">.</span></a><p>Tecnologia para organizar.<br>Tempo para cuidar.</p><span>© {% now 'Y' %} Tá Combinado</span>{% include 'usuarios/footer_contact.html' %}</footer>
 </body></html>

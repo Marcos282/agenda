@@ -3,6 +3,7 @@ import re
 
 from PIL import Image, ImageOps
 from django import forms
+from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.core.files.base import ContentFile
@@ -23,10 +24,12 @@ class CadastroResponsavelForm(forms.Form):
     first_name = forms.CharField(label='Nome', max_length=150, widget=forms.TextInput(attrs={'autocomplete': 'name'}))
     email = forms.EmailField(label='Login (e-mail)', disabled=True)
     cpf = forms.CharField(
-        label='CPF',
-        max_length=14,
-        widget=forms.TextInput(attrs={'inputmode': 'numeric', 'autocomplete': 'off', 'placeholder': '000.000.000-00'}),
+        label='CPF ou razão social',
+        max_length=200,
+        widget=forms.TextInput(attrs={'autocomplete': 'off', 'placeholder': '000.000.000-00 ou razão social da empresa'}),
     )
+    cnpj = forms.CharField(label='CNPJ', max_length=18, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '00.000.000/0000-00'}))
     telefone = forms.CharField(
         label='Telefone / WhatsApp',
         max_length=40,
@@ -53,7 +56,8 @@ class CadastroResponsavelForm(forms.Form):
         if not self.is_bound:
             self.initial.update({
                 'first_name': user.get_full_name(),
-                'cpf': user.cpf,
+                'cpf': user.tenant.razao_social or user.cpf,
+                'cnpj': user.tenant.cnpj,
                 'telefone': user.whatsapp,
                 'endereco': user.endereco,
                 'bairro': user.bairro,
@@ -66,7 +70,10 @@ class CadastroResponsavelForm(forms.Form):
         return ' '.join(self.cleaned_data['first_name'].split())
 
     def clean_cpf(self):
-        cpf = re.sub(r'\D', '', self.cleaned_data['cpf'])
+        valor = ' '.join(self.cleaned_data['cpf'].split())
+        if any(letra.isalpha() for letra in valor):
+            return valor
+        cpf = re.sub(r'\D', '', valor)
         if len(cpf) != 11 or len(set(cpf)) == 1:
             raise forms.ValidationError('Informe um CPF válido.')
         primeiro = sum(int(digito) * peso for digito, peso in zip(cpf[:9], range(10, 1, -1))) * 10 % 11
@@ -77,17 +84,40 @@ class CadastroResponsavelForm(forms.Form):
             raise forms.ValidationError('Informe um CPF válido.')
         return cpf
 
+    def clean_cnpj(self):
+        value = self.cleaned_data['cnpj'].strip()
+        if not value:
+            return ''
+        digits = re.sub(r'[. /-]', '', value)
+        if not re.fullmatch(r'[0-9]{14}', digits) or len(set(digits)) == 1:
+            raise forms.ValidationError('Informe um CNPJ com 14 dígitos.')
+        return f'{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}'
+
     def clean_telefone(self):
         try:
             return normalizar_whatsapp(self.cleaned_data['telefone'])
         except ValidationError as exc:
             raise forms.ValidationError(exc.messages) from exc
 
+    @transaction.atomic
     def save(self):
+        identificacao = self.cleaned_data['cpf']
+        razao_social = identificacao if any(letra.isalpha() for letra in identificacao) else ''
+        self.user.cpf = '' if razao_social else identificacao
+        tenant = self.user.tenant
+        tenant.razao_social = razao_social
+        tenant.telefone = self.cleaned_data['telefone']
+        tenant.cnpj = self.cleaned_data['cnpj']
+        tenant.endereco_publico = ', '.join(filter(None, [
+            self.cleaned_data['endereco'], self.cleaned_data['numero_endereco'],
+            self.cleaned_data['bairro'],
+            ' - '.join([self.cleaned_data['cidade'], self.cleaned_data['estado']]),
+        ]))
+        tenant.save(update_fields=['razao_social', 'telefone', 'cnpj', 'endereco_publico', 'atualizado_em'])
         self.user.first_name = self.cleaned_data['first_name']
         self.user.last_name = ''
         for field in (
-            'cpf', 'endereco', 'bairro', 'numero_endereco', 'cidade', 'estado',
+            'endereco', 'bairro', 'numero_endereco', 'cidade', 'estado',
         ):
             setattr(self.user, field, self.cleaned_data[field])
         self.user.whatsapp = self.cleaned_data['telefone']

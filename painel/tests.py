@@ -126,6 +126,12 @@ class PanelTests(TestCase):
         self.assertEqual(self.admin.email, 'admin@marcos.test')
         self.assertEqual(self.admin.get_full_name(), 'Marcos Antonio')
         self.assertEqual(self.admin.cpf, '52998224725')
+        self.marcos.refresh_from_db()
+        from django.template.loader import render_to_string
+        from types import SimpleNamespace
+        footer = render_to_string('usuarios/footer_contact.html', {'request': SimpleNamespace(tenant=self.marcos)})
+        self.assertIn('CPF 529.982.247-25', footer)
+        self.assertNotIn('CNPJ', footer)
         self.assertEqual(self.admin.whatsapp, '+5511999991234')
         self.assertEqual(self.admin.endereco, 'Rua das Flores')
         self.assertEqual(self.admin.bairro, 'Centro')
@@ -155,6 +161,36 @@ class PanelTests(TestCase):
         self.admin.refresh_from_db()
         self.assertEqual(self.admin.get_full_name(), 'Marcos Antonio')
         self.assertEqual(self.admin.cpf, '52998224725')
+
+    def test_owner_profile_accepts_company_name_and_updates_public_contact(self):
+        response = self.post(reverse('painel:meu_cadastro'), {
+            'first_name': 'Marcos Antonio', 'cpf': 'Minha Empresa LTDA',
+            'cnpj': '48992693000172',
+            'telefone': '(11) 99999-1234', 'endereco': 'Rua das Flores',
+            'bairro': 'Centro', 'numero_endereco': '123', 'cidade': 'São Paulo',
+            'estado': 'SP',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.marcos.refresh_from_db()
+        self.admin.refresh_from_db()
+        self.wanessa.refresh_from_db()
+        self.assertEqual(self.marcos.cnpj, '48.992.693/0001-72')
+        self.assertEqual(self.marcos.endereco_publico, 'Rua das Flores, 123, Centro, São Paulo - SP')
+        from django.template.loader import render_to_string
+        from types import SimpleNamespace
+        footer = render_to_string('usuarios/footer_contact.html', {'request': SimpleNamespace(tenant=self.marcos)})
+        self.assertIn('https://wa.me/5511999991234', footer)
+        self.assertIn('48.992.693/0001-72', footer)
+        self.assertIn('Rua das Flores, 123, Centro, São Paulo - SP', footer)
+        self.assertNotIn('tel:', footer)
+        self.assertNotIn('NOVA REDE', footer)
+        self.assertEqual(self.marcos.razao_social, 'Minha Empresa LTDA')
+        self.assertEqual(self.marcos.telefone, '+5511999991234')
+        self.assertEqual(self.admin.cpf, '')
+        self.assertEqual(self.wanessa.razao_social, '')
+        saved = self.get(reverse('painel:meu_cadastro'))
+        self.assertEqual(saved.context['form']['cpf'].value(), 'Minha Empresa LTDA')
+        self.assertContains(saved, 'CPF ou razão social')
 
     def test_lists_are_isolated_both_directions(self):
         for user, host, own, other, own_service, other_service in [
