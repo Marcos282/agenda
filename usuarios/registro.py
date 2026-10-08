@@ -64,7 +64,11 @@ def registro(request):
     if request.method == 'POST' and form.is_valid():
         try:
             with transaction.atomic():
-                tenant = Tenant.objects.create(nome=form.cleaned_data['subdomain'], subdomain=form.cleaned_data['subdomain'])
+                tenant = Tenant.objects.create(
+                    nome=form.cleaned_data['subdomain'],
+                    subdomain=form.cleaned_data['subdomain'],
+                    plano=Tenant.Plano.PROFISSIONAL,
+                )
                 User.objects.create_user(email=form.cleaned_data['email'], password=form.cleaned_data['password1'], tenant=tenant, tipo=User.Tipo.ADMIN)
         except (IntegrityError, ValidationError):
             form.add_error(None, 'Não foi possível concluir o cadastro. Confira se o subdomínio ou o e-mail já está em uso.')

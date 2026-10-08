@@ -11,6 +11,8 @@ No topo esquerdo do painel, o nome do estabelecimento aparece acompanhado de “
 
 Ambos incluem agendamentos online, WhatsApp, histórico de clientes, loja online e QR Code. O plano fica no campo `Tenant.plano`, representado por `TextChoices`. O preço é calculado no servidor a partir do identificador; valores ou IDs de estabelecimento enviados pelo navegador não alteram essa regra.
 
+Novas contas criadas em `/registro` começam no Plano Profissional, com vários profissionais ativos liberados durante os 30 dias iniciais de acesso. Na renovação, o administrador pode escolher um dos planos. Contas existentes mantêm seu plano atual.
+
 ## Troca de plano
 
 A seleção inicia a cobrança e preserva o plano atual até a confirmação do pagamento. Os dois botões “Escolher este plano” criam a preferência com o valor do plano escolhido e abrem o checkout. A abertura do checkout não acrescenta dias: a renovação depende de pagamento avulso confirmado, sem cobrança automática. O checkout Individual pode abrir com vários profissionais ativos; a aplicação do downgrade é validada após a aprovação.

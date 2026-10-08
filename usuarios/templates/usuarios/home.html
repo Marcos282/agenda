@@ -6,7 +6,15 @@
 <meta property="og:title" content="{{ profile_title }}">
 <meta property="og:description" content="{% if profile_address %}{{ profile_address }} · {% endif %}Conheça os serviços e agende seu horário.">
 <meta property="og:url" content="{{ profile_url }}">
-{% if profile_image %}<meta property="og:image" content="{{ profile_image }}"><meta property="og:image:alt" content="Foto de {{ profile_title }}">{% endif %}
+{% if profile_image %}
+<meta property="og:image" content="{{ profile_image }}">
+<meta property="og:image:secure_url" content="{{ profile_image }}">
+<meta property="og:image:type" content="image/jpeg">
+{% if profile_image_width and profile_image_height %}<meta property="og:image:width" content="{{ profile_image_width }}"><meta property="og:image:height" content="{{ profile_image_height }}">{% endif %}
+<meta property="og:image:alt" content="Foto de {{ profile_title }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ profile_image }}">
+{% endif %}
 <meta name="description" content="Conheça serviços e profissionais de beleza, bem-estar e cuidados pessoais. Seu próximo cuidado começa aqui.">
 <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/home.css' %}?v=service-star-reference-2">
 <link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"><link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">

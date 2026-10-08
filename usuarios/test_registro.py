@@ -9,6 +9,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.urls import reverse
 from tenants.models import Tenant
+from profissionais.models import Profissional
 from usuarios.models import User
 
 
@@ -22,6 +23,7 @@ class RegistroTests(TestCase):
         self.assertRedirects(response, '/registro/concluido/', fetch_redirect_response=False)
         tenant=Tenant.objects.get(subdomain='meusalao');user=User.objects.get(email=data['email'])
         self.assertEqual(user.tenant,tenant)
+        self.assertEqual(tenant.plano, Tenant.Plano.PROFISSIONAL)
         self.assertEqual(tenant.expira_em, timezone.localtime(tenant.criado_em, ZoneInfo(tenant.timezone)).date() + timedelta(days=30))
         self.assertEqual(user.tipo,User.Tipo.ADMIN)
         self.assertFalse(user.is_staff or user.is_superuser)
@@ -31,6 +33,13 @@ class RegistroTests(TestCase):
         login=self.client.post('/login/',{'email':user.email,'password':data['password1']},HTTP_HOST='meusalao.localhost')
         self.assertEqual(login.status_code,302)
         self.assertEqual(self.client.get('/painel/',HTTP_HOST='meusalao.localhost').status_code,200)
+
+    def test_new_registration_allows_multiple_active_professionals(self):
+        self.client.post('/registro', self.data(), HTTP_HOST='localhost')
+        tenant = Tenant.objects.get(subdomain='meusalao')
+        for nome in ['Ana', 'Bia', 'Carlos']:
+            Profissional.objects.create(tenant=tenant, nome=nome, ativo=True)
+        self.assertEqual(Profissional.objects.filter(tenant=tenant, ativo=True).count(), 3)
 
     def test_invalid_and_duplicate_registration(self):
         for slug in ['www','foo.bar','-salao','salao-']:

@@ -82,10 +82,22 @@ def home(request, profissional_id=None):
     profile_title = f'{profissional.nome} — {request.tenant.nome}' if profissional else request.tenant.nome
     public_root = f'https://{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}'
     profile_path = reverse('home_profissional', args=[profissional.pk]) if profissional else reverse('home')
+    profile_image = ''
+    profile_image_width = profile_image_height = None
+    if profissional and profissional.foto:
+        from hashlib import sha256
+        version = sha256(profissional.foto.name.encode()).hexdigest()[:12]
+        profile_image = public_root + reverse('profissional_foto_publica', args=[profissional.pk]) + '?v=' + version
+        try:
+            profile_image_width = profissional.foto.width
+            profile_image_height = profissional.foto.height
+        except OSError:
+            pass
     return render(request, 'usuarios/home.html', {
         'profile_title': profile_title, 'profile_address': endereco_fisico(request.tenant),
         'profile_url': public_root + profile_path,
-        'profile_image': public_root + reverse('profissional_foto_publica', args=[profissional.pk]) if profissional and profissional.foto else '',
+        'profile_image': profile_image,
+        'profile_image_width': profile_image_width, 'profile_image_height': profile_image_height,
         'ofertas': Paginator(ofertas.order_by('servico__nome', 'profissional__nome', 'pk'), 9).get_page(request.GET.get('page')),
         'equipe': equipe, 'total_servicos': total_servicos, 'total_profissionais': equipe.count(),
         'termo': termo, 'profissional_selecionado': str(profissional_id) if profissional_id is not None else '',
@@ -215,6 +227,6 @@ def profissional_foto_publica(request, pk):
         response = FileResponse(profissional.foto.open('rb'), content_type='image/jpeg')
     except FileNotFoundError:
         raise Http404
-    response['Cache-Control'] = 'private, no-store'
+    response['Cache-Control'] = 'public, max-age=300'
     response['X-Content-Type-Options'] = 'nosniff'
     return response
