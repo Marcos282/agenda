@@ -17,6 +17,34 @@ from .agenda_views import agenda_url
 from .decorators import admin_tenant_required
 
 
+def avaliar_ajax(request, booking, action):
+    """Serialize agenda clicks and acknowledge only a persisted tenant rating."""
+    from django.db import transaction
+    from django.http import JsonResponse
+    from agenda.models import Agendamento, ReputacaoCliente
+    from agenda.reputation import numero_agendamento
+    from profissionais.models import Profissional
+    from tenants.models import Tenant
+    try:
+        with transaction.atomic():
+            Tenant.objects.select_for_update().get(pk=request.tenant.pk)
+            Profissional.objects.for_tenant(request.tenant).select_for_update().get(pk=booking.profissional_id)
+            current = Agendamento.objects.for_tenant(request.tenant).select_for_update().get(pk=booking.pk)
+            rating = ReputacaoCliente.objects.for_tenant(request.tenant).filter(agendamento=current).first()
+            from agenda.reputation import confirmar_conclusao
+            if rating is None or (action is confirmar_conclusao and not current.conclusao_confirmada_em):
+                numero_agendamento(current)
+                action(tenant=request.tenant, administrador=request.user, agendamento_id=current.pk)
+                rating = ReputacaoCliente.objects.for_tenant(request.tenant).get(agendamento=current)
+        return JsonResponse({'ok': True, 'agendamento_id': booking.pk, 'tipo': rating.tipo})
+    except ValidationError as exc:
+        return JsonResponse({'ok': False, 'erro': ' '.join(exc.messages)}, status=409)
+
+
+def quer_avaliacao_ajax(request):
+    return request.method == 'POST' and request.headers.get('Accept') == 'application/json'
+
+
 class OfertaChoice(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         price = format(obj.valor, '.2f').replace('.', ',')
@@ -104,6 +132,8 @@ def cancelar_agendamento(request, pk):
     if pk > 9223372036854775807:
         raise Http404
     booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant).select_related('cliente', 'contato'), pk=pk)
+    if quer_avaliacao_ajax(request):
+        return avaliar_ajax(request, booking, cancelar_pelo_painel)
     dia = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
     voltar = agenda_url(booking.profissional_id, dia)
     erro = None
@@ -131,6 +161,8 @@ def falta(request, pk):
     if pk > 9223372036854775807:
         raise Http404
     booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant), pk=pk)
+    if quer_avaliacao_ajax(request):
+        return avaliar_ajax(request, booking, registrar_falta)
     dia = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
     voltar = agenda_url(booking.profissional_id, dia)
     erro = None
@@ -155,6 +187,8 @@ def atraso(request, pk):
     from agenda.models import Agendamento
     from agenda.reputation import registrar_atraso
     booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant), pk=pk)
+    if quer_avaliacao_ajax(request):
+        return avaliar_ajax(request, booking, registrar_atraso)
     dia = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
     voltar = agenda_url(booking.profissional_id, dia)
     erro = None
@@ -180,6 +214,8 @@ def concluir(request, pk):
     if pk > 9223372036854775807:
         raise Http404
     booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant), pk=pk)
+    if quer_avaliacao_ajax(request):
+        return avaliar_ajax(request, booking, confirmar_conclusao)
     dia = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
     voltar = agenda_url(booking.profissional_id, dia)
     erro = None

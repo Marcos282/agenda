@@ -23,7 +23,8 @@ def timeline_payload(profissional, data, periodos):
     atualizar_reputacoes(profissional.tenant)
     ratings = reputacoes(profissional.tenant)
     bookings = Agendamento.objects.for_tenant(profissional.tenant).filter(profissional=profissional, status__in=['CONFIRMADO', 'NAO_COMPARECEU']).annotate(dia_local=TruncDate('inicio', tzinfo=ZoneInfo(profissional.tenant.timezone))).filter(dia_local=data)
-    return {
+    pending_ids = set(bookings.filter(avaliacao_reputacao__isnull=True).values_list('pk', flat=True))
+    payload = {
         'professionalId': profissional.pk,
         'date': data.isoformat(),
         'timeZone': profissional.tenant.timezone,
@@ -36,3 +37,6 @@ def timeline_payload(profissional, data, periodos):
             'statusLabel': a.get_status_display(), 'status': a.status, 'inicio_label': a.inicio.astimezone(ZoneInfo(profissional.tenant.timezone)).strftime('%H:%M'),
             'fim_label': a.fim.astimezone(ZoneInfo(profissional.tenant.timezone)).strftime('%H:%M')} for a in bookings],
     }
+
+    payload['pendingAppointments'] = [a for a in payload['appointments'] if a['id'] in pending_ids]
+    return payload

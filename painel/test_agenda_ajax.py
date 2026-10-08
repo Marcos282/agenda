@@ -59,3 +59,12 @@ class AgendaAjaxTests(BookingFixture, TestCase):
             self.assertContains(response,'data-agenda-refresh')
             self.assertContains(response,self.url)
             self.assertContains(response,'data-timeline')
+
+    def test_page_accepts_whitespace_around_date_parameter(self):
+        response = self.client.get(
+            reverse('painel:agenda'),
+            {'profissional': self.prof.pk, 'data': f' {self.day.isoformat()} '},
+            HTTP_HOST='marcos.localhost',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['dia'], self.day)

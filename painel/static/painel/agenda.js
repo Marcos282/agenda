@@ -106,11 +106,50 @@
     }
     element.classList.add('is-rendered');
   }
-  const api = {layout, coordinate, renderTimeline};
+  const pendingRatings = new Set();
+  let ratingRevision = 0;
+  async function submitRating(form) {
+    const row = form.closest('[data-rating-row]');
+    const id = row.dataset.ratingRow;
+    if (pendingRatings.has(id)) return;
+    pendingRatings.add(id);
+    ratingRevision += 1;
+    const buttons = row.querySelectorAll('button');
+    buttons.forEach(button => { button.disabled = true; });
+    const error = row.querySelector('[data-rating-error]');
+    error.hidden = true;
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Accept': 'application/json'}, body: new FormData(form)
+      });
+      if (response.redirected) throw new Error('Sua sessão expirou. Entre novamente para avaliar.');
+      const result = await response.json();
+      if (!response.ok || result.ok !== true || String(result.agendamento_id) !== id) {
+        throw new Error(result.erro || 'Não foi possível registrar a avaliação. Tente novamente.');
+      }
+      const summary = row.closest('.booked-summary');
+      ratingRevision += 1;
+      row.remove();
+      if (!summary.querySelector('[data-rating-row]')) summary.remove();
+    } catch (failure) {
+      error.textContent = failure.message || 'Não foi possível registrar a avaliação. Tente novamente.';
+      error.hidden = false;
+    } finally {
+      pendingRatings.delete(id);
+      buttons.forEach(button => { button.disabled = false; });
+    }
+  }
+  const api = {layout, coordinate, renderTimeline, submitRating};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined') return;
   root.DailyAgenda = api;
   document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('submit', event => {
+      if (!event.target.matches('[data-rating-form]')) return;
+      event.preventDefault();
+      submitRating(event.target);
+    });
     const payload = document.getElementById('agenda-data'), timeline = document.querySelector('[data-timeline]');
     if (payload && timeline) {
       renderTimeline(timeline, JSON.parse(payload.textContent));
@@ -118,8 +157,9 @@
       const refreshButton = document.querySelector('[data-refresh-agenda]');
       let refreshing = false;
       const refresh = async () => {
-        if (refreshing || document.hidden || !refreshStatus) return;
+        if (refreshing || pendingRatings.size || document.hidden || !refreshStatus) return;
         refreshing = true;
+        const revision = ratingRevision;
         if (refreshButton) refreshButton.disabled = true;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
@@ -130,6 +170,7 @@
           });
           if (!response.ok || response.redirected) throw new Error('Agenda unavailable');
           const result = await response.json();
+          if (pendingRatings.size || revision !== ratingRevision) return;
           const data = result.timeline;
           renderTimeline(timeline, data);
           payload.textContent = JSON.stringify(data);

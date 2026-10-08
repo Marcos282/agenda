@@ -26,6 +26,9 @@ class PanelBookingTests(BookingFixture, TestCase):
     def test_admin_creates_booking_for_customer_and_returns_to_agenda(self):
         response=self.post(self.data(acao='consultar'))
         self.assertContains(response,'09:07')
+        self.assertFalse(response.context['selecionando'])
+        self.assertNotContains(response, 'placeholder="Nome completo do cliente"')
+        self.assertNotContains(response, 'class="edit-form"')
         self.assertFalse(Agendamento.objects.exists())
         response=self.post(self.data(acao='confirmar',hora='09:07',cotacao=self.quote()))
         self.assertEqual(response.status_code,302)

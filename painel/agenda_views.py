@@ -27,7 +27,7 @@ def agenda_url(profissional_id, dia):
 
 def selected_day(request):
     today = timezone.localdate(timezone=ZoneInfo(request.tenant.timezone))
-    value = request.GET.get('data', today.isoformat())
+    value = request.GET.get('data', today.isoformat()).strip()
     form = DiaForm({'data': value})
     return form.cleaned_data['data'] if form.is_valid() else None
 

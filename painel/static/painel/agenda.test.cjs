@@ -19,3 +19,40 @@ console.log('Agenda JS: intervalos, lacunas, timezone e proporções 20/40/60 mi
   const absent = noShowPlan.blocks.find(b => b.kind === 'no-show');
   if (!absent || absent.end - absent.start !== 2400 || noShowPlan.blocks.filter(b=>b.kind==='free').some(b=>b.start<34800)) throw new Error('Invalid no-show layout');
 }
+
+(async () => {
+  const {submitRating} = require('./agenda.js');
+  const originalFetch = global.fetch, originalFormData = global.FormData;
+  global.FormData = class {};
+  function fixture() {
+    const buttons = [{disabled: false}, {disabled: false}];
+    const error = {hidden: true};
+    const summary = {removed: false, querySelector: () => null, remove() {this.removed = true;}};
+    const row = {dataset: {ratingRow: '42'}, removed: false,
+      querySelectorAll: () => buttons, querySelector: () => error,
+      closest: () => summary, remove() {this.removed = true;}};
+    return {form: {action: '/rating', closest: () => row}, row, buttons, error, summary};
+  }
+  try {
+    let resolve, requests = 0;
+    global.fetch = () => {requests++; return new Promise(done => {resolve = done;});};
+    const success = fixture();
+    const waiting = submitRating(success.form);
+    assert(success.buttons.every(button => button.disabled));
+    assert.equal(success.row.removed, false);
+    await submitRating(success.form);
+    assert.equal(requests, 1);
+    resolve({ok: true, json: async () => ({ok: true, agendamento_id: 42})});
+    await waiting;
+    assert.equal(success.row.removed, true);
+    assert.equal(success.summary.removed, true);
+    const failed = fixture();
+    global.fetch = async () => ({ok: false, json: async () => ({ok: false, erro: 'Avaliação inválida'})});
+    await submitRating(failed.form);
+    assert.equal(failed.row.removed, false);
+    assert.equal(failed.error.hidden, false);
+    assert.equal(failed.error.textContent, 'Avaliação inválida');
+    assert(failed.buttons.every(button => !button.disabled));
+    console.log('Agenda AJAX: confirmação, remoção imediata, cliques duplicados e erro OK.');
+  } finally {global.fetch = originalFetch; global.FormData = originalFormData;}
+})().catch(error => {console.error(error); process.exitCode = 1;});
