@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.utils import timezone
 from profissionais.models import Profissional
-from usuarios.validators import normalizar_whatsapp
+from usuarios.validators import preparar_whatsapp
 from .models import Agendamento, ReputacaoCliente
 
 PONTOS = {'CONCLUIDO': 4, 'ATRASADO': 3, 'DESMARCOU': 2, 'AUSENTE': 1}
@@ -30,22 +30,18 @@ def reputacoes(tenant, numeros=None):
 
 
 def numero_agendamento(booking):
-    return normalizar_whatsapp(booking.cliente_whatsapp or booking.whatsapp_contato)
+    return preparar_whatsapp(booking.cliente_whatsapp or booking.whatsapp_contato)
 
 
 def reputacao_agendamento(booking, ratings):
-    try:
-        return ratings.get(numero_agendamento(booking), resumir())
-    except ValidationError:
-        return resumir()
+    return ratings.get(numero_agendamento(booking), resumir())
 
 
 def gravar_avaliacao(booking, tipo, *, corrigir=False):
     """Caller must hold the reservation's professional lock."""
-    try:
-        numero = numero_agendamento(booking)
-    except ValidationError:
-        return None  # Legacy reservations without a valid identity remain unrated.
+    numero = numero_agendamento(booking)
+    if not numero:
+        return None
     defaults = {'tenant': booking.tenant, 'whatsapp_normalizado': numero, 'tipo': tipo, 'pontuacao': PONTOS[tipo]}
     rating, created = ReputacaoCliente.objects.get_or_create(agendamento=booking, defaults=defaults)
     if not created and corrigir and rating.tipo != tipo:
@@ -68,10 +64,7 @@ def avaliar_automaticamente(*, tenant, agendamento_id):
         tipo = 'CONCLUIDO'
     else:
         return None
-    # Legacy records with no valid number remain unrated, never merged.
-    try:
-        numero_agendamento(booking)
-    except ValidationError:
+    if not numero_agendamento(booking):
         return None
     return gravar_avaliacao(booking, tipo)
 

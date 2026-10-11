@@ -1,3 +1,5 @@
 {% extends 'usuarios/base.html' %}{% load static %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}?v=professional-photo-3">{% endblock %}
 {% block title %}Agendamentos{% endblock %}
+{% block extra_css %}{% if oferta.profissional.foto_fundo %}body.booking-has-background{background:linear-gradient(rgba(255,255,255,.72),rgba(255,255,255,.72)),url("{% url 'profissional_fundo_publica' oferta.profissional.pk %}") center/cover fixed no-repeat}{% endif %}{% endblock %}
+{% block body_class %}{{ block.super }}{% if oferta.profissional.foto_fundo %} booking-has-background{% endif %}{% endblock %}

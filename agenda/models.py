@@ -105,7 +105,7 @@ class Agendamento(models.Model):
     profissional = models.ForeignKey('profissionais.Profissional', on_delete=models.PROTECT, related_name='agendamentos')
     acesso_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
     cliente_nome = models.CharField(max_length=150)
-    cliente_whatsapp = models.CharField(max_length=16, blank=True, default='')
+    cliente_whatsapp = models.CharField(max_length=40, blank=True, default='')
     servico_nome = models.CharField(max_length=150)
     profissional_nome = models.CharField(max_length=150)
     inicio = models.DateTimeField()
@@ -165,7 +165,7 @@ class ReputacaoCliente(models.Model):
         AUSENTE = 'AUSENTE', 'Cliente ausente'
 
     tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
-    whatsapp_normalizado = models.CharField(max_length=16)
+    whatsapp_normalizado = models.CharField(max_length=40)
     agendamento = models.OneToOneField(Agendamento, on_delete=models.PROTECT, related_name='avaliacao_reputacao')
     pontuacao = models.PositiveSmallIntegerField()
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
@@ -181,13 +181,13 @@ class ReputacaoCliente(models.Model):
 
     def clean(self):
         super().clean()
-        from usuarios.validators import normalizar_whatsapp
-        self.whatsapp_normalizado = normalizar_whatsapp(self.whatsapp_normalizado)
+        from usuarios.validators import preparar_whatsapp
+        self.whatsapp_normalizado = preparar_whatsapp(self.whatsapp_normalizado)
         if self.agendamento_id:
             booking = Agendamento.objects.for_tenant(self.tenant).filter(pk=self.agendamento_id).first()
             if booking is None:
                 raise ValidationError('Avaliação e agendamento devem pertencer ao mesmo estabelecimento.')
-            if self.whatsapp_normalizado != normalizar_whatsapp(booking.cliente_whatsapp or booking.whatsapp_contato):
+            if self.whatsapp_normalizado != preparar_whatsapp(booking.cliente_whatsapp or booking.whatsapp_contato):
                 raise ValidationError('A avaliação deve usar o WhatsApp do agendamento.')
 
     def save(self, *args, **kwargs):

@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ request.tenant.nome|default:"Plataforma" }}{% endblock %} · Agendamento</title>
-  <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}">
+  <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}?v=account-nav-1">
   {% block public_layout_head %}{% if not request.tenant %}<link rel="stylesheet" href="{% static 'usuarios/public-layout.css' %}">{% endif %}{% endblock %}
   <style>{% block extra_css %}{% endblock %}</style>
 {% block extra_head %}{% endblock %}
@@ -30,7 +30,7 @@
       {% if user.tipo == "ADMIN" %}<a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}">Painel</a>{% endif %}
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="ui-button ui-button-quiet">Sair</button></form>
     {% else %}
-      <a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a><a class="ui-button ui-button-secondary" href="{% url 'login' %}">Área do estabelecimento</a>
+      <a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a>
     {% endif %}
   </nav>{% endif %}
 </main>{% block public_footer %}{% if not request.tenant %}{% include 'usuarios/public_footer.html' %}{% endif %}{% endblock %}{% block scripts %}{% endblock %}</body></html>

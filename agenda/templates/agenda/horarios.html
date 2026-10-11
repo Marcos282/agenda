@@ -1,14 +1,15 @@
-{% extends 'agenda/base.html' %}
+{% extends 'agenda/base.html' %}{% load static %}
 {% block content %}
 <span class="booking-step">02 / ESCOLHA SEU HORÁRIO</span><h1>Seu próximo cuidado.</h1>
 <section class="booking-summary"><span class="booking-symbol" aria-hidden="true">◷</span><div><h2>{{ oferta.servico.nome }}</h2><p>Com {{ oferta.profissional.nome }}</p><strong>R$ {{ oferta.valor|floatformat:2 }} <span>· {{ oferta.duracao_minutos }} min</span></strong></div></section>
 <div class="booking-day"><div><strong>{{ dia|date:'l, d/m/Y' }}</strong><small>Horário de {{ request.tenant.timezone }}</small></div><a class="ui-button ui-button-secondary" href="{% url 'agenda:escolher_data' oferta.pk %}">Trocar data</a></div>
 {% if form.errors %}<div class="booking-error" role="alert">{{ form.non_field_errors }}{{ form.nome.errors }}{{ form.whatsapp.errors }}{{ form.hora.errors }}{{ form.cotacao.errors }}<a class="ui-button ui-button-secondary" href="{{ request.path }}">Atualizar horários e valores</a></div>{% endif %}
-{% if horarios %}
-<form method="post" class="booking-confirm">{% csrf_token %}{{ form.cotacao }}
-<fieldset><legend>Escolha o início do atendimento</legend><div class="booking-slots">{% for horario in horarios %}<label class="booking-slot"><input type="radio" name="hora" value="{{ horario.hora }}" required {% if form.hora.value == horario.hora %}checked{% endif %}><span><strong>{{ horario.hora }}</strong><small>até {{ horario.fim }}</small></span></label>{% endfor %}</div></fieldset>
+<form method="post" class="booking-confirm" data-refresh-url="{% url 'agenda:horarios_atualizar' oferta.pk dia|date:'Y-m-d' %}"{% if not horarios %} hidden{% endif %}>{% csrf_token %}{{ form.cotacao }}
+<fieldset><legend>Escolha o início do atendimento</legend><div class="booking-slots" data-booking-slots>{% for horario in horarios %}<label class="booking-slot"><input type="radio" name="hora" value="{{ horario.hora }}" required {% if form.hora.value == horario.hora %}checked{% endif %}><span><strong>{{ horario.hora }}</strong><small>até {{ horario.fim }}</small></span></label>{% endfor %}</div></fieldset>
 <p>{{ form.nome.label_tag }}{{ form.nome }}</p>
-<p>{{ form.whatsapp.label_tag }}{{ form.whatsapp }}<small class="helptext" id="{{ form.whatsapp.auto_id }}_helptext">Obrigatório para confirmar. Confira o DDD e o número; ele identifica seu contato no estabelecimento. Não é necessário e-mail ou senha.</small></p><p class="booking-note">Confira o serviço, o valor e o horário. A confirmação é imediata e não realiza cobrança online.</p><button type="submit">Confirmar agendamento →</button>
+<p>{{ form.whatsapp.label_tag }}{{ form.whatsapp }}<small class="helptext" id="{{ form.whatsapp.auto_id }}_helptext">Obrigatório para confirmar. Informe o número com DDD; ele identifica seu contato no estabelecimento. Não é necessário e-mail ou senha.</small></p><p class="booking-note">Confira o serviço, o valor e o horário. A confirmação é imediata e não realiza cobrança online.</p><button type="submit">Confirmar agendamento →</button>
 </form>
-{% else %}<div class="booking-empty"><span aria-hidden="true">☾</span><h2>Nenhum horário disponível neste dia.</h2><p>A agenda pode estar fechada ou os horários já foram preenchidos. Experimente outra data.</p><a class="ui-button" href="{% url 'agenda:escolher_data' oferta.pk %}">Escolher outra data</a></div>{% endif %}
+<div class="booking-empty" data-booking-empty{% if horarios %} hidden{% endif %}><span aria-hidden="true">☾</span><h2>Nenhum horário disponível neste dia.</h2><p>A agenda pode estar fechada ou os horários já foram preenchidos. Experimente outra data.</p><a class="ui-button" href="{% url 'agenda:escolher_data' oferta.pk %}">Escolher outra data</a></div>
+<p class="booking-refresh-status" data-refresh-status role="status" aria-live="polite" hidden></p>
 {% endblock %}
+{% block scripts %}<script src="{% static 'agenda/horarios.js' %}?v=1" defer></script>{% endblock %}

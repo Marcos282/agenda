@@ -1,14 +1,19 @@
+import json
 from concurrent.futures import ThreadPoolExecutor
-from datetime import time
+from datetime import datetime, time
 from threading import Barrier
+from unittest.mock import patch
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
+from django.core.exceptions import ValidationError
 from django.db import close_old_connections
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from usuarios.models import ContatoCliente, User
 from .booking import reservar_por_whatsapp
+from .customer_views import horarios_atualizar
 from .models import Agendamento
 from .test_booking import BookingFixture
 
@@ -77,6 +82,27 @@ class GuestBookingTests(BookingFixture, TestCase):
         self.assertEqual(secure.post(self.slots_url(), self.payload(hora='09:47'), **self.host).status_code, 403)
         response = self.client.post(self.slots_url(), self.payload(hora='09:47'), **self.host)
         self.assertEqual(secure.post(response.url, **self.host).status_code, 403)
+
+    def test_guest_booking_rejects_whatsapp_without_phone_format(self):
+        with self.assertRaisesMessage(ValidationError, 'Informe um WhatsApp com DDD'):
+            reservar_por_whatsapp(
+                tenant=self.tenant, nome='Cliente Teste', whatsapp='contato livre',
+                oferta_id=self.offer.pk, dia=self.day, hora=time(9, 7),
+                valor_exibido='40.00', duracao_exibida=40)
+
+    def test_ajax_refresh_drops_slots_that_have_passed(self):
+        request = RequestFactory().get(reverse(
+            'agenda:horarios_atualizar', args=[self.offer.pk, self.day.isoformat()]))
+        request.tenant = self.tenant
+        now = datetime.combine(self.day, time(9, 8), ZoneInfo(self.tenant.timezone))
+
+        with patch('agenda.booking.timezone.now', return_value=now):
+            response = horarios_atualizar(request, self.offer.pk, self.day.isoformat())
+
+        self.assertEqual(response.status_code, 200)
+        starts = [slot['hora'] for slot in json.loads(response.content)['horarios']]
+        self.assertNotIn('09:07', starts)
+        self.assertEqual(starts[0], '09:08')
 
     def test_inactive_contact_rejected_and_tenant_scoped(self):
         foreign = ContatoCliente.objects.create(tenant=self.other, nome='Outro', whatsapp='11999991234')

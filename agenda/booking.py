@@ -120,7 +120,6 @@ def validar_limite_agendamentos(*, tenant, whatsapp, dia):
     from django.db.models import Q
     from django.db.models.functions import TruncDate
     from usuarios.validators import normalizar_whatsapp, whatsapp_liberado_para_testes
-
     numero = normalizar_whatsapp(whatsapp)
     if whatsapp_liberado_para_testes(tenant, numero):
         return

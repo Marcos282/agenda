@@ -45,7 +45,7 @@ class PanelBookingTests(BookingFixture, TestCase):
         page=self.client.get(self.url,HTTP_HOST='marcos.localhost')
         self.assertNotContains(page,self.foreign.email)
         payload=self.data(acao='confirmar',hora='09:07',cotacao=self.quote())
-        for value in ['', '123']:
+        for value in ['', '123', 'contato livre']:
             self.assertEqual(self.post(payload|{'whatsapp':value}).status_code,400)
         self.assertEqual(self.post(payload|{'cotacao':'bad'}).status_code,400)
         secure=Client(enforce_csrf_checks=True);secure.force_login(self.admin)

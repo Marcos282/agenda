@@ -1,5 +1,4 @@
 {% if widget.is_initial %}
-<p><a class="ui-button ui-button-secondary" href="{{ photo_url }}">Ver foto atual</a></p>
 {% if not widget.required %}<label for="{{ widget.checkbox_id }}"><input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}> Remover foto</label>{% endif %}
 {% endif %}
 <input type="{{ widget.type }}" name="{{ widget.name }}"{% include 'django/forms/widgets/attrs.html' %}>

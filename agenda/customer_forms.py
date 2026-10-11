@@ -1,5 +1,5 @@
 from django import forms
-from usuarios.forms import WhatsAppField
+from usuarios.forms import WhatsAppNumberField
 
 
 class DataAgendamentoForm(forms.Form):
@@ -7,7 +7,7 @@ class DataAgendamentoForm(forms.Form):
 
 
 class ConfirmarAgendamentoForm(forms.Form):
-    whatsapp = WhatsAppField()
+    whatsapp = WhatsAppNumberField()
     nome = forms.CharField(label='Seu nome', max_length=150, widget=forms.TextInput(attrs={'autocomplete': 'name'}))
     hora = forms.TimeField(label='Horário', input_formats=['%H:%M'], widget=forms.HiddenInput)
     cotacao = forms.CharField(widget=forms.HiddenInput)

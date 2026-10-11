@@ -15,6 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 from agenda.models import Disponibilidade
 from catalogo.models import Servico, ProfissionalServico
+from painel.forms import ProfissionalForm
 from profissionais.models import Profissional
 from tenants.models import Tenant
 from usuarios.models import User
@@ -219,6 +220,69 @@ class PanelTests(TestCase):
         self.assertFalse(hasattr(servico, 'valor'))
         self.assertFalse(hasattr(servico, 'duracao_minutos'))
         self.assertNotContains(self.get('/painel/profissionais/novo/'), 'name="tenant')
+
+    def test_professional_edit_hides_current_photo_link_and_keeps_remove_option(self):
+        profissional = Profissional.objects.create(tenant=self.marcos, nome='Com foto', foto='foto.jpg')
+        form = ProfissionalForm(instance=profissional, tenant=self.marcos)
+
+        rendered_photo_field = str(form['foto'])
+
+        self.assertNotIn('Ver foto atual', rendered_photo_field)
+        self.assertIn('Remover foto', rendered_photo_field)
+
+    def test_professional_form_reencodes_background_photo(self):
+        image = BytesIO()
+        Image.new('RGBA', (20, 10), (10, 20, 30, 255)).save(image, format='PNG')
+        upload = SimpleUploadedFile('fundo.png', image.getvalue(), content_type='image/png')
+        form = ProfissionalForm(
+            {'nome': 'Com fundo', 'ativo': 'on'}, {'foto_fundo': upload}, tenant=self.marcos)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['foto_fundo'].name, 'fundo.jpg')
+        self.assertNotIn('Ver foto atual', str(form['foto_fundo']))
+
+    def test_booking_date_page_uses_professional_background(self):
+        from types import SimpleNamespace
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+        profissional = Profissional.objects.create(tenant=self.marcos, nome='Com fundo', foto_fundo='fundo.jpg')
+        request = RequestFactory().get('/agendamentos/servico/1/')
+        request.tenant = self.marcos
+        request.user = self.admin
+        oferta = SimpleNamespace(pk=1, profissional=profissional, servico=SimpleNamespace(nome='Corte'),
+                                 valor=Decimal('10'), duracao_minutos=30)
+
+        rendered = render_to_string('agenda/escolher_data.html', {
+            'oferta': oferta, 'horarios': [], 'dia_selecionado': date(2026, 1, 1)}, request=request)
+
+        self.assertIn('booking-has-background', rendered)
+        self.assertIn(reverse('profissional_fundo_publica', args=[profissional.pk]), rendered)
+
+        rendered = render_to_string('agenda/horarios.html', {
+            'oferta': oferta, 'horarios': [], 'dia': date(2026, 1, 1)}, request=request)
+
+        self.assertIn('booking-has-background', rendered)
+        self.assertIn(reverse('profissional_fundo_publica', args=[profissional.pk]), rendered)
+
+    def test_professional_list_shows_profile_photos_without_view_button(self):
+        profissional = Profissional.objects.create(tenant=self.marcos, nome='Com foto', foto='foto.jpg')
+        from django.template.loader import render_to_string
+        from django.urls import resolve
+        from django.test import RequestFactory
+        request = RequestFactory().get('/painel/profissionais/')
+        request.tenant = self.marcos
+        request.user = self.admin
+        request.resolver_match = resolve(request.path)
+
+        rendered = render_to_string(
+            'painel/profissionais.html',
+            {'page_obj': Profissional.objects.for_tenant(self.marcos), 'request': request},
+            request=request,
+        )
+
+        self.assertIn(f'src="{reverse("painel:profissional_foto", args=[profissional.pk])}"', rendered)
+        self.assertIn('alt="Foto de Com foto"', rendered)
+        self.assertNotIn('Ver foto atual', rendered)
 
     def test_foreign_ids_rejected_on_get_and_post(self):
         foreign_link = self.link(tenant=self.wanessa, profissional=self.maria, servico=self.manicure)

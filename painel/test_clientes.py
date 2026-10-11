@@ -1,11 +1,13 @@
 from datetime import time
 from unittest.mock import patch
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from usuarios.models import User
 from agenda.models import Agendamento
-from agenda.booking import cancelar, registrar_falta
+from agenda.booking import cancelar, registrar_falta, reservar
 from agenda.test_booking import BookingFixture
+from .cliente_views import grupos_por_whatsapp
 
 
 class PanelCustomerTests(BookingFixture, TestCase):
@@ -115,7 +117,12 @@ class PanelCustomerTests(BookingFixture, TestCase):
             self.assertEqual(response.context['page_obj'].paginator.count, 6)
             self.assertNotContains(response, 'Contato externo')
         self.assertEqual(self.get(reverse('painel:whatsapp_historico', args=['11999991234'])).context['resumo'], expected)
-        self.assertEqual(self.get(reverse('painel:whatsapp_historico', args=['invalid'])).status_code, 404)
+        from usuarios.models import ContatoCliente
+        unformatted = ContatoCliente.objects.create(
+            tenant=self.tenant, nome='Contato sem formato', whatsapp='contato sem formato')
+        unformatted_url = reverse('painel:whatsapp_historico', args=[unformatted.whatsapp])
+        self.assertEqual(self.get(unformatted_url).status_code, 200)
+        self.assertContains(self.get(unformatted_url), 'Contato sem formato')
         self.assertEqual(self.client.post(url, HTTP_HOST='marcos.localhost').status_code, 405)
         self.client.force_login(self.user)
         self.assertEqual(self.get(url).status_code, 403)
@@ -131,3 +138,18 @@ class PanelCustomerTests(BookingFixture, TestCase):
         self.assertEqual(sum(row['total'] for row in page), 3)
         self.assertEqual(self.get(q='Nome 11').context['page_obj'].paginator.count, 1)
         self.assertEqual(self.get(q='Nome 11').context['page_obj'][0]['total'], 3)
+
+    def test_unformatted_contact_values_still_group_booking_history(self):
+        from usuarios.models import ContatoCliente
+        contact = ContatoCliente.objects.create(
+            tenant=self.tenant, nome='Contato livre', whatsapp='contato livre')
+        with self.assertRaisesMessage(ValidationError, 'Informe um WhatsApp com DDD'):
+            reservar(
+                tenant=self.tenant, cliente=None, contato=contact, oferta_id=self.offer.pk,
+                dia=self.day, hora=time(13, 11), nome='Contato livre',
+                valor_exibido='40.00', duracao_exibida=40)
+
+        group = grupos_por_whatsapp(self.tenant, whatsapp='contato livre')
+
+        self.assertEqual(len(group), 1)
+        self.assertEqual(group[0]['total'], 0)

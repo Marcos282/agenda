@@ -35,6 +35,7 @@ urlpatterns = [
     path('inicio/', views.home, name='inicio'),
     path('profissional/<int:profissional_id>/', views.home, name='home_profissional'),
     path('profissional/<int:pk>/foto/', views.profissional_foto_publica, name='profissional_foto_publica'),
+    path('profissional/<int:pk>/fundo/', views.profissional_fundo_publica, name='profissional_fundo_publica'),
     path('loja/', views.loja, name='loja'),
     path('loja/<int:item_id>/', views.loja, name='loja_item'),
     path('cadastro/', views.cadastro, name='cadastro'),

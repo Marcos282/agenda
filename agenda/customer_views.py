@@ -6,6 +6,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -24,6 +25,16 @@ def oferta_publica(request, pk):
     if pk > 9223372036854775807:
         raise Http404
     return get_object_or_404(ProfissionalServico.objects.for_tenant(request.tenant).disponiveis().select_related('servico', 'profissional', 'tenant'), pk=pk)
+
+
+def data_horarios(value):
+    try:
+        data = date.fromisoformat(value)
+    except ValueError:
+        raise Http404
+    if data.isoformat() != value:
+        raise Http404
+    return data
 
 
 @tenant_required
@@ -48,15 +59,20 @@ def escolher_data(request, oferta_id):
 
 
 @tenant_required
+@never_cache
+@require_http_methods(['GET'])
+def horarios_atualizar(request, oferta_id, dia):
+    oferta = oferta_publica(request, oferta_id)
+    data = data_horarios(dia)
+    return JsonResponse({'horarios': horarios_disponiveis(oferta, data)})
+
+
+@tenant_required
+@never_cache
 @require_http_methods(['GET', 'POST'])
 def horarios(request, oferta_id, dia):
     oferta = oferta_publica(request, oferta_id)
-    try:
-        data = date.fromisoformat(dia)
-    except ValueError:
-        raise Http404
-    if data.isoformat() != dia:
-        raise Http404
+    data = data_horarios(dia)
     quote = signing.dumps({'oferta': oferta.pk, 'valor': str(oferta.valor), 'duracao': oferta.duracao_minutos}, salt='agendamento')
     form = ConfirmarAgendamentoForm(request.POST if request.method == 'POST' else None,
         initial={'nome': request.user.get_full_name() if request.user.is_authenticated else '', 'cotacao': quote,

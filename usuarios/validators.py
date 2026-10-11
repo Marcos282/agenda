@@ -24,14 +24,28 @@ def normalizar_whatsapp(value):
     return '+' + digits
 
 
+def preparar_whatsapp(value):
+    """Normalize valid numbers while preserving other supplied contact values."""
+    raw = ' '.join(str(value or '').split())
+    if not raw:
+        return ''
+    try:
+        return normalizar_whatsapp(raw)
+    except ValidationError:
+        return raw
+
+
 def validate_whatsapp(value):
-    normalizar_whatsapp(value)
+    """Compatibility hook for historical migrations; WhatsApp format is not restricted."""
 
 
 def whatsapp_liberado_para_testes(tenant, value):
     """Allow quantity/block exceptions only for the configured tenant/number pair."""
     from django.conf import settings
-    numero = normalizar_whatsapp(value)
+    try:
+        numero = normalizar_whatsapp(value)
+    except ValidationError:
+        return False
     for entry in getattr(settings, 'WHATSAPP_TEST_RECIPIENTS', '').split(','):
         subdomain, separator, phone = entry.strip().partition(':')
         if not separator or subdomain != tenant.subdomain:

@@ -42,7 +42,7 @@ class Tenant(models.Model):
 
     nome = models.CharField(max_length=150)
     razao_social = models.CharField("Razão social", max_length=200, blank=True, default="")
-    telefone = models.CharField("Telefone de contato", max_length=20, blank=True, default="")
+    telefone = models.CharField("Telefone de contato", max_length=40, blank=True, default="")
     cnpj = models.CharField("CNPJ", max_length=18, blank=True, default="")
     endereco_publico = models.CharField("Endereço do estabelecimento", max_length=400, blank=True, default="")
     subdomain = models.CharField(max_length=100, unique=True, validators=[subdomain_validator])

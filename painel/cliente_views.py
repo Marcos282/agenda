@@ -4,7 +4,6 @@ from zoneinfo import ZoneInfo
 from django.core.paginator import Paginator
 from django.db.models import CharField, Count, Exists, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce, Concat, NullIf, Trim
-from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction
@@ -15,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 from agenda.models import Agendamento
 from agenda.reputation import atualizar_reputacoes, reputacoes, resumir
 from usuarios.models import User, ContatoCliente, WhatsAppBloqueado
-from usuarios.validators import normalizar_whatsapp
+from usuarios.validators import preparar_whatsapp
 from .agenda_views import agenda_url
 from .decorators import admin_tenant_required
 
@@ -62,7 +61,8 @@ def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
             # Blank legacy numbers must never combine unrelated customers.
             key = row['whatsapp'] or (origem, row['pk'])
             matches = not termo or row['nome_historico'] or any(
-                termo.casefold() in value.casefold() for value in [row['nome_exibicao'], row['email']]
+                termo.casefold() in value.casefold()
+                for value in [row['nome_exibicao'], row['email'], row['whatsapp']]
             ) or bool(digits and digits in row['whatsapp'])
             if key not in grupos:
                 grupos[key] = dict(row, origem=origem, corresponde=matches, bloqueado=row['whatsapp'] in bloqueados)
@@ -84,10 +84,7 @@ def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
         raw = booking.cliente_whatsapp or booking.whatsapp_contato
         if not raw:
             continue
-        try:
-            numero = normalizar_whatsapp(raw)
-        except ValidationError:
-            continue
+        numero = preparar_whatsapp(raw)
         if whatsapp is not None and numero != whatsapp:
             continue
         if numero not in grupos:
@@ -99,7 +96,9 @@ def grupos_por_whatsapp(tenant, termo='', whatsapp=None):
         counter = {'CONFIRMADO': 'confirmados', 'CANCELADO': 'cancelados', 'NAO_COMPARECEU': 'faltas'}[booking.status]
         group[counter] += 1
         group['nome_exibicao'] = booking.cliente_nome
-        group['corresponde'] |= not termo or termo.casefold() in booking.cliente_nome.casefold() or bool(digits and digits in numero)
+        group['corresponde'] |= (
+            not termo or termo.casefold() in booking.cliente_nome.casefold()
+            or termo.casefold() in numero.casefold() or bool(digits and digits in numero))
     ratings = reputacoes(tenant)
     for group in grupos.values():
         group['reputacao'] = ratings.get(group['whatsapp'], resumir())
@@ -135,9 +134,8 @@ def historico_do_numero(request, whatsapp):
 @admin_tenant_required
 @require_http_methods(['GET'])
 def whatsapp_historico(request, whatsapp):
-    try:
-        numero = normalizar_whatsapp(whatsapp)
-    except ValidationError:
+    numero = preparar_whatsapp(whatsapp)
+    if not numero:
         raise Http404
     return historico_do_numero(request, numero)
 
@@ -180,9 +178,8 @@ def contato_historico(request, pk):
 @transaction.atomic
 def whatsapp_bloqueio(request, whatsapp):
     from tenants.models import Tenant
-    try:
-        numero = normalizar_whatsapp(whatsapp)
-    except ValidationError:
+    numero = preparar_whatsapp(whatsapp)
+    if not numero:
         raise Http404
     Tenant.objects.select_for_update().get(pk=request.tenant.pk)
     if not grupos_por_whatsapp(request.tenant, whatsapp=numero):

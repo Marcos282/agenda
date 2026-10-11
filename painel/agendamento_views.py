@@ -12,7 +12,7 @@ from django.views.decorators.http import require_http_methods
 
 from agenda.booking import horarios_disponiveis, reservar_pelo_painel
 from catalogo.models import ProfissionalServico
-from usuarios.forms import WhatsAppField
+from usuarios.forms import WhatsAppNumberField
 from .agenda_views import agenda_url
 from .decorators import admin_tenant_required
 
@@ -53,7 +53,7 @@ class OfertaChoice(forms.ModelChoiceField):
 
 class AgendamentoPainelForm(forms.Form):
     nome = forms.CharField(label='Cliente', max_length=150, widget=forms.TextInput(attrs={'placeholder': 'Nome completo do cliente', 'autocomplete': 'name'}))
-    whatsapp = WhatsAppField()
+    whatsapp = WhatsAppNumberField()
     oferta = OfertaChoice(label='Profissional e serviço', queryset=ProfissionalServico.objects.none(), empty_label='Selecione o profissional e o serviço')
     data = forms.DateField(label='Data do atendimento', widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'))
 

@@ -2,15 +2,27 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import BaseUserCreationForm
 from .models import User
-from .validators import normalizar_whatsapp
+from .validators import normalizar_whatsapp, preparar_whatsapp
 
 
 class WhatsAppField(forms.CharField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('label', 'WhatsApp')
         kwargs.setdefault('max_length', 40)
-        kwargs.setdefault('widget', forms.TextInput(attrs={'type': 'tel', 'autocomplete': 'tel', 'placeholder': '(11) 99999-9999'}))
-        kwargs.setdefault('help_text', 'Informe DDD e número. Para um número internacional, inclua + e o código do país.')
+        kwargs.setdefault('widget', forms.TextInput(attrs={'type': 'tel', 'autocomplete': 'tel', 'placeholder': 'WhatsApp'}))
+        kwargs.setdefault('help_text', 'Informe o contato de WhatsApp.')
+        super().__init__(*args, **kwargs)
+
+    def clean(self, value):
+        return preparar_whatsapp(super().clean(value))
+
+
+class WhatsAppNumberField(WhatsAppField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault(
+            'help_text',
+            'Informe um WhatsApp com DDD, como (11) 99999-9999. Para outros países, use + e o código do país.',
+        )
         super().__init__(*args, **kwargs)
 
     def clean(self, value):

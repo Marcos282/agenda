@@ -82,6 +82,9 @@ def home(request, profissional_id=None):
     profile_title = f'{profissional.nome} — {request.tenant.nome}' if profissional else request.tenant.nome
     public_root = f'https://{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}'
     profile_path = reverse('home_profissional', args=[profissional.pk]) if profissional else reverse('home')
+    _, port = split_domain_port(request.get_host())
+    registro_url = (f'{request.scheme}://{tenant_base_domain_for_host(request.get_host())}'
+                    f'{":" + port if port else ""}/registro/')
     profile_image = ''
     profile_image_width = profile_image_height = None
     if profissional and profissional.foto:
@@ -95,7 +98,7 @@ def home(request, profissional_id=None):
             pass
     return render(request, 'usuarios/home.html', {
         'profile_title': profile_title, 'profile_address': endereco_fisico(request.tenant),
-        'profile_url': public_root + profile_path,
+        'profile_url': public_root + profile_path, 'registro_url': registro_url,
         'profile_image': profile_image,
         'profile_image_width': profile_image_width, 'profile_image_height': profile_image_height,
         'ofertas': Paginator(ofertas.order_by('servico__nome', 'profissional__nome', 'pk'), 9).get_page(request.GET.get('page')),
@@ -215,18 +218,23 @@ def loja(request, item_id=None):
 
 @tenant_required
 @require_http_methods(['GET'])
-def profissional_foto_publica(request, pk):
+def profissional_foto_publica(request, pk, campo='foto'):
     from django.http import FileResponse, Http404
     from django.shortcuts import get_object_or_404
     from profissionais.models import Profissional
 
     profissional = get_object_or_404(Profissional.objects.for_tenant(request.tenant).ativos(), pk=pk)
-    if not profissional.foto:
+    arquivo = getattr(profissional, campo)
+    if not arquivo:
         raise Http404
     try:
-        response = FileResponse(profissional.foto.open('rb'), content_type='image/jpeg')
+        response = FileResponse(arquivo.open('rb'), content_type='image/jpeg')
     except FileNotFoundError:
         raise Http404
     response['Cache-Control'] = 'public, max-age=300'
     response['X-Content-Type-Options'] = 'nosniff'
     return response
+
+
+def profissional_fundo_publica(request, pk):
+    return profissional_foto_publica(request, pk, campo='foto_fundo')
