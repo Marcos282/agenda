@@ -6,7 +6,7 @@
 <meta name="description" content="Sua agenda, sua equipe e sua loja online conectadas. Experimente o Tá Combinado por 30 dias grátis.">
 <meta name="theme-color" content="#090d19">
 <title>Tá Combinado · Seu próximo horário começa aqui</title>
-<link rel="stylesheet" href="{% static 'usuarios/plataforma-futuro.css' %}">
+<link rel="stylesheet" href="{% static 'usuarios/plataforma-futuro.css' %}?v=mobile-whatsapp-1">
 <link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
 </head>
 <body class="platform-future">
@@ -29,4 +29,8 @@
 <section class="closing-cta container"><span class="eyebrow">SEU TEMPO MERECE ESSE CUIDADO.</span><h2>Vamos deixar<br><span>tudo combinado?</span></h2><a class="button button-primary" href="{% url 'registro' %}">Criar meu estabelecimento ↗</a></section>
 <section class="store-access container" id="acesso"><div><h2>Já tem um estabelecimento?</h2><p>Encontre sua loja pelo endereço cadastrado.</p></div><form method="get" action="#acesso"><label for="id_estabelecimento">Endereço do estabelecimento</label><div><input id="id_estabelecimento" name="estabelecimento" placeholder="Ex.: marcos" required maxlength="63" value="{{ estabelecimento_form.estabelecimento.value|default:'' }}"><button class="button button-outline" type="submit">Encontrar loja →</button></div>{{ estabelecimento_form.estabelecimento.errors }}</form></section>
 </main><footer class="future-footer container"><a class="future-brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">✦</span>tá combinado<span class="brand-dot">.</span></a><p>Tecnologia para organizar.<br>Tempo para cuidar.</p><span>© {% now 'Y' %} Tá Combinado</span>{% include 'usuarios/footer_contact.html' %}</footer>
+<a class="platform-whatsapp" href="https://wa.me/5521990921092" target="_blank" rel="noopener noreferrer">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M9 8c0 4 3 7 7 7"/></svg>
+  <span>Agende conosco para conhecer melhor</span>
+</a>
 </body></html>

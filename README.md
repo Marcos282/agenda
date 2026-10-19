@@ -31,6 +31,8 @@ Em cada host: `/cadastro/`, `/login/`, `/conta/` e logout via botão POST. Cadas
 
 `criar_tenants_dev` é idempotente: não altera tenants existentes, incluindo os inativos. O domínio raiz exibe a página da plataforma e não oferece cadastro/login de clientes.
 
+Na página principal da plataforma, telas de até 680 px exibem uma faixa flutuante “Agende conosco para conhecer melhor”, fixa na parte inferior da tela e ocupando toda a largura, com acesso ao WhatsApp +55 (21) 99092-1092. A faixa não aparece em telas maiores nem nas páginas dos estabelecimentos.
+
 ## Instalação em outro ambiente
 
 Use Python 3.12+ e um PostgreSQL acessível:

@@ -4,5 +4,47 @@
 @media(max-width:680px){.container{padding-left:20px;padding-right:20px}.future-header{padding:20px;align-items:flex-start;flex-wrap:wrap;gap:20px}.future-header nav{gap:16px;font-size:11px;flex-wrap:wrap;width:100%;justify-content:space-between}.future-header .button{padding:9px 12px;min-height:36px}.future-hero{grid-template-columns:1fr;gap:45px;padding-top:48px;padding-bottom:40px}h1{font-size:56px;letter-spacing:-3px}.hero-copy>p{font-size:14px}.hero-preview{max-width:500px;width:100%;margin:0 auto}.preview-window{transform:none}.floating-notification{margin:0 4px}.brand-strip>div{gap:18px;font-size:11px}.future-section{padding-top:60px}.feature-grid,.pricing-section,.faq-section{grid-template-columns:1fr;gap:16px}.feature-large{grid-row:auto}.feature-card:last-child{grid-column:auto}.feature-card{padding:25px}.steps{grid-template-columns:1fr;gap:24px}.steps h3{margin:14px 0 8px}.steps li{padding-top:18px}.pricing-card{padding:28px}.faq-section{gap:0}.closing-cta{margin-top:55px;margin-left:16px;margin-right:16px;padding-top:40px;padding-bottom:40px}.store-access{flex-direction:column;align-items:stretch;padding-top:45px;padding-bottom:45px}.store-access form{max-width:none}.store-access form>div{flex-wrap:wrap}.store-access input{flex:1 1 150px}.future-footer{flex-wrap:wrap;gap:14px}.future-footer p{margin:0}.future-footer>span{width:100%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important}}
 
+.platform-whatsapp {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .platform-future {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .platform-whatsapp {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 14px max(20px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+    background: #25d366;
+    color: #090d19;
+    box-shadow: 0 -4px 24px #0006;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .platform-whatsapp svg {
+    flex-shrink: 0;
+  }
+
+  .platform-whatsapp:hover {
+    background: #57e38a;
+  }
+
+  .platform-whatsapp:focus-visible {
+    outline: 3px solid #eff2ff;
+    outline-offset: 3px;
+  }
+}
+
 /* Two plans share the same features grid without changing tenant or panel styles. */
 .pricing-section{display:block}.pricing-copy{margin-bottom:32px}.pricing-copy p{max-width:620px}.pricing-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.pricing-options .pricing-card{display:flex;flex-direction:column}.pricing-options .pricing-card ul{flex:1}.pricing-team{border-color:#a28bff66;background:radial-gradient(ellipse at 100% 0,#a28bff18,transparent 65%),#131b29}.pricing-team .plan-tag{color:#c3b7ff;background:#a28bff18}.pricing-card .team-contact{margin-top:0;color:#c3b7ff;font-size:13px;line-height:1.6}@media(max-width:680px){.pricing-options{grid-template-columns:1fr}}
