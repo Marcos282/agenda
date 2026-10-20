@@ -226,7 +226,7 @@ def registrar_falta(*, tenant, administrador, agendamento_id):
     booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk)
     if booking.status == Agendamento.Status.NAO_COMPARECEU:
         from .reputation import gravar_avaliacao
-        gravar_avaliacao(booking, 'AUSENTE', corrigir=True)
+        gravar_avaliacao(booking, 'AUSENTE', corrigir=True, administrador=administrador)
         return booking
     if booking.status != Agendamento.Status.CONFIRMADO:
         raise ValidationError('Somente agendamentos confirmados podem ser marcados como falta.')
@@ -237,7 +237,7 @@ def registrar_falta(*, tenant, administrador, agendamento_id):
     booking.nao_compareceu_em = now
     booking.save(update_fields=['status', 'nao_compareceu_em', 'atualizado_em'])
     from .reputation import gravar_avaliacao
-    gravar_avaliacao(booking, 'AUSENTE', corrigir=True)
+    gravar_avaliacao(booking, 'AUSENTE', corrigir=True, administrador=administrador)
     return booking
 
 

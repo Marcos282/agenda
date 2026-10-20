@@ -1,32 +1,128 @@
 """Tenant-scoped reputation; one mutable outcome per reservation."""
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Avg, Count, Q
+from django.db.models import Q
 from django.utils import timezone
+
 from profissionais.models import Profissional
 from usuarios.validators import preparar_whatsapp
-from .models import Agendamento, ReputacaoCliente
 
-PONTOS = {'CONCLUIDO': 4, 'ATRASADO': 3, 'DESMARCOU': 2, 'AUSENTE': 1}
+from .models import Agendamento, ReputacaoCliente, ReputacaoClienteAuditoria
+
+PONTOS = {'CONCLUIDO': 4, 'ATRASADO': 3, 'DESMARCOU': 2, 'AUSENTE': 0}
+TIPOS_AVALIADOS = ('CONCLUIDO', 'ATRASADO', 'AUSENTE')
 MIN_AVALIACOES = 3
-LIMITES_ESTRELAS = ((Decimal('3.5'), 4), (Decimal('2.5'), 3), (Decimal('1.5'), 2), (Decimal('0'), 1))
+PESOS_RECENTES = Decimal('0.70')
+PESOS_HISTORICO = Decimal('0.30')
 
 
-def resumir(quantidade=0, media=None):
-    estrelas = None
-    if quantidade >= MIN_AVALIACOES:
-        estrelas = next(n for limite, n in LIMITES_ESTRELAS if Decimal(str(media)) >= limite)
-    simbolos = '★' * estrelas + '☆' * (4 - estrelas) if estrelas else 'Cliente Novo'
-    return {'quantidade': quantidade, 'media': media, 'estrelas': estrelas, 'rotulo': simbolos}
+def _formatar_estrelas(media):
+    preenchimentos = []
+    for indice in range(4):
+        preenchido = min(max(media - Decimal(indice), Decimal('0')), Decimal('1'))
+        preenchimentos.append(int((preenchido * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP)))
+    return preenchimentos
 
 
-def reputacoes(tenant, numeros=None):
+def resumir(quantidade=0, media=None, *, pontuais=0, atrasos=0, faltas=0,
+            media_recente=None, media_historica=None):
+    disponivel = quantidade >= MIN_AVALIACOES and media is not None
+    if not disponivel:
+        return {
+            'quantidade': quantidade,
+            'pontuais': pontuais,
+            'atrasos': atrasos,
+            'faltas': faltas,
+            'media': None,
+            'nota': None,
+            'media_recente': media_recente,
+            'media_historica': media_historica,
+            'estrelas': None,
+            'preenchimentos': [],
+            'disponivel': False,
+            'rotulo': 'Cliente Novo — Reputação em formação',
+        }
+
+    nota_bruta = Decimal(str(media))
+    nota = nota_bruta.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    return {
+        'quantidade': quantidade,
+        'pontuais': pontuais,
+        'atrasos': atrasos,
+        'faltas': faltas,
+        'media': nota_bruta,
+        'nota': nota,
+        'media_recente': media_recente,
+        'media_historica': media_historica,
+        'estrelas': nota_bruta,
+        'preenchimentos': _formatar_estrelas(nota_bruta),
+        'disponivel': True,
+        'rotulo': f'{nota:.2f}/4',
+    }
+
+
+def _resumir_avaliacoes(avaliacoes):
+    if not avaliacoes:
+        return resumir()
+
+    pontuacoes = [Decimal(pontuacao) for _, pontuacao, _ in avaliacoes]
+    quantidade = len(pontuacoes)
+    media_historica = sum(pontuacoes, Decimal('0')) / Decimal(quantidade)
+    recentes = pontuacoes[-5:]
+    media_recente = sum(recentes, Decimal('0')) / Decimal(len(recentes))
+    reputacao = PESOS_RECENTES * media_recente + PESOS_HISTORICO * media_historica
+    tipos = [tipo for _, _, tipo in avaliacoes]
+    return resumir(
+        quantidade,
+        reputacao,
+        pontuais=tipos.count('CONCLUIDO'),
+        atrasos=tipos.count('ATRASADO'),
+        faltas=tipos.count('AUSENTE'),
+        media_recente=media_recente,
+        media_historica=media_historica,
+    )
+
+
+def _avaliacoes_validas(query):
+    rows = query.filter(
+        tipo__in=TIPOS_AVALIADOS,
+        agendamento__fim__lte=timezone.now(),
+    ).order_by('data_atendimento', 'agendamento_id').values_list(
+        'data_atendimento', 'pontuacao', 'tipo',
+    )
+    return list(rows)
+
+
+def _resumir_por_whatsapp(tenant, numeros=None):
     query = ReputacaoCliente.objects.for_tenant(tenant)
     if numeros is not None:
         query = query.filter(whatsapp_normalizado__in=numeros)
-    return {row['whatsapp_normalizado']: resumir(row['quantidade'], row['media']) for row in
-            query.values('whatsapp_normalizado').annotate(quantidade=Count('pk'), media=Avg('pontuacao'))}
+    rows = query.filter(
+        tipo__in=TIPOS_AVALIADOS,
+        agendamento__fim__lte=timezone.now(),
+    ).order_by('whatsapp_normalizado', 'data_atendimento', 'agendamento_id').values_list(
+        'whatsapp_normalizado', 'data_atendimento', 'pontuacao', 'tipo',
+    )
+    grouped = {}
+    for numero, data_atendimento, pontuacao, tipo in rows:
+        grouped.setdefault(numero, []).append((data_atendimento, pontuacao, tipo))
+    return {numero: _resumir_avaliacoes(avaliacoes) for numero, avaliacoes in grouped.items()}
+
+
+def calculate_customer_reputation(customer, tenant):
+    """Calculate raw reputation for a tenant-scoped WhatsApp identity."""
+    raw_number = customer if isinstance(customer, str) else getattr(customer, 'whatsapp', '')
+    number = preparar_whatsapp(raw_number)
+    if not number:
+        return resumir()
+    query = ReputacaoCliente.objects.for_tenant(tenant).filter(whatsapp_normalizado=number)
+    return _resumir_avaliacoes(_avaliacoes_validas(query))
+
+
+def reputacoes(tenant, numeros=None):
+    return _resumir_por_whatsapp(tenant, numeros)
 
 
 def numero_agendamento(booking):
@@ -37,14 +133,30 @@ def reputacao_agendamento(booking, ratings):
     return ratings.get(numero_agendamento(booking), resumir())
 
 
-def gravar_avaliacao(booking, tipo, *, corrigir=False):
+def gravar_avaliacao(booking, tipo, *, corrigir=False, administrador=None):
     """Caller must hold the reservation's professional lock."""
     numero = numero_agendamento(booking)
     if not numero:
         return None
-    defaults = {'tenant': booking.tenant, 'whatsapp_normalizado': numero, 'tipo': tipo, 'pontuacao': PONTOS[tipo]}
+    defaults = {
+        'tenant': booking.tenant,
+        'whatsapp_normalizado': numero,
+        'data_atendimento': booking.inicio,
+        'tipo': tipo,
+        'pontuacao': PONTOS[tipo],
+        'registrado_por': administrador,
+    }
     rating, created = ReputacaoCliente.objects.get_or_create(agendamento=booking, defaults=defaults)
-    if not created and corrigir and rating.tipo != tipo:
+    if not created and corrigir and (rating.tipo != tipo or rating.pontuacao != PONTOS[tipo]):
+        ReputacaoClienteAuditoria.objects.create(
+            tenant=rating.tenant,
+            reputacao=rating,
+            tipo_anterior=rating.tipo,
+            pontuacao_anterior=rating.pontuacao,
+            tipo_novo=tipo,
+            pontuacao_nova=PONTOS[tipo],
+            alterado_por=administrador,
+        )
         rating.tipo = tipo
         rating.pontuacao = PONTOS[tipo]
         rating.save(update_fields=['tipo', 'pontuacao'])
@@ -85,7 +197,7 @@ def registrar_atraso(*, tenant, administrador, agendamento_id):
     booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk)
     if booking.status != 'CONFIRMADO' or booking.inicio > timezone.now():
         raise ValidationError('O atraso só pode ser registrado em atendimento confirmado que já começou.')
-    return gravar_avaliacao(booking, 'ATRASADO', corrigir=True)
+    return gravar_avaliacao(booking, 'ATRASADO', corrigir=True, administrador=administrador)
 
 
 @transaction.atomic
@@ -100,11 +212,27 @@ def confirmar_conclusao(*, tenant, administrador, agendamento_id):
     booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk)
     if booking.status != 'CONFIRMADO' or booking.fim > timezone.now():
         raise ValidationError('Só é possível confirmar a conclusão de um atendimento confirmado após seu término.')
-    # Preserve a manual late outcome while correcting any stale presumed rating.
     tipo = 'ATRASADO' if ReputacaoCliente.objects.for_tenant(tenant).filter(
         agendamento=booking, tipo='ATRASADO').exists() else 'CONCLUIDO'
-    rating = gravar_avaliacao(booking, tipo, corrigir=True)
+    rating = gravar_avaliacao(booking, tipo, corrigir=True, administrador=administrador)
     if not booking.conclusao_confirmada_em:
         booking.conclusao_confirmada_em = timezone.now()
         booking.save(update_fields=['conclusao_confirmada_em', 'atualizado_em'])
     return rating
+
+
+@transaction.atomic
+def corrigir_avaliacao(*, tenant, administrador, agendamento_id, tipo):
+    if not administrador.is_active or administrador.tipo != 'ADMIN' or administrador.tenant_id != tenant.pk:
+        raise PermissionDenied('Apenas administradores deste estabelecimento podem corrigir avaliações.')
+    if tipo not in TIPOS_AVALIADOS:
+        raise ValidationError('Tipo de avaliação inválido.')
+    booking = Agendamento.objects.for_tenant(tenant).get(pk=agendamento_id)
+    Profissional.objects.for_tenant(tenant).select_for_update().get(pk=booking.profissional_id)
+    booking = Agendamento.objects.for_tenant(tenant).select_for_update().get(pk=booking.pk)
+    if booking.fim > timezone.now():
+        raise ValidationError('Só é possível corrigir um atendimento após seu término.')
+    rating = ReputacaoCliente.objects.for_tenant(tenant).filter(agendamento=booking).first()
+    if rating is None or rating.tipo == 'DESMARCOU':
+        raise ValidationError('Não há uma avaliação de atendimento corrigível para este agendamento.')
+    return gravar_avaliacao(booking, tipo, corrigir=True, administrador=administrador)

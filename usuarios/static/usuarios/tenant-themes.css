@@ -1,0 +1,34 @@
+/* All theme rules are scoped to the public tenant body (never panel or platform). */
+.tenant-site {
+ --brand-color:var(--theme-primary);--brand-hover:color-mix(in srgb,var(--theme-primary),black 16%);
+ --brand-soft:color-mix(in srgb,var(--theme-primary) 10%,var(--theme-background));
+ --brand-subtle:color-mix(in srgb,var(--theme-primary) 4%,var(--theme-background));
+ --brand-border:color-mix(in srgb,var(--theme-primary) 28%,var(--theme-background));
+ --brand-medium:color-mix(in srgb,var(--theme-primary) 55%,var(--theme-background));
+ --brand-ink:var(--theme-text);--surface:var(--theme-surface);--page:var(--theme-background);
+ --text:var(--theme-text);--muted:color-mix(in srgb,var(--theme-text) 75%,var(--theme-background));
+ --line:color-mix(in srgb,var(--theme-text) 20%,var(--theme-background));--focus:var(--theme-primary);
+ background:var(--page);color:var(--text);font-family:var(--theme-font);min-height:100vh;
+}
+.tenant-site :is(h1,h2,h3,.care-title,.wordmark,.shop-brand){font-family:var(--theme-font);color:var(--text)}
+.tenant-site :is(.service-card,.team-card,.care-card,.product-card,.shop-filters,.card,.catalog-search,.booking-status,.detail-art){background:var(--surface);color:var(--text);border-color:var(--line);border-radius:var(--theme-radius);box-shadow:var(--theme-shadow)}
+.tenant-site :is(button,.ui-button){border-radius:var(--theme-radius);background:var(--theme-primary);border-color:var(--theme-primary);color:var(--theme-on-primary)}
+.tenant-site :is(.ui-button-secondary,.ui-button-quiet){background:var(--brand-soft);color:var(--text);border-color:var(--brand-border)}
+.tenant-site :is(input,select,textarea){background:var(--surface);color:var(--text);border-color:var(--line);border-radius:var(--theme-radius)}
+.tenant-site :is(.category-strip,.shop-benefits,.join-banner,.hero-stamp,.hero-art,.product-art,.service-avatar,.team-avatar,.floating-note){background-color:var(--brand-soft);border-color:var(--brand-border);color:var(--text);border-radius:var(--theme-radius)}
+.tenant-site :is(.overline,.eyebrow,.provider,.service-category,.service-meta span,.hero-copy>p,.team-card p,.site-footer p,.shop-footer p){color:var(--muted)}
+.tenant-site :is(.service-icon,.care-icon,.care-logo,.brand-period){color:var(--theme-accent-ink,var(--text));background:var(--brand-soft);border-color:var(--brand-border)}
+.tenant-site .hero h1 em{color:var(--theme-accent-ink,var(--text))}
+.tenant-site :is(.hero-primary,button:not(.ui-button-secondary)):hover{background:var(--theme-primary);box-shadow:0 0 0 3px var(--brand-border)}
+.tenant-site.theme-glassmorphism :is(.care-card,.service-card,.team-card){backdrop-filter:blur(16px)}
+.tenant-site.theme-brutalista :is(.service-card,.team-card,.care-card,.ui-button){border:2px solid var(--text);font-weight:800}
+.tenant-site.theme-gradiente :is(.hero-art,.join-banner,.product-art){background:linear-gradient(130deg,var(--brand-soft),color-mix(in srgb,var(--theme-primary) 35%,var(--surface)))}
+.tenant-site.theme-personal-trainer :is(h1,h2,h3,.ui-button){font-weight:900;text-transform:uppercase;letter-spacing:-.035em}
+.tenant-site.theme-personal-trainer .overline{color:#b6ff00}
+.tenant-site.theme-odontologia .hero-art{background:linear-gradient(130deg,var(--brand-soft),#00bcd425)}
+.tenant-site.theme-retro :is(h1,h2,.care-title){font-style:italic}
+.tenant-site.theme-futurista :is(.service-card,.team-card){border-color:var(--brand-border)}
+.tenant-site :focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+
+.tenant-content :is(.hero-copy h1,.hero-copy p){overflow-wrap:anywhere}
+.tenant-site :is(.brand-symbol,.shop-announcement){background:var(--theme-primary);color:var(--theme-on-primary)}

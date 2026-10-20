@@ -54,8 +54,8 @@ class ReturnFixture:
             nao_compareceu_em=start if status == 'NAO_COMPARECEU' else None)
         if rated:
             ReputacaoCliente.objects.create(tenant=tenant, agendamento=booking,
-                whatsapp_normalizado=contact.whatsapp, tipo=tipo,
-                pontuacao={'CONCLUIDO': 4, 'ATRASADO': 3, 'DESMARCOU': 2, 'AUSENTE': 1}[tipo])
+                whatsapp_normalizado=contact.whatsapp, data_atendimento=booking.inicio, tipo=tipo,
+                pontuacao={'CONCLUIDO': 4, 'ATRASADO': 3, 'DESMARCOU': 2, 'AUSENTE': 0}[tipo])
         return booking
 
 

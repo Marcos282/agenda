@@ -7,6 +7,7 @@
     const h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60);
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
+  const PIXELS_PER_SECOND = 1.4 / 60;
   function coordinate(iso, day, timeZone) {
     const instant = new Date(iso);
     if (!Number.isFinite(instant.getTime())) throw new Error('Invalid appointment datetime');
@@ -22,7 +23,7 @@
     const windows = [...data.windows].sort((a, b) => a.start - b.start);
     if (!windows.length) return {blocks: [], ticks: [], height: 0};
     const start = windows[0].start, end = windows[windows.length - 1].end;
-    const scale = 1.4 / 60; // px/second, independent of any tenant setting.
+    const scale = PIXELS_PER_SECOND; // px/second, independent of any tenant setting.
     const appointments = (data.appointments || []).map(a => ({...a,
       start: coordinate(a.inicio, data.date, data.timeZone),
       end: coordinate(a.fim, data.date, data.timeZone)
@@ -50,6 +51,30 @@
     }
     ticks.push({at: end, text: clock(end)});
     return {blocks, ticks: ticks.map(t => ({...t, top: (t.at - start) * scale})), height: (end - start) * scale};
+  }
+  function currentTimePosition(data, now = new Date()) {
+    const windows = [...data.windows].sort((a, b) => a.start - b.start);
+    if (!windows.length) return null;
+    const seconds = coordinate(now.toISOString(), data.date, data.timeZone);
+    const start = windows[0].start, end = windows[windows.length - 1].end;
+    if (seconds < 0 || seconds >= 86400 || seconds < start || seconds > end) return null;
+    return (seconds - start) * PIXELS_PER_SECOND;
+  }
+  function updateCurrentTimeIndicator(element, data) {
+    const top = currentTimePosition(data);
+    let indicator = element.querySelector('[data-current-time]');
+    if (top === null) {
+      indicator?.remove();
+      return;
+    }
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.className = 'current-time-indicator';
+      indicator.dataset.currentTime = '';
+      indicator.setAttribute('aria-hidden', 'true');
+      element.append(indicator);
+    }
+    indicator.style.top = `${top}px`;
   }
   function renderTimeline(element, data) {
     const plan = layout(data);
@@ -104,6 +129,7 @@
       });
       element.append(block);
     }
+    updateCurrentTimeIndicator(element, data);
     element.classList.add('is-rendered');
   }
   const pendingRatings = new Set();
@@ -140,7 +166,7 @@
       buttons.forEach(button => { button.disabled = false; });
     }
   }
-  const api = {layout, coordinate, renderTimeline, submitRating};
+  const api = {layout, coordinate, currentTimePosition, renderTimeline, submitRating};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined') return;
   root.DailyAgenda = api;
@@ -152,7 +178,8 @@
     });
     const payload = document.getElementById('agenda-data'), timeline = document.querySelector('[data-timeline]');
     if (payload && timeline) {
-      renderTimeline(timeline, JSON.parse(payload.textContent));
+      let timelineData = JSON.parse(payload.textContent);
+      renderTimeline(timeline, timelineData);
       const refreshStatus = document.querySelector('[data-agenda-refresh]');
       const refreshButton = document.querySelector('[data-refresh-agenda]');
       let refreshing = false;
@@ -172,6 +199,7 @@
           const result = await response.json();
           if (pendingRatings.size || revision !== ratingRevision) return;
           const data = result.timeline;
+          timelineData = data;
           renderTimeline(timeline, data);
           payload.textContent = JSON.stringify(data);
           timeline.closest('[data-timeline-container]').hidden = !result.aberta;
@@ -202,6 +230,7 @@
         }
       };
       refresh();
+      setInterval(() => updateCurrentTimeIndicator(timeline, timelineData), 15000);
       setInterval(refresh, 10000);
       if (refreshButton) {
         refreshButton.hidden = false;

@@ -1,51 +1,36 @@
 # Reputação por WhatsApp
 
-A identidade é `(tenant, WhatsApp normalizado)`, usando a função existente `usuarios.validators.normalizar_whatsapp`. Cada reserva preserva seu número em `cliente_whatsapp`; mudanças posteriores no cadastro não transferem seu histórico. Nomes diferentes são reunidos e a lista mostra o nome da reserva mais recente. Números de estabelecimentos diferentes nunca compartilham avaliações.
+A identidade é `(tenant, contato preparado)`, usando `usuarios.validators.preparar_whatsapp`: números válidos são normalizados, enquanto outros contatos informados são preservados. Cada reserva mantém o contato usado no atendimento; alterações posteriores no cadastro não transferem o histórico. Contatos iguais em estabelecimentos diferentes nunca compartilham avaliações.
 
-## Ocorrências e conclusão automática
+## Avaliações
 
-`ReputacaoCliente` guarda agendamento, tenant, WhatsApp, tipo, pontuação e data de criação. Cada agendamento tem uma única avaliação (`OneToOneField`, unicidade no banco). A restrição `reputacao_tipo_pontos_validos` exige a correspondência entre tipo e pontos; a FK composta `reputacao_ag_tenant_fk` impede ligar avaliações a reservas de outro tenant, inclusive em escritas diretas.
+`ReputacaoCliente` preserva tenant, WhatsApp, agendamento, tipo, pontuação, data do atendimento, data de registro e responsável pelo lançamento. A restrição `OneToOneField` impede avaliações duplicadas para o mesmo agendamento, e a FK composta `reputacao_ag_tenant_fk` impede associar uma avaliação a um agendamento de outro tenant.
 
-- **Compareceu / CONCLUIDO:** 4 pontos, automaticamente após `fim <= agora` quando o agendamento continua confirmado.
-- **Chegou atrasado / ATRASADO:** 3 pontos, ação administrativa após o início de atendimento confirmado.
-- **Desmarcou / DESMARCOU:** 2 pontos, pelo fluxo existente de cancelamento antes do início; o horário é liberado.
-- **Cliente ausente / AUSENTE:** 1 ponto, pelo fluxo existente de falta após o início.
+- **Compareceu pontualmente / CONCLUIDO:** 4 pontos.
+- **Compareceu atrasado / ATRASADO:** 3 pontos.
+- **Não compareceu / AUSENTE:** 0 ponto.
+- **Cancelou dentro do prazo / DESMARCOU:** ocorrência mantida no histórico, mas não conta como avaliação nem reduz a nota.
 
-O término de um atendimento confirmado sem exceção registrada representa comparecimento presumido para a reputação. O administrador deve registrar ausência ou atraso; pode corrigir a avaliação automática posteriormente, alterando a mesma ocorrência em vez de duplicá-la. Não se confirma presença física por WhatsApp.
+Agendamentos futuros, em andamento ou ainda sem avaliação não entram no cálculo. Agendamentos confirmados recebem avaliação automática de comparecimento após o término; administradores podem corrigir uma avaliação automática ou registrar atraso/falta. As correções preservam o registro atual, criam uma linha de auditoria com valores anteriores e novos, data e usuário responsável, e não criam avaliações duplicadas.
 
-Para os [lembretes de retorno de 30 dias](lembretes-retorno-30-dias.md), existe uma confirmação explícita e separada: na agenda, após o término, escolha **Confirmar atendimento realizado**. Essa ação registra `Agendamento.conclusao_confirmada_em` e grava/reutiliza a avaliação positiva, preservando um atraso já registrado. A conclusão presumida automática não preenche esse campo e não habilita o lembrete de retorno por si só.
+Para os [lembretes de retorno de 30 dias](lembretes-retorno-30-dias.md), a confirmação explícita de atendimento continua separada da reputação. Ela não é requisito para o cálculo e a conclusão presumida automática não habilita o lembrete por si só.
 
-A atualização automática ocorre ao abrir Clientes, seu histórico e a agenda administrativa. Para processar sem acesso ao painel, execute `python manage.py atualizar_reputacoes`; o comando é idempotente e pode ser chamado pelo agendador da implantação. Nenhum cron é instalado automaticamente. Reservas antigas canceladas, com falta ou confirmadas já encerradas também são avaliadas; registros legados sem WhatsApp válido permanecem sem avaliação.
+A atualização automática ocorre ao abrir Clientes, o histórico ou a agenda administrativa. Para processar sem acesso ao painel, execute `python manage.py atualizar_reputacoes`; o comando é idempotente e pode ser chamado por um agendador. Reservas antigas canceladas, com falta ou confirmadas já encerradas são processadas; registros sem contato permanecem sem avaliação. Nenhuma migração ou alteração de banco de produção é executada automaticamente durante o desenvolvimento.
 
-Operações de pontuação usam a trava do profissional e a transação já empregadas nas reservas, cancelamentos e faltas. Reexecuções automáticas preservam avaliações manuais.
+## Cálculo e exibição
 
-## Média e estrelas
+A nota é calculada com `Decimal` diretamente dos eventos originais:
 
-A média é calculada a partir das ocorrências, sem campo de média mutável no cadastro. Com zero, uma ou duas avaliações, aparece somente **Cliente Novo**. A partir da terceira:
+`R = (0,70 × M5) + (0,30 × MH)`
 
-| Média | Estrelas |
-| --- | --- |
-| >= 3,5 | ★★★★ |
-| >= 2,5 e < 3,5 | ★★★☆ |
-| >= 1,5 e < 2,5 | ★★☆☆ |
-| < 1,5 | ★☆☆☆ |
+`M5` é a média dos cinco atendimentos avaliados mais recentes; quando há menos de cinco, usa todos os disponíveis. `MH` é a média histórica de todas as avaliações válidas. O ordenamento usa a data do atendimento e, em caso de empate, o identificador do agendamento. Não há média armazenada nem reutilização de nota arredondada. O arredondamento para duas casas ocorre somente na apresentação.
 
-Os limites ficam centralizados em `agenda.reputation.LIMITES_ESTRELAS`; a exibição numérica usa uma casa decimal. As estrelas usam a média sem arredondamento prévio. Lista e histórico exibem média e total de avaliações; a agenda exibe a classificação discretamente. Avaliações iniciais são armazenadas e aparecem individualmente no histórico, mesmo enquanto a classificação é Cliente Novo.
+Até duas avaliações válidas, o painel mostra **Cliente Novo — Reputação em formação**, sem atribuir nota ou estrelas. A partir da terceira, a ficha administrativa exibe quatro estrelas laranjas, preenchimento proporcional (incluindo frações), nota no formato `3,77/4`, quantidade e contagens de comparecimentos pontuais, atrasos e faltas. A fórmula e a exclusão dos cancelamentos são explicadas na ficha.
 
-## Acesso, instalação e testes
+A lista, o histórico e a agenda reutilizam `painel/reputacao.html` ou `CustomerReputation.renderRating`, de `painel/static/painel/reputacao.js`. A exibição permanece restrita ao painel administrativo do tenant e não é publicada para clientes. A reputação não bloqueia agendamentos automaticamente.
 
-Somente administradores do tenant podem registrar exceções. As ações possuem tela de confirmação e POST com CSRF; GET não pontua manualmente. Os limites diário e de reservas futuras por WhatsApp e o bloqueio de clientes permanecem independentes da reputação.
+## Acesso, correções e testes
 
-Aplicar `python manage.py migrate` antes de iniciar esta versão. Não é necessário recriar dados. Executar `python manage.py test agenda.test_reputation painel.test_clientes agenda.test_booking painel.test_agendamento --noinput` em banco de testes isolado. A suíte cobre identidade, isolamento, terceira avaliação, média, pontuação automática/manual, idempotência, unicidade e FK no banco, interface e permissões.
+Somente administradores autenticados do estabelecimento podem registrar exceções e corrigir avaliações. As ações usam POST com CSRF; a ficha do cliente permite selecionar a avaliação correta e mostra as alterações auditadas em ordem temporal. Os limites de agendamentos e bloqueios por WhatsApp permanecem independentes da reputação.
 
-### Validação realizada
-
-Passaram 31 testes da seleção `agenda.test_reputation`, `painel.test_clientes`, `usuarios.test_customer_login_disabled`, `agenda.test_guest_booking` e dos cenários de agenda administrativa, configuração de limites, limite diário e limite futuro em `agenda.test_booking`. O banco `test_barbe` foi criado e removido separadamente do banco da aplicação. As verificações `manage.py check`, `makemigrations --check --dry-run` e de sintaxe do JavaScript passaram.
-
-A suíte antiga completa ainda contém expectativas de login de clientes por senha e datas fixas de abertura que já ficaram no passado; esses casos falham com as regras atuais e precisam de atualização independente. As políticas de autenticação e de abertura de agendas não foram alteradas para satisfazer expectativas antigas.
-
-## Componente visual de estrelas
-
-A lista, o histórico e o resumo da agenda reutilizam `painel/reputacao.html`. Os cartões e o diálogo da agenda utilizam `CustomerReputation.renderRating`, de `painel/static/painel/reputacao.js`. Ambos compartilham as classes e o CSS de `reputacao.css`, carregados na base do painel.
-
-Após três avaliações, sempre há quatro ícones preenchidos `★` do mesmo formato. Estrelas conquistadas usam `#F59E0B` e opacidade 1; estrelas restantes usam `#94A3B8` e opacidade 0,25. O componente informa a nota com `aria-label` e oculta os ícones individuais de leitores de tela. Até duas avaliações, somente o selo Cliente Novo é renderizado.
+Aplicar `python manage.py migrate` em implantação após backup e validação em banco de testes isolado. A migração preenche a data do atendimento a partir do agendamento e ajusta a pontuação histórica de faltas para zero, preservando a pontuação anterior no registro de auditoria. Executar `python manage.py test agenda.test_reputation painel.test_agenda_reputacao painel.test_clientes whatsapp.test_returns --noinput`.

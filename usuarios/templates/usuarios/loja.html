@@ -3,7 +3,8 @@
 {% include 'usuarios/google_tag.html' %}
 <title>{% if item %}{{ item.servico.nome }} · {% endif %}Loja · {{ request.tenant.nome }}</title>
 <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/loja.css' %}"><link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"><link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
-</head><body class="public-booking-page">
+{% include 'usuarios/tenant_theme_head.html' %}
+</head><body {% if theme_preview %}inert{% endif %} class="public-booking-page{% if site_theme %} tenant-content{% endif %}{% if theme_active %} tenant-site theme-{{ site_theme.style }}{% endif %}">
 <div class="shop-announcement">Seu cuidado, do seu jeito. Conheça os serviços de {{ request.tenant.nome }}.</div>
 <header class="shop-header"><a class="shop-brand" href="{% url 'loja' %}"><span aria-hidden="true">✦</span>{{ request.tenant.nome }}<small>LOJA DE SERVIÇOS</small></a>
 <nav aria-label="Navegação da loja"><a class="ui-button ui-button-secondary" href="{% url 'home' %}">Início</a>{% if user.is_authenticated %}<a class="ui-button" href="{% url 'conta' %}">Minha conta ↗</a>{% else %}<a class="ui-button" href="{% url 'agenda:meus' %}">Meus agendamentos ↗</a>{% endif %}</nav></header>

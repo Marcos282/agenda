@@ -7,7 +7,10 @@ from whatsapp.console import testezap, testes
 from whatsapp.inbox_views import receive
 from usuarios.seo import robots, sitemap
 
+from painel.theme_views import image as theme_image
+
 urlpatterns = [
+    path('aparencia/imagem/<str:field>/', theme_image, name='theme_image'),
     path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='sitemap'),
     path('teste/', testes, {'route': 'teste'}, name='teste'),

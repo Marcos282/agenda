@@ -400,7 +400,9 @@ class PanelTests(TestCase):
         link.ativo = False; link.save()
 
     def test_edit_professional_service_and_grid(self):
-        self.assertEqual(self.post(reverse('painel:profissional_editar', args=[self.joao.pk]), {'nome': 'João editado', 'tenant': self.wanessa.pk}).status_code, 302)
+        edit_url = reverse('painel:profissional_editar', args=[self.joao.pk])
+        self.assertNotContains(self.get(edit_url), 'Ver foto atual')
+        self.assertEqual(self.post(edit_url, {'nome': 'João editado', 'tenant': self.wanessa.pk}).status_code, 302)
         self.joao.refresh_from_db(); self.assertFalse(self.joao.ativo); self.assertEqual(self.joao.tenant, self.marcos)
         self.assertEqual(self.post(reverse('painel:servico_editar', args=[self.corte.pk]), {'nome': 'Corte editado'}).status_code, 302)
         self.corte.refresh_from_db(); self.assertFalse(self.corte.ativo)

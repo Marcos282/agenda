@@ -1,0 +1,30 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Aparência do Site · Personalização{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}"><link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
+{% block painel_content %}
+<p class="eyebrow">Personalização → Aparência do Site</p>
+<h1>Gerencie seus estilos</h1><p>Escolha o melhor estilo para seu site. As alterações só serão publicadas ao salvar e aplicar.</p>
+<nav class="toolbar"><a class="ui-button" href="{% url 'painel:estilo' %}" aria-current="page">Aparência do Site</a><a class="ui-button ui-button-secondary" href="{% url 'painel:estilo_conteudo' %}">Conteúdo do Site</a><a class="ui-button ui-button-secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Abrir site publicado ↗</a></nav>
+{{ form.errors }}
+<p role="status" id="theme-status">Tema publicado: <strong>{{ theme.get_style_display }}</strong> · {{ theme.primary_color }}</p>
+<div class="theme-gallery">
+{% for entry in themes %}
+<article class="theme-card" data-theme="{{ entry.id }}" {% if theme.style == entry.id %}data-published="true"{% endif %}>
+<h2>{{ entry.name }} {% if theme.style == entry.id %}<small>Publicado</small>{% endif %}</h2><p>{{ entry.description }}</p>
+<div class="theme-mini tenant-site theme-{{ entry.id }}" aria-label="Miniatura de {{ entry.name }}" style="--theme-primary:{% if theme.style == entry.id %}{{ theme.primary_color }}{% else %}{{ entry.color }}{% endif %};--theme-on-primary:{{ entry.tokens.on_primary }};--theme-background:{{ entry.tokens.background }};--theme-surface:{{ entry.tokens.surface }};--theme-text:{{ entry.tokens.text }};--theme-radius:{{ entry.tokens.radius }};--theme-shadow:{{ entry.tokens.shadow }};--theme-font:{{ entry.tokens.font }}">
+<div class="mini-nav"><strong>{{ request.tenant.nome }}</strong><span>Serviços · Equipe</span></div>
+<div class="mini-hero"><div><strong>{{ theme.title|default:'Um tempo para você.' }}</strong><p>{{ theme.subtitle|default:'Um cuidado que faz bem.' }}</p><span class="mini-cta">{{ theme.button_text|default:'Explorar serviços' }}</span></div><div class="care-card">{{ theme.icon|default:'✦' }}<br>Seu cuidado</div></div>
+<div class="mini-section">Serviços</div><div class="mini-grid"><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div></div><div class="mini-section">Profissionais</div><div class="mini-team"><span>● Profissional</span><span>Ver serviços ↗</span></div><div class="mini-footer">{{ request.tenant.nome }} · Contato</div>
+</div>
+<form method="post" class="theme-choice" data-preview-url="{% url 'painel:estilo_preview' %}">
+{% csrf_token %}<input type="hidden" name="style" value="{{ entry.id }}">
+<fieldset><legend>Escolha a cor principal</legend><div class="theme-swatches">
+{% for color in palette %}<button type="button" class="theme-swatch" data-color="{{ color }}" style="--swatch:{{ color }}" aria-label="Selecionar {{ color }}" aria-pressed="false"></button>{% endfor %}
+<label class="theme-custom">Cor personalizada<input type="color" name="primary_color" aria-label="Cor principal de {{ entry.name }}" value="{% if theme.style == entry.id %}{{ theme.primary_color }}{% else %}{{ entry.color }}{% endif %}"></label></div>
+<p>Cor selecionada: <output>{% if theme.style == entry.id %}{{ theme.primary_color }}{% else %}{{ entry.color }}{% endif %}</output></p></fieldset>
+<div class="theme-actions"><button class="ui-button ui-button-secondary" type="button" data-preview>Visualizar</button><button class="ui-button" type="submit">Salvar e aplicar</button></div>
+</form></article>
+{% endfor %}</div>
+<section class="theme-reset"><h2>Restaurar aparência original</h2><p>Restaura tema, cores, textos, ícone e imagens exibidas. Os arquivos de imagem serão preservados.</p><form method="post" action="{% url 'painel:estilo_restaurar' %}" data-restore>{% csrf_token %}<label><input type="checkbox" name="confirm" value="yes" required> Confirmo a restauração dos conteúdos visuais originais.</label><button class="ui-button ui-button-secondary" type="submit">Restaurar aparência original</button></form></section>
+{% include 'painel/estilo_preview.html' %}
+{% endblock %}

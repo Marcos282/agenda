@@ -1,10 +1,9 @@
 .rating-stars{display:inline-flex!important;align-items:center;gap:2px;vertical-align:middle}
-.rating-stars .star{display:inline-block!important;font-size:18px!important;line-height:1!important;margin:0!important;font-style:normal;background:transparent!important;padding:0!important;border:0!important}
-.rating-stars .star.active{color:#F59E0B!important;opacity:1!important}
-.rating-stars .star.inactive{color:#94A3B8!important;opacity:.25!important}
+.rating-stars .star{display:inline-block!important;font-size:18px!important;line-height:1!important;margin:0!important;font-style:normal;padding:0!important;border:0!important;color:transparent!important;background:linear-gradient(90deg,#F59E0B var(--star-fill,0%),rgba(148,163,184,.25) var(--star-fill,0%))!important;background-clip:text!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important}
 .timeline-block .client-reputation{display:inline-flex!important;align-items:center;gap:4px;margin:0 6px 0 0;vertical-align:middle}
 .timeline-block .client-reputation-new{font-size:11px;color:#245473}
 .timeline-block.compact .rating-stars .star{font-size:12px!important}
-.rating-average{margin-left:4px}
+.rating-average,.rating-count{margin-left:4px}
 
 .client-reputation{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 8px;border-radius:8px;background:#fff7dc}.client-reputation-new{color:#245473;background:#e8f4fc;border:1px solid #b7d7eb;font-weight:600}.client-history-summary>[data-customer-reputation]{margin-bottom:10px}.appointment-summary-copy>[data-customer-reputation]{align-self:flex-start}
+.client-reputation-explanation{margin:14px 0;padding:12px 16px;border:1px solid #d9e3eb;border-radius:8px;background:#f7fafc}.reputation-correction-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}.reputation-correction-form label{font-weight:600}

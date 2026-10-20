@@ -1,5 +1,6 @@
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import DateTimeRangeField, RangeOperators
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from tenants.base import TenantOwnedModel, TenantQuerySet
@@ -167,17 +168,23 @@ class ReputacaoCliente(models.Model):
     tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
     whatsapp_normalizado = models.CharField(max_length=40)
     agendamento = models.OneToOneField(Agendamento, on_delete=models.PROTECT, related_name='avaliacao_reputacao')
+    data_atendimento = models.DateTimeField()
     pontuacao = models.PositiveSmallIntegerField()
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
+    registrado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='avaliacoes_reputacao_registradas')
     created_at = models.DateTimeField(auto_now_add=True)
     objects = TenantQuerySet.as_manager()
 
     class Meta:
         indexes = [models.Index(fields=['tenant', 'whatsapp_normalizado'], name='reputacao_tenant_whatsapp_idx')]
-        constraints = [models.CheckConstraint(condition=(
-            models.Q(tipo='CONCLUIDO', pontuacao=4) | models.Q(tipo='ATRASADO', pontuacao=3) |
-            models.Q(tipo='DESMARCOU', pontuacao=2) | models.Q(tipo='AUSENTE', pontuacao=1)
-        ), name='reputacao_tipo_pontos_validos')]
+        constraints = [
+            models.UniqueConstraint(fields=['id', 'tenant'], name='reputacao_id_tenant_unique'),
+            models.CheckConstraint(condition=(
+                models.Q(tipo='CONCLUIDO', pontuacao=4) | models.Q(tipo='ATRASADO', pontuacao=3) |
+                models.Q(tipo='DESMARCOU', pontuacao=2) | models.Q(tipo='AUSENTE', pontuacao=0)
+            ), name='reputacao_tipo_pontos_validos'),
+        ]
 
     def clean(self):
         super().clean()
@@ -189,6 +196,37 @@ class ReputacaoCliente(models.Model):
                 raise ValidationError('Avaliação e agendamento devem pertencer ao mesmo estabelecimento.')
             if self.whatsapp_normalizado != preparar_whatsapp(booking.cliente_whatsapp or booking.whatsapp_contato):
                 raise ValidationError('A avaliação deve usar o WhatsApp do agendamento.')
+            if self.data_atendimento and self.data_atendimento != booking.inicio:
+                raise ValidationError('A data do atendimento deve corresponder ao agendamento.')
+        if self.registrado_por_id and self.registrado_por.tenant_id != self.tenant_id:
+            raise ValidationError('O responsável pelo lançamento deve pertencer ao estabelecimento.')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class ReputacaoClienteAuditoria(models.Model):
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    reputacao = models.ForeignKey(ReputacaoCliente, on_delete=models.PROTECT, related_name='alteracoes')
+    tipo_anterior = models.CharField(max_length=12, choices=ReputacaoCliente.Tipo.choices)
+    pontuacao_anterior = models.PositiveSmallIntegerField()
+    tipo_novo = models.CharField(max_length=12, choices=ReputacaoCliente.Tipo.choices)
+    pontuacao_nova = models.PositiveSmallIntegerField()
+    alterado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='correcoes_reputacao')
+    alterado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-alterado_em', '-pk']
+        constraints = [models.UniqueConstraint(fields=['id', 'tenant'], name='reputacao_audit_id_tenant_unique')]
+
+    def clean(self):
+        super().clean()
+        if self.reputacao_id and not ReputacaoCliente.objects.for_tenant(self.tenant).filter(pk=self.reputacao_id).exists():
+            raise ValidationError('A correção e a avaliação devem pertencer ao mesmo estabelecimento.')
+        if self.alterado_por_id and self.alterado_por.tenant_id != self.tenant_id:
+            raise ValidationError('O responsável pela correção deve pertencer ao estabelecimento.')
 
     def save(self, *args, **kwargs):
         self.full_clean()

@@ -7,6 +7,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, MinValueValidator
 from django.db import models, transaction
+from .themes import THEME_CHOICES, ICONS
+from .theme_uploads import theme_storage, theme_upload_path
 
 
 subdomain_validator = RegexValidator(
@@ -121,3 +123,21 @@ class Tenant(models.Model):
 
     def __str__(self):
         return self.nome
+
+
+
+
+class TenantTheme(models.Model):
+    """Independent visual configuration; never writes to Tenant or booking models."""
+    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name='site_theme')
+    style = models.CharField(max_length=32, choices=THEME_CHOICES, default='original')
+    primary_color = models.CharField(max_length=7, default='#287454', validators=[
+        RegexValidator(r'^#[0-9a-fA-F]{6}$', 'Informe uma cor hexadecimal válida.')])
+    title = models.CharField('Título principal', max_length=150, blank=True)
+    subtitle = models.CharField('Subtítulo', max_length=400, blank=True)
+    description = models.TextField('Descrição do estabelecimento', max_length=1000, blank=True)
+    button_text = models.CharField('Texto do botão principal', max_length=60, blank=True)
+    icon = models.CharField('Ícone decorativo', max_length=4, choices=ICONS, blank=True)
+    hero_image = models.ImageField('Imagem principal', storage=theme_storage, upload_to=theme_upload_path, blank=True)
+    background_image = models.ImageField('Imagem de fundo', storage=theme_storage, upload_to=theme_upload_path, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)

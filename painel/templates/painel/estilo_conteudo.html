@@ -1,0 +1,12 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Conteúdo do Site · Personalização{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
+{% block painel_content %}
+<p class="eyebrow">Personalização → Conteúdo do Site</p><h1>Conteúdo do Site</h1><p>Personalize a apresentação do seu estabelecimento. Os botões mantêm suas ações originais.</p>
+<nav class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:estilo' %}">Aparência do Site</a><a class="ui-button" href="{% url 'painel:estilo_conteudo' %}" aria-current="page">Conteúdo do Site</a></nav>
+<div class="content-suggestions"><label for="profession-suggestion">Sugestão de título por profissão</label><select id="profession-suggestion"><option value="">Escolha uma profissão</option>{% for profession, title in suggestions.items %}<option value="{{ title }}">{{ profession }}</option>{% endfor %}</select><button type="button" class="ui-button ui-button-secondary" data-use-suggestion>Usar sugestão no título</button><p>As sugestões só substituem o título quando você clicar no botão acima.</p></div>
+{% if form.instance.hero_image %}<p><a href="{% url 'theme_image' 'hero_image' %}" target="_blank" rel="noopener">Ver imagem principal publicada</a></p>{% endif %}
+{% if form.instance.background_image %}<p><a href="{% url 'theme_image' 'background_image' %}" target="_blank" rel="noopener">Ver imagem de fundo publicada</a></p>{% endif %}
+<form method="post" enctype="multipart/form-data" class="edit-form theme-content-form" data-preview-url="{% url 'painel:estilo_preview' %}">{% csrf_token %}<input type="hidden" name="preview_kind" value="content">{{ form.as_p }}<p>Imagens JPG, PNG ou WebP, até 5 MB e 20 megapixels. Serão otimizadas para WebP. Campos vazios usam os textos originais.</p><div class="toolbar"><button class="ui-button ui-button-secondary" type="button" data-preview>Visualizar</button><button class="ui-button" type="submit">Salvar e aplicar</button></div></form>
+{% include 'painel/estilo_preview.html' %}
+{% endblock %}

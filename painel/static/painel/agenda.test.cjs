@@ -1,10 +1,13 @@
 const assert = require('node:assert/strict');
-const {layout, coordinate} = require('./agenda.js');
+const {layout, coordinate, currentTimePosition} = require('./agenda.js');
 const base = {date:'2026-09-30',timeZone:'America/Sao_Paulo',windows:[{start:32400,end:43200},{start:46800,end:64800}],appointments:[]};
 assert.deepEqual(layout({...base,windows:[]}).blocks, []);
 const plan=layout(base);
 assert.deepEqual(plan.blocks.map(b=>[b.kind,b.start,b.end]), [['free',32400,43200],['closed',43200,46800],['free',46800,64800]]);
 assert.equal(coordinate('2026-09-30T12:15:00Z',base.date,base.timeZone),33300);
+assert.equal(currentTimePosition(base, new Date('2026-09-30T15:30:00Z')), 294);
+assert.equal(currentTimePosition(base, new Date('2026-10-01T15:30:00Z')), null);
+assert.equal(currentTimePosition(base, new Date('2026-09-30T10:00:00Z')), null);
 const appointments=[20,40,60].map((duration,i)=>({cliente:'Cliente',servico:'Serviço',valor:'40,00',status:'CONFIRMADO',inicio:`2026-09-30T${String(9+i).padStart(2,'0')}:00:00-03:00`,fim:`2026-09-30T${String(9+i+Math.floor(duration/60)).padStart(2,'0')}:${String(duration%60).padStart(2,'0')}:00-03:00`}));
 const blocks=layout({...base,appointments}).blocks.filter(b=>b.kind==='booked');
 assert.equal(blocks[1].height,blocks[0].height*2);assert.equal(blocks[2].height,blocks[0].height*3);

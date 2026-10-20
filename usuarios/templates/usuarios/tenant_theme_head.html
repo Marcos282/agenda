@@ -1,0 +1,12 @@
+{% load static %}{% if site_theme %}
+<link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}">
+<style>
+{% if theme_active %}.tenant-site {
+--theme-primary: {{ theme_tokens.primary }}; --theme-accent-ink: {{ theme_tokens.accent_ink }}; --theme-on-primary: {{ theme_tokens.on_primary }};
+--theme-background: {{ theme_tokens.background }}; --theme-surface: {{ theme_tokens.surface }};
+--theme-text: {{ theme_tokens.text }}; --theme-radius: {{ theme_tokens.radius }};
+--theme-shadow: {{ theme_tokens.shadow }}; --theme-font: {{ theme_tokens.font }};
+}{% endif %}
+{% if theme_media.hero_image %}.tenant-content .hero-art{background-image:url("{{ theme_media.hero_image }}");background-size:cover;background-position:center}.tenant-content .hero-art>*{visibility:hidden}{% endif %}
+{% if theme_media.background_image %}.tenant-content .hero{background-image:linear-gradient(color-mix(in srgb,var(--page) 45%,transparent),color-mix(in srgb,var(--page) 45%,transparent)),url("{{ theme_media.background_image }}");background-size:cover;background-position:center}{% endif %}
+</style>{% endif %}

@@ -10,8 +10,9 @@
 {% block extra_head %}{% endblock %}
 {% block layout_head %}{% endblock %}
 <link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
+{% include 'usuarios/tenant_theme_head.html' %}
 </head>
-<body class="{% block body_class %}{% if not request.tenant %}public-site{% endif %}{% endblock %}">
+<body {% if theme_preview %}inert{% endif %} class="{% if site_theme %}tenant-content {% endif %}{% if theme_active %}tenant-site theme-{{ site_theme.style }} {% endif %}{% block body_class %}{% if not request.tenant %}public-site{% endif %}{% endblock %}">
 {% block public_header %}{% if not request.tenant %}{% include 'usuarios/public_header.html' %}{% endif %}{% endblock %}
 <main class="{% block main_class %}{% if not request.tenant %}public-card{% endif %}{% endblock %}">
   <div class="eyebrow">{{ request.tenant.nome|default:"Plataforma de agendamento" }}{% block establishment_plan %}{% endblock %}</div>

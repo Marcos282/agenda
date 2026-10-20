@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 from django.views.generic import RedirectView
-from . import views, agenda_views, agendamento_views, cliente_views, loja_qrcode_views, mensalidade_views
+from . import theme_views, views, agenda_views, agendamento_views, cliente_views, loja_qrcode_views, mensalidade_views
 
 from whatsapp.views import configuracao_whatsapp
 from whatsapp.console import testes
@@ -17,12 +17,17 @@ urlpatterns = [
     path('testes/', testes, {'route': 'painel:testes'}, name='testes'),
     re_path(r'^whatsapp/testes/?$', RedirectView.as_view(pattern_name='painel:testes', query_string=True)),
     path('', views.inicio, name='inicio'),
+    re_path(r'^estilo/?$', theme_views.appearance, name='estilo'),
+    path('estilo/conteudo/', theme_views.content, name='estilo_conteudo'),
+    path('estilo/visualizar/', theme_views.preview, name='estilo_preview'),
+    path('estilo/restaurar/', theme_views.restore, name='estilo_restaurar'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),
     path('agendamentos/<int:pk>/cancelar/', agendamento_views.cancelar_agendamento, name='agendamento_cancelar'),
     path('agendamentos/<int:pk>/atraso/', agendamento_views.atraso, name='agendamento_atraso'),
     path('agendamentos/<int:pk>/falta/', agendamento_views.falta, name='agendamento_falta'),
     path('agendamentos/<int:pk>/concluir/', agendamento_views.concluir, name='agendamento_concluir'),
     path('clientes/whatsapp/<str:whatsapp>/bloqueio/', cliente_views.whatsapp_bloqueio, name='whatsapp_bloqueio'),
+    path('clientes/avaliacoes/<int:pk>/corrigir/', cliente_views.corrigir_reputacao, name='corrigir_reputacao'),
     path('clientes/', cliente_views.lista, name='clientes'),
     path('clientes/whatsapp/<str:whatsapp>/', cliente_views.whatsapp_historico, name='whatsapp_historico'),
     path('clientes/contatos/<int:pk>/', cliente_views.contato_historico, name='contato_historico'),

@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from agenda.models import Agendamento
-from agenda.reputation import atualizar_reputacoes, reputacoes, resumir
+from agenda.reputation import atualizar_reputacoes, calculate_customer_reputation, corrigir_avaliacao, numero_agendamento, reputacoes, resumir
 from usuarios.models import User, ContatoCliente, WhatsAppBloqueado
 from usuarios.validators import preparar_whatsapp
 from .agenda_views import agenda_url
@@ -154,11 +154,44 @@ def historico(request, pk):
 def render_historico(request, cliente, bookings, contato=False):
     resumo = bookings.aggregate(total=Count('pk'), confirmados=Count('pk', filter=Q(status='CONFIRMADO')),
         cancelados=Count('pk', filter=Q(status='CANCELADO')), faltas=Count('pk', filter=Q(status='NAO_COMPARECEU')))
-    page = Paginator(bookings.select_related('avaliacao_reputacao').order_by('-inicio', '-pk'), 15).get_page(request.GET.get('page'))
+    page = Paginator(bookings.select_related('avaliacao_reputacao').prefetch_related(
+        'avaliacao_reputacao__alteracoes__alterado_por').order_by('inicio', 'pk'), 15).get_page(request.GET.get('page'))
     for booking in page:
         day = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
         booking.link_agenda = agenda_url(booking.profissional_id, day)
-    return render(request, 'painel/cliente_historico.html', {'cliente': cliente, 'page_obj': page, 'resumo': resumo, 'contato': contato})
+    reputacao = cliente.get('reputacao', resumir()) if isinstance(cliente, dict) else calculate_customer_reputation(cliente, request.tenant)
+    return render(request, 'painel/cliente_historico.html', {
+        'cliente': cliente,
+        'page_obj': page,
+        'resumo': resumo,
+        'reputacao': reputacao,
+        'opcoes_avaliacao': (
+            ('CONCLUIDO', 'Compareceu pontualmente · 4 pontos'),
+            ('ATRASADO', 'Compareceu atrasado · 3 pontos'),
+            ('AUSENTE', 'Não compareceu · 0 ponto'),
+        ),
+        'contato': contato,
+    })
+
+
+@admin_tenant_required
+@require_http_methods(['POST'])
+def corrigir_reputacao(request, pk):
+    booking = get_object_or_404(Agendamento.objects.for_tenant(request.tenant), pk=pk)
+    try:
+        corrigir_avaliacao(
+            tenant=request.tenant,
+            administrador=request.user,
+            agendamento_id=booking.pk,
+            tipo=request.POST.get('tipo', ''),
+        )
+        messages.success(request, 'A avaliação foi corrigida e a alteração foi registrada no histórico.')
+    except ValidationError as exc:
+        messages.error(request, ' '.join(exc.messages))
+    try:
+        return redirect('painel:whatsapp_historico', whatsapp=numero_agendamento(booking))
+    except ValidationError:
+        return redirect('painel:clientes')
 
 
 

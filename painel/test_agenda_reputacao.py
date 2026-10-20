@@ -57,6 +57,8 @@ class AgendaReputationTests(BookingFixture, TestCase):
                 self.assertEqual(second.json(), first.json())
                 self.assertEqual(ReputacaoCliente.objects.filter(agendamento=booking).count(), 1)
                 self.assertEqual(first.json()['tipo'], kind)
+                if kind == 'AUSENTE':
+                    self.assertEqual(ReputacaoCliente.objects.get(agendamento=booking).pontuacao, 0)
     def test_error_and_tenant_isolation(self):
         booking = self.book()
         response = self.post_rating(booking, 'atraso')
