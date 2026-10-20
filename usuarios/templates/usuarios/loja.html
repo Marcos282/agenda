@@ -1,5 +1,6 @@
 {% load static %}
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+{% include 'usuarios/google_tag.html' %}
 <title>{% if item %}{{ item.servico.nome }} · {% endif %}Loja · {{ request.tenant.nome }}</title>
 <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/loja.css' %}"><link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"><link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
 </head><body class="public-booking-page">

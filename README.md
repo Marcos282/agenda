@@ -33,6 +33,8 @@ Em cada host: `/cadastro/`, `/login/`, `/conta/` e logout via botão POST. Cadas
 
 Na página principal da plataforma, telas de até 680 px exibem uma faixa flutuante “Agende conosco para conhecer melhor”, fixa na parte inferior da tela e ocupando toda a largura, com acesso ao WhatsApp +55 (21) 99092-1092. A faixa não aparece em telas maiores nem nas páginas dos estabelecimentos.
 
+As páginas públicas da plataforma, início do estabelecimento e loja carregam a tag do Google Analytics `G-QNYYDDRTKK`, pelo componente `usuarios/google_tag.html`. O componente não é incluído na base compartilhada de login, conta, agendamentos e painel administrativo.
+
 ## Instalação em outro ambiente
 
 Use Python 3.12+ e um PostgreSQL acessível:

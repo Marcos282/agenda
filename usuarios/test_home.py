@@ -19,6 +19,23 @@ class PublicHomeTests(TestCase):
     def get(self,query=''):
         return self.client.get('/'+query,HTTP_HOST='marcos.localhost')
 
+    def test_google_tag_is_loaded_once_on_public_pages_only(self):
+        tag_url = 'https://www.googletagmanager.com/gtag/js?id=G-QNYYDDRTKK'
+        for host, path in [
+            ('localhost', '/'),
+            ('marcos.localhost', '/'),
+            ('marcos.localhost', f'/loja/{self.offer.pk}/'),
+        ]:
+            with self.subTest(host=host, path=path):
+                response = self.client.get(path, HTTP_HOST=host)
+                self.assertContains(response, tag_url, count=1)
+                self.assertContains(response, "gtag('config', 'G-QNYYDDRTKK');", count=1)
+                head = response.content.decode().split('</head>', 1)[0]
+                self.assertIn(tag_url, head)
+        response = self.client.get('/login/', HTTP_HOST='localhost')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, tag_url)
+
     def test_catalog_is_dynamic_and_isolated(self):
         page=self.get()
         self.assertContains(page,'Corte')

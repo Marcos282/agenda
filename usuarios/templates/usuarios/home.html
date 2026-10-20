@@ -1,5 +1,6 @@
 {% load static %}
 <!doctype html><html lang="pt-BR"><head>
+{% include 'usuarios/google_tag.html' %}
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if request.tenant %}{{ request.tenant.nome }} · Serviços e profissionais{% else %}Agenda · Seu tempo, bem cuidado{% endif %}</title>
 <meta property="og:type" content="website">
