@@ -43,3 +43,11 @@
 .theme-gallery .theme-mini{height:195px;min-height:0;max-height:195px;flex:0 0 195px}
 
 .theme-mini .mini-page{transform:scale(.62);transform-origin:top left;width:161.29%}
+
+.theme-instructions{margin:18px 0 22px;padding:20px 22px;border:1px solid #cfe4d6;border-left:4px solid #287454;border-radius:12px;background:#f4faf6;color:#304a3b}
+.theme-instructions h2{font-size:17px;line-height:1.4;margin:0 0 10px;color:#205b40}
+.theme-instructions p{font-size:14px;line-height:1.7;margin:8px 0;overflow-wrap:anywhere}
+.theme-instructions .theme-save-label{display:inline-block;padding:2px 8px;border-radius:5px;background:#287454;color:#fff;font-size:13px}
+.theme-instructions a{font-weight:600;color:#205b40;text-decoration:underline;text-underline-offset:3px}
+.theme-instructions .theme-instructions-note{font-size:12px;color:#53695c;margin-bottom:0}
+@media(max-width:640px){.theme-instructions{padding:16px}.theme-instructions p{font-size:13px}}

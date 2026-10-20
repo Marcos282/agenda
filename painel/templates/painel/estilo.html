@@ -1,9 +1,15 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Aparência do Site · Personalização{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}?v=compact-5"><link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}?v=tatuagem-1"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}?v=compact-6"><link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}?v=tatuagem-1"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
 {% block painel_content %}
 <p class="eyebrow">Personalização → Aparência do Site</p>
-<h1>Gerencie seus estilos</h1><p>Escolha o melhor estilo para seu site. As alterações só serão publicadas ao salvar e aplicar.</p>
+<h1>Gerencie seus estilos</h1>
+<aside class="theme-instructions" aria-labelledby="theme-instructions-title">
+  <h2 id="theme-instructions-title">Como usar um tema</h2>
+  <p>Escolha o estilo que mais combina com seu site e clique no botão verde <strong class="theme-save-label">Salvar e aplicar</strong> dentro do card. Pronto: o tema será aplicado ao seu site!</p>
+  <p>Quer personalizar textos, ícones ou imagens? Clique em <a href="{% url 'painel:estilo_conteudo' %}">Conteúdo do Site</a>. Essa etapa é <strong>opcional</strong>: você pode usar o tema sem fazer nenhuma personalização.</p>
+  <p class="theme-instructions-note">As alterações só serão publicadas quando você clicar em Salvar e aplicar.</p>
+</aside>
 <nav class="toolbar"><a class="ui-button" href="{% url 'painel:estilo' %}" aria-current="page">Aparência do Site</a><a class="ui-button ui-button-secondary" href="{% url 'painel:estilo_conteudo' %}">Conteúdo do Site</a><a class="ui-button ui-button-secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Abrir site publicado ↗</a></nav>
 {{ form.errors }}
 <p role="status" id="theme-status">Tema publicado: <strong>{{ theme.get_style_display }}</strong> · {{ theme.primary_color }}</p>
