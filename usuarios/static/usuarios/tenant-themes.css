@@ -8,7 +8,7 @@
  --brand-ink:var(--theme-text);--surface:var(--theme-surface);--page:var(--theme-background);
  --text:var(--theme-text);--muted:color-mix(in srgb,var(--theme-text) 75%,var(--theme-background));
  --line:color-mix(in srgb,var(--theme-text) 20%,var(--theme-background));--focus:var(--theme-primary);
- background:var(--page);color:var(--text);font-family:var(--theme-font);min-height:100vh;
+ background:var(--page);color:var(--text);font-family:var(--theme-font);
 }
 .tenant-site :is(h1,h2,h3,.care-title,.wordmark,.shop-brand){font-family:var(--theme-font);color:var(--text)}
 .tenant-site :is(.service-card,.team-card,.care-card,.product-card,.shop-filters,.card,.catalog-search,.booking-status,.detail-art){background:var(--surface);color:var(--text);border-color:var(--line);border-radius:var(--theme-radius);box-shadow:var(--theme-shadow)}
@@ -32,3 +32,6 @@
 
 .tenant-content :is(.hero-copy h1,.hero-copy p){overflow-wrap:anywhere}
 .tenant-site :is(.brand-symbol,.shop-announcement){background:var(--theme-primary);color:var(--theme-on-primary)}
+
+/* Full-screen height belongs only to the public page, never theme thumbnails. */
+body.tenant-site{min-height:100vh}

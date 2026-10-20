@@ -1,6 +1,6 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Aparência do Site · Personalização{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}"><link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}?v=compact-4"><link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}?v=thumbnail-height-1"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
 {% block painel_content %}
 <p class="eyebrow">Personalização → Aparência do Site</p>
 <h1>Gerencie seus estilos</h1><p>Escolha o melhor estilo para seu site. As alterações só serão publicadas ao salvar e aplicar.</p>
@@ -11,11 +11,12 @@
 {% for entry in themes %}
 <article class="theme-card" data-theme="{{ entry.id }}" {% if theme.style == entry.id %}data-published="true"{% endif %}>
 <h2>{{ entry.name }} {% if theme.style == entry.id %}<small>Publicado</small>{% endif %}</h2><p>{{ entry.description }}</p>
-<div class="theme-mini tenant-site theme-{{ entry.id }}" aria-label="Miniatura de {{ entry.name }}" style="--theme-primary:{% if theme.style == entry.id %}{{ theme.primary_color }}{% else %}{{ entry.color }}{% endif %};--theme-on-primary:{{ entry.tokens.on_primary }};--theme-background:{{ entry.tokens.background }};--theme-surface:{{ entry.tokens.surface }};--theme-text:{{ entry.tokens.text }};--theme-radius:{{ entry.tokens.radius }};--theme-shadow:{{ entry.tokens.shadow }};--theme-font:{{ entry.tokens.font }}">
+<div class="theme-mini tenant-site theme-{{ entry.id }}" aria-label="Miniatura de {{ entry.name }}" style="height:150px;min-height:0;max-height:150px;--theme-primary:{% if theme.style == entry.id %}{{ theme.primary_color }}{% else %}{{ entry.color }}{% endif %};--theme-on-primary:{{ entry.tokens.on_primary }};--theme-background:{{ entry.tokens.background }};--theme-surface:{{ entry.tokens.surface }};--theme-text:{{ entry.tokens.text }};--theme-radius:{{ entry.tokens.radius }};--theme-shadow:{{ entry.tokens.shadow }};--theme-font:{{ entry.tokens.font }}">
+<div class="mini-page">
 <div class="mini-nav"><strong>{{ request.tenant.nome }}</strong><span>Serviços · Equipe</span></div>
 <div class="mini-hero"><div><strong>{{ theme.title|default:'Um tempo para você.' }}</strong><p>{{ theme.subtitle|default:'Um cuidado que faz bem.' }}</p><span class="mini-cta">{{ theme.button_text|default:'Explorar serviços' }}</span></div><div class="care-card">{{ theme.icon|default:'✦' }}<br>Seu cuidado</div></div>
-<div class="mini-section">Serviços</div><div class="mini-grid"><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div></div><div class="mini-section">Profissionais</div><div class="mini-team"><span>● Profissional</span><span>Ver serviços ↗</span></div><div class="mini-footer">{{ request.tenant.nome }} · Contato</div>
-</div>
+<div class="mini-section">Serviços</div><div class="mini-grid"><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div><div class="service-card">Serviço<br><span class="mini-cta">Agendar</span></div></div><div class="mini-section">Profissionais</div><div class="mini-team"><span>● Profissional</span><span>Ver serviços ↗</span></div><div class="mini-footer">{{ request.tenant.nome }} · Contato</div>
+</div></div>
 <form method="post" class="theme-choice" data-preview-url="{% url 'painel:estilo_preview' %}">
 {% csrf_token %}<input type="hidden" name="style" value="{{ entry.id }}">
 <fieldset><legend>Escolha a cor principal</legend><div class="theme-swatches">
