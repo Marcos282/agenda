@@ -68,9 +68,9 @@ class TenantThemeTests(BookingFixture, TestCase):
     def test_gallery_palettes_and_persistence(self):
         self.apply(style='podologia', primary_color='#66bfbf')
         response = self.client.get(self.url, **self.host)
-        self.assertEqual(response.content.count(b'class="theme-card"'), 15)
-        self.assertEqual(response.content.count(b'type="color"'), 15)
-        self.assertEqual(response.content.count(b'class="theme-swatch"'), 15*8)
+        self.assertEqual(response.content.count(b'class="theme-card"'), len(THEMES))
+        self.assertEqual(response.content.count(b'type="color"'), len(THEMES))
+        self.assertEqual(response.content.count(b'class="theme-swatch"'), len(THEMES)*len(PALETTE))
         self.assertContains(response, 'Podologia <small>Publicado</small>', html=False)
         self.assertContains(response, 'value="#66bfbf"')
         self.assertEqual(TenantTheme.objects.get(tenant=self.tenant).primary_color, '#66bfbf')
@@ -203,3 +203,23 @@ class TenantThemeTests(BookingFixture, TestCase):
                     self.assertGreaterEqual((max(a,b)+.05)/(min(a,b)+.05), 4.5)
         self.assertEqual(contrast_color('#ffffff'), '#000000')
         self.assertEqual(contrast_color('#000000'), '#ffffff')
+
+    def test_tattoo_theme_content_and_preview(self):
+        response = self.client.get(self.url, **self.host)
+        self.assertContains(response, 'Estúdio de Tatuagem')
+        response = self.client.get(self.content_url, **self.host)
+        self.assertContains(response, 'Sua história, marcada em arte')
+        self.assertEqual(self.apply(style='tatuagem', primary_color='#d6a86c').status_code, 302)
+        self.assertEqual(self.client.post(self.content_url, {
+            'title':'Sua história, marcada em arte', 'icon':'✒', 'button_text':'Conheça nossos serviços'
+        }, **self.host).status_code, 302)
+        response = self.client.get('/', **self.host)
+        self.assertContains(response, 'theme-tatuagem')
+        self.assertContains(response, 'Sua história, marcada em arte')
+        self.assertContains(response, '✒')
+        theme = TenantTheme.objects.get(tenant=self.tenant)
+        self.assertEqual((theme.style,theme.icon),('tatuagem','✒'))
+        before = list(TenantTheme.objects.values())
+        response = self.client.post(self.preview_url, {'style':'tatuagem','primary_color':'#dc2626'}, **self.host)
+        self.assertContains(response, 'theme-tatuagem')
+        self.assertEqual(before, list(TenantTheme.objects.values()))

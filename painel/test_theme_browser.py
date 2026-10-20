@@ -4,6 +4,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
 from playwright.sync_api import sync_playwright, expect
 from tenants.models import Tenant, TenantTheme
+from tenants.themes import THEMES
 from usuarios.models import User
 
 
@@ -24,7 +25,7 @@ class ThemeBrowserTests(StaticLiveServerTestCase):
             page = context.new_page()
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(url+'/painel/estilo')
-            expect(page.locator('.theme-card')).to_have_count(15)
+            expect(page.locator('.theme-card')).to_have_count(len(THEMES))
             first = page.locator('.theme-card').first
             first.locator('[data-color="#dc2626"]').click()
             expect(first.locator('output')).to_have_text('#dc2626')

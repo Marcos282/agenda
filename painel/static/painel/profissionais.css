@@ -1,0 +1,17 @@
+/* Shared dashboard components keep the team page consistent with the main panel. */
+.professionals-page .professional-card{align-items:stretch}
+.professional-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.professionals-page .professional-avatar{display:block;width:56px;height:56px;object-fit:cover;object-position:center;border-radius:14px;flex-shrink:0;box-sizing:border-box}
+.professionals-page .professional-initial{display:grid;place-items:center;font-size:24px;font-weight:600}
+.professional-card .status-active{font-size:10px;padding:5px 8px;gap:4px;box-shadow:none}
+.professional-card .status-active svg{width:14px;height:14px}
+.professional-card .badge.inactive{font-size:10px;padding:5px 8px}
+.professionals-page .professional-card h3{line-height:1.4;overflow-wrap:anywhere;margin-bottom:22px}
+.professional-actions{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.professional-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.professional-shortcuts .dashboard-card-button{justify-content:center;font-size:12px;padding:10px 8px}
+.professional-card-inactive .professional-initial{background:#75818d;box-shadow:none}
+.professionals-empty{grid-column:1/-1;text-align:center;padding:32px 20px;border:1px dashed #cedae5;border-radius:15px;background:#f8fafc}
+.professionals-empty h3{font-size:19px;color:#243b50;margin:0 0 8px}
+.professionals-empty p{font-size:13px;color:#64748b;line-height:1.6;max-width:440px;margin:0 auto 20px}
+.professionals-page :is(a,button):focus-visible{outline:3px solid #245dab;outline-offset:3px}

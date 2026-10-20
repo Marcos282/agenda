@@ -1,18 +1,35 @@
-{% extends 'painel/base.html' %}
-{% block extra_css %}{{ block.super }}
-.professionals-overview{padding:26px;margin-bottom:22px;border:1px solid rgba(40,116,84,.18);border-radius:16px;background:rgba(106,196,145,.13)}
-.professionals-overview h1{margin:0;color:#205b40}
-@media(max-width:600px){.professionals-overview{padding:20px 16px}}
-{% endblock %}
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Profissionais · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/inicio.css' %}"><link rel="stylesheet" href="{% static 'painel/profissionais.css' %}?v=1">{% endblock %}
 {% block painel_content %}
-<div class="professionals-overview"><h1>Profissionais</h1></div>
-<div class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:profissional_novo' %}">+ Novo profissional</a></div>
-<div class="cards">
-{% for profissional in page_obj %}<article class="card">
-{% if profissional.foto %}<img class="photo" src="{% url 'painel:profissional_foto' profissional.pk %}" alt="Foto de {{ profissional.nome }}">{% endif %}
-<h2>{{ profissional.nome }}</h2>
-{% include 'painel/status_ativo.html' with ativo=profissional.ativo %}
-<div class="card-actions"><a class="ui-button ui-button-secondary" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar</a><a class="ui-button ui-button-secondary" href="{% url 'painel:vinculos' profissional.pk %}">Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:disponibilidades' profissional.pk %}">Agenda</a></div>
-</article>{% empty %}<p>Nenhum profissional cadastrado. A agenda de cada novo profissional começa fechada.</p>{% endfor %}
-</div>{% include 'painel/paginacao.html' %}
+<div class="professionals-page">
+  <header class="dashboard-hero">
+    <div>
+      <span class="dashboard-kicker">SUA EQUIPE, BEM ORGANIZADA</span>
+      <h1>Vamos cuidar da sua equipe?</h1>
+      <p>Gerencie seus profissionais, organize os serviços e acompanhe a agenda de cada um.</p>
+      <div class="dashboard-actions"><a class="ui-button dashboard-primary professionals-create" href="{% url 'painel:profissional_novo' %}">＋ Novo profissional</a></div>
+    </div>
+    <div class="dashboard-hero-art" aria-hidden="true"><svg viewBox="0 0 160 160" fill="none"><rect x="20" y="28" width="120" height="112" rx="20" fill="white" fill-opacity=".12" stroke="white" stroke-opacity=".4" stroke-width="2"/><circle cx="70" cy="65" r="18" fill="#a7e8d5"/><path d="M36 120v-9a34 34 0 0 1 68 0v9" stroke="#a7e8d5" stroke-width="7" stroke-linecap="round"/><path d="M110 50a17 17 0 0 1 0 33m14 37v-9a34 34 0 0 0-10-24" stroke="white" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/></svg></div>
+  </header>
+  <div class="dashboard-section-heading"><h2>Seus profissionais</h2><span>{{ page_obj.paginator.count }} profissiona{{ page_obj.paginator.count|pluralize:'l,is' }} cadastrado{{ page_obj.paginator.count|pluralize }}</span></div>
+  <div class="dashboard-grid professionals-grid">
+  {% for profissional in page_obj %}
+    <article class="dashboard-card {% cycle 'dashboard-blue' 'dashboard-purple' 'dashboard-orange' 'dashboard-teal' 'dashboard-rose' 'dashboard-green' %} professional-card{% if not profissional.ativo %} professional-card-inactive{% endif %}">
+      <div class="professional-card-top">
+        {% if profissional.foto %}<img class="professional-avatar" src="{% url 'painel:profissional_foto' profissional.pk %}" alt="Foto de {{ profissional.nome }}" width="56" height="56" loading="lazy">{% else %}<span class="dashboard-icon professional-avatar professional-initial" aria-hidden="true">{{ profissional.nome|first|upper }}</span>{% endif %}
+        {% include 'painel/status_ativo.html' with ativo=profissional.ativo %}
+      </div>
+      <h3>{{ profissional.nome }}</h3>
+      <div class="professional-actions">
+        <a class="ui-button dashboard-card-button professional-edit" href="{% url 'painel:profissional_editar' profissional.pk %}">Editar profissional <span aria-hidden="true">→</span></a>
+        <div class="professional-shortcuts"><a class="ui-button dashboard-card-button professional-services" href="{% url 'painel:vinculos' profissional.pk %}">Serviços</a><a class="ui-button dashboard-card-button professional-agenda" href="{% url 'painel:disponibilidades' profissional.pk %}">Agenda</a></div>
+      </div>
+    </article>
+  {% empty %}
+    <div class="professionals-empty"><h3>Sua equipe começa aqui</h3><p>Nenhum profissional cadastrado. A agenda de cada novo profissional começa fechada.</p><a class="ui-button" href="{% url 'painel:profissional_novo' %}">＋ Cadastrar primeiro profissional</a></div>
+  {% endfor %}
+  </div>
+  {% include 'painel/paginacao.html' %}
+</div>
 {% endblock %}

@@ -16,12 +16,14 @@ THEMES = [
     ('retro', 'Retrô', 'Vintage', '#b34b32', '#f3e7cb', '#fff4d9', '#463826', '12px', '4px 4px 0 #8d714b', 'Georgia, serif'),
     ('podologia', 'Podologia', 'Delicado e acolhedor', '#66bfbf', '#f5f0e8', '#ffffff', '#29494a', '28px', '0 5px 18px #29494a10', 'sans-serif'),
     ('odontologia', 'Odontologia', 'Clínico e profissional', '#2196f3', '#f0fbfc', '#ffffff', '#183c50', '12px', '0 5px 18px #2196f315', 'sans-serif'),
+    ('tatuagem', 'Estúdio de Tatuagem', 'Autoral, artístico e marcante', '#d6a86c', '#121214', '#202024', '#f4f1eb', '6px', '0 8px 24px #00000040', 'Georgia, serif'),
     ('personal-trainer', 'Personal Trainer', 'Esportivo e energético', '#ff6b00', '#151515', '#232323', '#f8f8f8', '4px', '0 5px 18px #00000035', 'sans-serif'),
 ]
 THEME_CHOICES = [('original', 'Aparência original')] + [(t[0], t[1]) for t in THEMES]
 PALETTE = ['#2196f3', '#287454', '#7c3aed', '#ff6b00', '#dc2626', '#151515', '#facc15', '#66bfbf']
-ICONS = [('', 'Original'), ('✂', 'Barbearia'), ('✧', 'Salão de beleza'), ('♡', 'Podologia'), ('🦷', 'Odontologia'), ('⚡', 'Personal Trainer'), ('✦', 'Estética'), ('↗', 'Fisioterapia'), ('☀', 'Psicologia'), ('🐾', 'Pet Shop'), ('❀', 'Massoterapia')]
+ICONS = [('', 'Original'), ('✂', 'Barbearia'), ('✧', 'Salão de beleza'), ('♡', 'Podologia'), ('🦷', 'Odontologia'), ('⚡', 'Personal Trainer'), ('✦', 'Estética'), ('↗', 'Fisioterapia'), ('☀', 'Psicologia'), ('🐾', 'Pet Shop'), ('❀', 'Massoterapia'), ('✒', 'Estúdio de Tatuagem')]
 SUGGESTIONS = {
+    'Estúdio de Tatuagem': 'Sua história, marcada em arte',
     'Barbearia': 'Seu estilo começa aqui', 'Salão de beleza': 'Sua beleza merece atenção especial',
     'Podologia': 'Seus pés merecem cuidado especial', 'Odontologia': 'Seu sorriso é nossa prioridade',
     'Personal Trainer': 'Transforme seus objetivos em resultados', 'Estética': 'Realce sua beleza natural',

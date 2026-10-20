@@ -35,3 +35,9 @@
 
 /* Full-screen height belongs only to the public page, never theme thumbnails. */
 body.tenant-site{min-height:100vh}
+
+/* Tattoo studio: charcoal surfaces, warm ink accents and editorial typography. */
+.tenant-site.theme-tatuagem :is(h1,h2,h3,.care-title){font-family:Georgia,serif;font-weight:700;letter-spacing:-.025em}
+.tenant-site.theme-tatuagem :is(.ui-button,.mini-cta){font-family:system-ui,sans-serif;font-weight:700;letter-spacing:.025em}
+.tenant-site.theme-tatuagem :is(.service-card,.team-card,.care-card,.product-card){border-color:var(--brand-border)}
+.tenant-site.theme-tatuagem .hero-art{background:radial-gradient(ellipse at 70% 15%,var(--brand-border),transparent 65%),var(--theme-surface)}

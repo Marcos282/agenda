@@ -1,42 +1,14 @@
-.services-page{--services-ink:#173e37;--services-accent:#287454;--services-muted:#64776f}
-.services-page .services-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:32px 36px;border-radius:22px;background:radial-gradient(ellipse at 95% 0%,#42786e70,transparent 65%),linear-gradient(120deg,#142f35,#23584b);color:#fff;overflow:hidden}
-.services-hero-copy{max-width:590px;position:relative;z-index:1}
-.services-page .services-eyebrow{display:block;font-size:10px;font-weight:700;letter-spacing:.15em;color:var(--services-accent)}
-.services-hero .services-eyebrow{color:#afe7d4}
-.services-page .services-hero h1{color:#fff;font-size:clamp(27px,3vw,37px);font-weight:650;letter-spacing:-.045em;line-height:1.15;margin:12px 0}
-.services-hero p{font-size:14px;line-height:1.65;color:#d0e3dc;max-width:470px;margin:0 0 22px}
-.services-page .services-create{background:#b3edda;color:#173e37;border:1px solid #b3edda;gap:8px;padding:12px 18px;min-height:44px;font-weight:700;border-radius:11px}
-.services-page .services-create:hover{background:#d0f6e9;border-color:#d0f6e9}
-.services-create>span{font-size:21px;line-height:1}
-.services-hero-art{width:150px;flex:0 0 150px;margin-right:8px;transform:rotate(6deg)}
-.services-hero-art svg{display:block;width:100%;height:auto}
-.services-context{display:flex;align-items:center;gap:12px;padding:14px 17px;border:1px solid #e1eae4;border-radius:12px;background:#f6faf7;margin:18px 0 30px}
-.services-context-icon{color:var(--services-accent);font-size:20px;flex-shrink:0}
-.services-context p{margin:0;font-size:12px;line-height:1.65;color:var(--services-muted)}
-.services-context strong{color:var(--services-ink);font-weight:650}
-.services-section-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
-.services-section-heading h2{font-size:22px;letter-spacing:-.035em;color:var(--services-ink);margin:7px 0 0}
-.services-count{flex-shrink:0;padding:7px 12px;border-radius:999px;background:#edf5f0;border:1px solid #dce9e1;color:#35634d;font-size:12px;font-weight:600}
-.services-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.services-card{min-width:0;display:flex;flex-direction:column;padding:20px;border:1px solid #e0e8e2;border-radius:16px;background:#fff;box-shadow:0 3px 12px #183b2c04;transition:border-color .15s,box-shadow .15s,transform .15s}
-.services-card:hover{border-color:#a8cdb9;box-shadow:0 8px 22px #183b2c0c;transform:translateY(-2px)}
-.services-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.services-icon{width:48px;height:48px;border:1px solid #d9e9df;border-radius:14px;background:#eef6f0;display:grid;place-items:center;color:var(--services-accent);flex-shrink:0}
-.services-icon svg{display:block;width:27px;height:27px}
+/* Reuse the main dashboard's hero, grid, card colors and buttons. */
+.services-note{font-size:12px;color:#64748b;line-height:1.6;margin:-4px 0 20px}
+.services-page .services-card{align-items:stretch}
+.services-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%}
+.services-card .services-icon svg{display:block;width:24px;height:24px}
 .services-card .status-active{font-size:10px;padding:5px 8px;gap:4px;box-shadow:none}
 .services-card .status-active svg{width:14px;height:14px}
-.services-card h3{font-size:18px;line-height:1.4;letter-spacing:-.025em;font-weight:650;color:var(--services-ink);margin:18px 0 5px;overflow-wrap:anywhere}
-.services-card-label{font-size:11px;color:var(--services-muted);margin-bottom:20px}
-.services-page .services-edit{display:flex;justify-content:space-between;width:100%;margin-top:auto;padding:11px 13px;background:#f7faf8;color:var(--services-accent);border:1px solid #e0eae3;border-radius:10px;font-size:12px;min-height:44px}
-.services-page .services-edit:hover{background:#eaf4ee;border-color:#b8d5c4}
-.services-edit>span{font-size:17px;line-height:1}
-.services-card-inactive .services-icon{background:#f3f4f5;border-color:#e4e7e9;color:#69766e}
-.services-card-inactive{background:#fcfdfc}
-.services-empty{grid-column:1/-1;padding:40px 24px;text-align:center;background:#f8fbf9;border:1px dashed #c5d9cc;border-radius:18px}
-.services-empty-icon{display:grid;place-items:center;width:60px;height:60px;margin:0 auto 16px;background:#e9f4ed;border-radius:18px;color:var(--services-accent);font-size:34px}
-.services-empty h3{font-size:21px;color:var(--services-ink);margin:0 0 10px}
-.services-empty p{color:var(--services-muted);font-size:13px;max-width:420px;margin:0 auto 22px}
-.services-page :is(a,button):focus-visible{outline:3px solid #287454;outline-offset:4px}
-@media(max-width:850px){.services-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.services-page .services-hero{padding:26px}.services-hero-art{width:115px;flex-basis:115px;margin:0}}
-@media(max-width:580px){.services-page .services-hero{padding:24px 20px;border-radius:16px}.services-hero-art{display:none}.services-hero p{font-size:13px}.services-grid{grid-template-columns:1fr;gap:12px}.services-card{padding:18px}.services-context{align-items:flex-start;margin-bottom:24px;padding:12px}.services-context strong{display:block}.services-section-heading h2{font-size:19px}.services-section-heading .services-eyebrow{font-size:9px}.services-count{font-size:11px;padding:6px 9px}.services-empty{padding:30px 18px}}
-@media(prefers-reduced-motion:reduce){.services-card{transition:none}.services-card:hover{transform:none}}
+.services-card .badge.inactive{font-size:10px;padding:5px 8px}
+.services-page .services-card h3{overflow-wrap:anywhere;line-height:1.4;margin-bottom:22px}
+.services-card-inactive .services-icon{background:#75818d;box-shadow:none}
+.services-empty{grid-column:1/-1;padding:32px 20px;border:1px dashed #cedae5;border-radius:15px;text-align:center;background:#f8fafc}
+.services-empty h3{font-size:19px;margin:0 0 8px;color:#243b50}
+.services-empty p{font-size:13px;color:#64748b;margin:0 0 20px}
+.services-page :is(a,button):focus-visible{outline:3px solid #245dab;outline-offset:3px}
