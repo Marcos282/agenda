@@ -11,7 +11,7 @@
 .theme-card{padding:10px;border-radius:12px;display:flex;flex-direction:column}
 .theme-card h2{font-size:16px;margin-bottom:4px}
 .theme-card>p{font-size:12px;margin:2px 0 6px}
-.theme-mini{height:150px;min-height:150px;box-sizing:border-box;padding:10px;font-size:8px}
+.theme-mini{height:195px;min-height:195px;box-sizing:border-box;padding:10px;font-size:8px}
 .mini-nav{padding-bottom:6px}
 .mini-nav span{font-size:7px}
 .mini-hero{gap:8px;padding:10px 0}
@@ -38,8 +38,8 @@
 .theme-actions{gap:6px}
 .theme-actions .ui-button{font-size:11px;min-height:36px;padding:6px}
 @media(min-width:1100px){body:has(.theme-gallery)>main{max-width:1380px;padding:22px}}
-@media(max-width:640px){.theme-card{padding:12px}.theme-mini{height:150px;min-height:150px}.theme-swatch{width:32px;min-width:32px}}
+@media(max-width:640px){.theme-card{padding:12px}.theme-mini{height:195px;min-height:195px}.theme-swatch{width:32px;min-width:32px}}
 /* Override the full-page theme minimum height inside thumbnails. */
-.theme-gallery .theme-mini{height:150px;min-height:0;max-height:150px;flex:0 0 150px}
+.theme-gallery .theme-mini{height:195px;min-height:0;max-height:195px;flex:0 0 195px}
 
 .theme-mini .mini-page{transform:scale(.62);transform-origin:top left;width:161.29%}
