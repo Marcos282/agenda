@@ -55,3 +55,5 @@ main{max-width:1120px;background:#fff;margin:28px auto;padding:28px 34px;box-sha
 @media(max-width:480px){.agenda-header{padding:20px;gap:12px}.agenda-header-mark{width:48px;height:48px;border-radius:14px}.agenda-header-mark svg{width:28px;height:28px}.agenda-header .agenda-kicker{font-size:9px;letter-spacing:.08em}.agenda-header p{font-size:13px}.agenda-section-label{align-items:flex-start}.day-arrows{gap:8px}.day-actions .agenda-button{white-space:normal}.booked-summary{padding:18px}.appointment-summary-actions{flex-direction:column}}
 [data-timeline-container][hidden],.closed-day[hidden],.timeline-legend[hidden],.day-footer[hidden]{display:none!important}
 .current-time-indicator{position:absolute;left:0;right:0;border-top:1px dashed #dc2626;pointer-events:none;z-index:4}
+
+.agenda-page [data-agenda-refresh]{text-align:right;font-size:11px;line-height:1.5;color:#87919b;margin:12px 0 0}
