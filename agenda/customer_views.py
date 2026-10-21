@@ -1,6 +1,8 @@
+import json
 from datetime import date, timedelta
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.contrib import messages
 from django.core import signing
 from django.core.exceptions import ValidationError
@@ -113,7 +115,7 @@ def horarios(request, oferta_id, dia):
                 messages.success(request, 'Agendamento confirmado! Seu horário está reservado.')
                 if booking.acesso_token:
                     lembrar_reserva(request, booking)
-                    return redirect('agenda:acompanhar', token=booking.acesso_token)
+                    return salvar_acesso_reservas(request, redirect('agenda:acompanhar', token=booking.acesso_token))
                 return redirect('agenda:detalhe', pk=booking.pk)
     return render(request, 'agenda/horarios.html', {
         'oferta': oferta, 'dia': data, 'horarios': horarios_disponiveis(oferta, data), 'form': form,
@@ -126,7 +128,8 @@ def horarios(request, oferta_id, dia):
 def meus_agendamentos(request):
     bookings = reservas_acessiveis(request).order_by('-inicio', '-pk')
     from django.core.paginator import Paginator
-    return render(request, 'agenda/meus_agendamentos.html', {'agendamentos': Paginator(bookings, 15).get_page(request.GET.get('page'))})
+    response = render(request, 'agenda/meus_agendamentos.html', {'agendamentos': Paginator(bookings, 15).get_page(request.GET.get('page'))})
+    return salvar_acesso_reservas(request, response)
 
 
 @tenant_required
@@ -155,14 +158,48 @@ def render_detalhe(request, booking, link_acesso=None):
         'pode_cancelar': booking.status == 'CONFIRMADO' and booking.inicio > timezone.now()}, status=409 if error else 200)
 
 
+
+# Persistent guest access is independent of login/logout sessions. The cookie
+# contains signed references only; appointment details remain in the database.
+GUEST_COOKIE_NAME = 'reservas_visitante'
+GUEST_COOKIE_AGE = 180 * 24 * 60 * 60
+
+
+def ids_reservas_visitante(request):
+    raw = request.get_signed_cookie(GUEST_COOKIE_NAME, default='[]',
+        salt=f'guest-bookings:{request.tenant.pk}', max_age=GUEST_COOKIE_AGE)
+    try:
+        saved = json.loads(raw)
+    except (TypeError, ValueError):
+        saved = []
+    if not isinstance(saved, list):
+        saved = []
+    session_ids = request.session.get(f'reservas_visitante_{request.tenant.pk}', [])
+    ids = [pk for pk in [*saved[-100:], *session_ids[-100:]]
+           if type(pk) is int and 0 < pk <= 9223372036854775807]
+    return list(dict.fromkeys(ids))[-100:]
+
+
+def salvar_acesso_reservas(request, response):
+    ids = ids_reservas_visitante(request)
+    # Sign only real guest reservations belonging to the current establishment.
+    allowed = set(Agendamento.objects.for_tenant(request.tenant).filter(
+        pk__in=ids, cliente__isnull=True, acesso_token__isnull=False).values_list('pk', flat=True))
+    if allowed:
+        response.set_signed_cookie(GUEST_COOKIE_NAME, json.dumps([pk for pk in ids if pk in allowed]),
+            salt=f'guest-bookings:{request.tenant.pk}', max_age=GUEST_COOKIE_AGE,
+            secure=not settings.DEBUG, httponly=True, samesite='Lax')
+    return response
+
+
 def lembrar_reserva(request, booking):
     key = f'reservas_visitante_{request.tenant.pk}'
-    ids = request.session.get(key, [])
+    ids = ids_reservas_visitante(request)
     request.session[key] = [pk for pk in ids if pk != booking.pk][-99:] + [booking.pk]
 
 
 def reservas_acessiveis(request):
-    ids = request.session.get(f'reservas_visitante_{request.tenant.pk}', [])
+    ids = ids_reservas_visitante(request)
     allowed = Q(pk__in=ids, acesso_token__isnull=False, cliente__isnull=True)
     if request.user.is_authenticated:
         allowed |= Q(cliente=request.user)
@@ -179,4 +216,4 @@ def acompanhar(request, token):
     response = render_detalhe(request, booking, request.build_absolute_uri(request.path))
     response['Referrer-Policy'] = 'same-origin'
     response['X-Robots-Tag'] = 'noindex, nofollow'
-    return response
+    return salvar_acesso_reservas(request, response)

@@ -10,6 +10,6 @@
 {% block account_navigation %}
 <nav class="account-nav" aria-label="Navegação do agendamento">
   <a class="ui-button" href="{% url 'loja' %}">Explorar serviços</a>
-  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="ui-button ui-button-secondary">Sair</button></form>
+  <a class="ui-button ui-button-secondary" href="{% url 'home' %}">Voltar ao início</a>
 </nav>
 {% endblock %}

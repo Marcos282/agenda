@@ -1,7 +1,8 @@
 {% extends 'agenda/base.html' %}
 {% block content %}
 <span class="booking-step">01 / ESCOLHA O DIA</span>
-<h1>Um tempo para você.</h1><p class="booking-subtitle">Use as setas para escolher o dia e selecione seu horário.</p>
+<h1>Um tempo para você.</h1>
+<div class="booking-actions"><a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos →</a></div><p class="booking-subtitle">Use as setas para escolher o dia e selecione seu horário.</p>
 <section class="booking-summary{% if oferta.profissional.foto %} booking-summary-with-photo{% endif %}">{% if oferta.profissional.foto %}<img class="booking-professional-photo" src="{% url 'profissional_foto_publica' oferta.profissional.pk %}" alt="Foto de {{ oferta.profissional.nome }}" width="88" height="88">{% endif %}<span class="booking-symbol" aria-hidden="true">✦</span><div><h2>{{ oferta.servico.nome }}</h2><p>Com {{ oferta.profissional.nome }}</p><strong>R$ {{ oferta.valor|floatformat:2 }} <span>· {{ oferta.duracao_minutos }} min</span></strong></div></section>
 <nav class="booking-day-selector" aria-label="Escolher dia de atendimento">
 {% if dia_anterior %}<a class="booking-day-arrow" href="?dia={{ dia_anterior|date:'Y-m-d' }}" aria-label="Recuar 1 dia">←</a>{% else %}<button class="booking-day-arrow" type="button" disabled aria-label="Recuar 1 dia">←</button>{% endif %}
