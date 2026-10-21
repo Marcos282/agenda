@@ -67,3 +67,16 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
 .billing-summary-grid>.billing-receipts{margin-top:0}
 
 .billing-receipt-button{background:#1769d2!important;border:1px solid #1769d2!important;color:#fff!important;white-space:normal}.billing-receipt-button:hover{background:#1155b0!important}.billing-history-list li{gap:16px;flex-wrap:wrap}.billing-history-list p{margin:6px 0}
+
+.billing-header{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.billing-header-copy{min-width:0;flex:1}
+.billing-expiry{flex:0 0 200px;box-sizing:border-box;padding:18px 20px;border:1px solid #cde4d6;border-radius:16px;background:linear-gradient(135deg,#eaf6ee,#f8fcfa);color:#246345;box-shadow:0 4px 16px #24634508}
+.billing-expiry-label{display:block;font-size:9px;line-height:1.5;font-weight:700;letter-spacing:.11em}
+.billing-expiry-value{display:flex;align-items:center;gap:9px;margin:10px 0 8px}
+.billing-expiry-value svg{width:27px;height:27px;flex-shrink:0}
+.billing-expiry-value strong{font-size:38px;line-height:1;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.billing-expiry-value>span{font-size:14px;align-self:flex-end;padding-bottom:3px}
+.billing-expiry-date{display:block;font-size:11px;line-height:1.5}
+.billing-expiry-soon{background:linear-gradient(135deg,#fff5df,#fffaf1);border-color:#ecd29c;color:#805b1b}
+.billing-expiry-expired{background:linear-gradient(135deg,#fff0ee,#fff8f7);border-color:#efc8c2;color:#9c3c32}
+@media(max-width:700px){.billing-header{align-items:stretch;flex-direction:column;gap:18px}.billing-expiry{flex-basis:auto;align-self:flex-end;width:100%;max-width:260px}}
