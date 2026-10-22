@@ -17,7 +17,7 @@ def site_theme(request):
     media = {}
     for field in ('hero_image', 'background_image'):
         image = getattr(theme, field)
-        if image:
+        if image and getattr(theme, field + '_enabled'):
             if preview is not None and not image._committed:
                 image.open()
                 media[field] = 'data:image/webp;base64,' + base64.b64encode(image.read()).decode()

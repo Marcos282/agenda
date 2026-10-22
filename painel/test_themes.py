@@ -223,3 +223,50 @@ class TenantThemeTests(BookingFixture, TestCase):
         response = self.client.post(self.preview_url, {'style':'tatuagem','primary_color':'#dc2626'}, **self.host)
         self.assertContains(response, 'theme-tatuagem')
         self.assertEqual(before, list(TenantTheme.objects.values()))
+
+    def test_image_can_be_disabled_reenabled_and_removed_independently(self):
+        theme = TenantTheme.objects.create(tenant=self.tenant,
+            hero_image=f'tenants/{self.tenant.pk}/hero.webp',
+            background_image=f'tenants/{self.tenant.pk}/background.webp')
+        response = self.client.post(self.content_url, {
+            'hero_image_action':'hide', 'background_image_action':'show'
+        }, **self.host)
+        self.assertEqual(response.status_code, 302)
+        theme.refresh_from_db()
+        self.assertFalse(theme.hero_image_enabled)
+        self.assertTrue(theme.hero_image.name)
+        self.assertTrue(theme.background_image_enabled)
+        response = self.client.get('/', **self.host)
+        self.assertNotIn('hero_image', response.context['theme_media'])
+        self.assertIn('background_image', response.context['theme_media'])
+        self.client.post(self.content_url, {'hero_image_action':'show', 'background_image_action':'hide'}, **self.host)
+        response = self.client.get('/', **self.host)
+        self.assertIn('hero_image', response.context['theme_media'])
+        self.assertNotIn('background_image', response.context['theme_media'])
+        with patch.object(theme.hero_image.storage, 'delete') as delete:
+            response = self.client.post(self.content_url, {'hero_image_action':'remove'}, **self.host)
+            self.assertEqual(response.status_code, 302)
+            delete.assert_not_called()
+        theme.refresh_from_db()
+        self.assertFalse(theme.hero_image.name)
+        self.assertTrue(theme.background_image.name)
+        self.assertFalse(theme.background_image_enabled)
+
+    def test_preview_image_actions_do_not_persist(self):
+        theme = TenantTheme.objects.create(tenant=self.tenant,
+            hero_image=f'tenants/{self.tenant.pk}/hero.webp')
+        for action in ['hide','remove']:
+            response = self.client.post(self.preview_url, {
+                'preview_kind':'content', 'hero_image_action':action
+            }, **self.host)
+            self.assertEqual(response.status_code, 200)
+            self.assertNotIn('hero_image', response.context['theme_media'])
+            theme.refresh_from_db()
+            self.assertTrue(theme.hero_image.name)
+            self.assertTrue(theme.hero_image_enabled)
+        response = self.client.post(self.content_url, {
+            'hero_image':self.upload(), 'hero_image_action':'remove'
+        }, **self.host)
+        self.assertEqual(response.status_code, 200)
+        theme.refresh_from_db()
+        self.assertTrue(theme.hero_image.name.endswith('hero.webp'))

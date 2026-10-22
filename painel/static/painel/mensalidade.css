@@ -73,7 +73,7 @@ body>main{max-width:960px;margin:28px auto;padding:28px}
 .billing-expiry{flex:0 0 200px;box-sizing:border-box;padding:18px 20px;border:1px solid #cde4d6;border-radius:16px;background:linear-gradient(135deg,#eaf6ee,#f8fcfa);color:#246345;box-shadow:0 4px 16px #24634508}
 .billing-expiry-label{display:block;font-size:9px;line-height:1.5;font-weight:700;letter-spacing:.11em}
 .billing-expiry-value{display:flex;align-items:center;gap:9px;margin:10px 0 8px}
-.billing-expiry-value svg{width:27px;height:27px;flex-shrink:0}
+.billing-page .billing-expiry-value>svg{display:block;width:22px;height:22px;max-width:22px;max-height:22px;flex:0 0 22px}
 .billing-expiry-value strong{font-size:38px;line-height:1;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .billing-expiry-value>span{font-size:14px;align-self:flex-end;padding-bottom:3px}
 .billing-expiry-date{display:block;font-size:11px;line-height:1.5}

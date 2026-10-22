@@ -1,6 +1,6 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Acesso ao sistema · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-8">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-9">{% endblock %}
 {% block painel_content %}
 <div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
@@ -11,7 +11,7 @@
     </div>
     <aside class="billing-expiry{% if prazo_expirado %} billing-expiry-expired{% elif dias_restantes <= 5 %} billing-expiry-soon{% endif %}" aria-label="Prazo de acesso ao sistema">
       <span class="billing-expiry-label">{% if prazo_expirado %}ACESSO VENCIDO{% elif expira_hoje %}VENCE HOJE{% else %}SEU TEMPO RESTANTE{% endif %}</span>
-      <div class="billing-expiry-value"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-11 4 2 2 4-4"/></svg><strong>{{ dias_restantes }}</strong><span>dia{{ dias_restantes|pluralize }}</span></div>
+      <div class="billing-expiry-value"><svg width="22" height="22" style="width:22px;height:22px;max-width:22px;flex-shrink:0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-11 4 2 2 4-4"/></svg><strong>{{ dias_restantes }}</strong><span>dia{{ dias_restantes|pluralize }}</span></div>
       <span class="billing-expiry-date">{% if prazo_expirado %}Venceu em{% else %}Vencimento:{% endif %} {{ data_expiracao|date:"d/m/Y" }}</span>
     </aside>
   </header>

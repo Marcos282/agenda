@@ -10,6 +10,35 @@ class AppearanceForm(forms.ModelForm):
 
 
 class ContentForm(forms.ModelForm):
+    IMAGE_ACTIONS = [('show', 'Ativar imagem'), ('hide', 'Desativar sem remover'), ('remove', 'Remover imagem do site')]
+    hero_image_action = forms.ChoiceField(label='Imagem principal: exibição', choices=IMAGE_ACTIONS, required=False)
+    background_image_action = forms.ChoiceField(label='Imagem de fundo: exibição', choices=IMAGE_ACTIONS, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in ('hero_image', 'background_image'):
+            self.fields[field + '_action'].initial = 'show' if getattr(self.instance, field + '_enabled') else 'hide'
+        self.order_fields(['title', 'subtitle', 'description', 'button_text', 'icon',
+                           'hero_image', 'hero_image_action', 'background_image', 'background_image_action'])
+
+    def clean(self):
+        cleaned = super().clean()
+        for field in ('hero_image', 'background_image'):
+            action = cleaned.get(field + '_action') or ('show' if getattr(self.instance, field + '_enabled') else 'hide')
+            if action == 'remove':
+                if field in self.files:
+                    self.add_error(field, 'Escolha entre enviar uma nova imagem ou remover a imagem atual.')
+                else:
+                    cleaned[field] = ''
+            setattr(self.instance, field + '_enabled', action != 'hide')
+        return cleaned
+
+    def visual_values(self):
+        values = {field: self.cleaned_data[field] for field in self._meta.fields}
+        for field in ('hero_image_enabled', 'background_image_enabled'):
+            values[field] = getattr(self.instance, field)
+        return values
+
     class Meta:
         model = TenantTheme
         fields = ['title', 'subtitle', 'description', 'button_text', 'icon', 'hero_image', 'background_image']

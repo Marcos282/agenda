@@ -140,4 +140,6 @@ class TenantTheme(models.Model):
     icon = models.CharField('Ícone decorativo', max_length=4, choices=ICONS, blank=True)
     hero_image = models.ImageField('Imagem principal', storage=theme_storage, upload_to=theme_upload_path, blank=True)
     background_image = models.ImageField('Imagem de fundo', storage=theme_storage, upload_to=theme_upload_path, blank=True)
+    hero_image_enabled = models.BooleanField(default=True)
+    background_image_enabled = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)

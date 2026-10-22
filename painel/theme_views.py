@@ -40,7 +40,7 @@ def content(request):
     if request.method == 'POST' and form.is_valid():
         # Only content fields are updated; concurrent appearance edits are preserved.
         with transaction.atomic():
-            TenantTheme.objects.update_or_create(tenant=request.tenant, defaults=form.cleaned_data)
+            TenantTheme.objects.update_or_create(tenant=request.tenant, defaults=form.visual_values())
         messages.success(request, 'Conteúdo visual salvo.')
         return redirect('painel:estilo_conteudo')
     return render(request, 'painel/estilo_conteudo.html', {'form': form, 'suggestions': SUGGESTIONS})
@@ -76,7 +76,8 @@ def restore(request):
         return HttpResponseBadRequest('Confirme a restauração da aparência original.')
     # File references are cleared, files themselves are retained for recovery.
     defaults = {'style': 'original', 'primary_color': '#287454', 'title': '', 'subtitle': '',
-                'description': '', 'button_text': '', 'icon': '', 'hero_image': '', 'background_image': ''}
+                'description': '', 'button_text': '', 'icon': '', 'hero_image': '', 'background_image': '',
+                'hero_image_enabled': True, 'background_image_enabled': True}
     TenantTheme.objects.filter(tenant=request.tenant).update(**defaults)
     messages.success(request, 'Aparência original restaurada. Os arquivos de imagem foram preservados.')
     return redirect('painel:estilo')
