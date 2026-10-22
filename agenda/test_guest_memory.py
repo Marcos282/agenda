@@ -70,3 +70,48 @@ class GuestReservationMemoryTests(BookingFixture, TestCase):
         response = self.client.get(reverse('agenda:escolher_data',args=[self.offer.pk]), **self.host)
         self.assertContains(response, 'Meus agendamentos →')
         self.assertContains(response, reverse('agenda:meus'))
+
+    def test_past_reservation_is_shown_as_history_without_changing_record(self):
+        from datetime import timedelta
+        from unittest.mock import patch
+        from agenda.models import Agendamento
+        self.reserve()
+        booking = Agendamento.objects.get()
+        before = Agendamento.objects.filter(pk=booking.pk).values().get()
+        with patch('agenda.customer_views.timezone.now', return_value=booking.fim+timedelta(seconds=1)):
+            detail = self.client.get(reverse('agenda:detalhe',args=[booking.pk]), **self.host)
+            self.assertContains(detail, 'Horário já passou')
+            self.assertContains(detail, 'Esta é uma reserva do seu histórico.')
+            self.assertNotContains(detail, '<h1>Seu horário está reservado.</h1>', html=True)
+            self.assertNotContains(detail, 'Confirmar cancelamento')
+            listing = self.client.get(reverse('agenda:meus'), **self.host)
+            self.assertContains(listing, 'Horário já passou')
+        self.assertEqual(before, Agendamento.objects.filter(pk=booking.pk).values().get())
+
+    def test_future_and_current_reservation_display(self):
+        from unittest.mock import patch
+        from agenda.models import Agendamento
+        self.reserve()
+        booking = Agendamento.objects.get()
+        url = reverse('agenda:detalhe', args=[booking.pk])
+        self.assertContains(self.client.get(url, **self.host), '<h1>Seu horário está reservado.</h1>', html=True)
+        with patch('agenda.customer_views.timezone.now', return_value=booking.inicio):
+            response = self.client.get(url, **self.host)
+            self.assertContains(response, 'Horário em andamento')
+            self.assertNotContains(response, 'Confirmar cancelamento')
+        with patch('agenda.customer_views.timezone.now', return_value=booking.fim):
+            self.assertContains(self.client.get(url, **self.host), 'Horário já passou')
+
+    def test_attendance_and_cancelled_status_take_priority(self):
+        from agenda.models import Agendamento
+        from agenda.customer_views import apresentacao_reserva
+        from django.utils import timezone
+        self.reserve()
+        booking = Agendamento.objects.get()
+        booking.status = 'CANCELADO'
+        self.assertEqual(apresentacao_reserva(booking, booking.fim)['status'], 'Cancelado')
+        booking.status = 'NAO_COMPARECEU'
+        self.assertEqual(apresentacao_reserva(booking, booking.fim)['status'], 'Não compareceu')
+        booking.status = 'CONFIRMADO'
+        booking.conclusao_confirmada_em = timezone.now()
+        self.assertEqual(apresentacao_reserva(booking, booking.fim)['status'], 'Concluído')

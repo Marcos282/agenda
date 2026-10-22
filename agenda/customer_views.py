@@ -128,7 +128,11 @@ def horarios(request, oferta_id, dia):
 def meus_agendamentos(request):
     bookings = reservas_acessiveis(request).order_by('-inicio', '-pk')
     from django.core.paginator import Paginator
-    response = render(request, 'agenda/meus_agendamentos.html', {'agendamentos': Paginator(bookings, 15).get_page(request.GET.get('page'))})
+    page_obj = Paginator(bookings, 15).get_page(request.GET.get('page'))
+    now = timezone.now()
+    for booking in page_obj:
+        booking.apresentacao = apresentacao_reserva(booking, now)
+    response = render(request, 'agenda/meus_agendamentos.html', {'agendamentos': page_obj})
     return salvar_acesso_reservas(request, response)
 
 
@@ -143,6 +147,22 @@ def detalhe(request, pk):
     return render_detalhe(request, booking, link)
 
 
+def apresentacao_reserva(booking, now):
+    """Time-aware display only; never infer attendance or change stored status."""
+    if booking.status == 'CANCELADO':
+        return {'titulo': 'Agendamento cancelado', 'status': 'Cancelado'}
+    if booking.status == 'NAO_COMPARECEU':
+        return {'titulo': 'Não compareceu', 'status': 'Não compareceu'}
+    if booking.conclusao_confirmada_em:
+        return {'titulo': 'Atendimento concluído', 'status': 'Concluído'}
+    if booking.fim <= now:
+        return {'titulo': 'O horário deste agendamento já passou.', 'status': 'Horário já passou',
+                'aviso': 'Esta é uma reserva do seu histórico. O horário terminou; isso não confirma automaticamente o comparecimento.'}
+    if booking.inicio <= now:
+        return {'titulo': 'O horário do seu atendimento já começou.', 'status': 'Horário em andamento'}
+    return {'titulo': 'Seu horário está reservado.', 'status': 'Confirmado'}
+
+
 def render_detalhe(request, booking, link_acesso=None):
     error = None
     if request.method == 'POST':
@@ -153,9 +173,11 @@ def render_detalhe(request, booking, link_acesso=None):
         else:
             messages.success(request, 'Agendamento cancelado. O horário voltou a ficar disponível.')
             return redirect(request.path)
+    now = timezone.now()
+    booking.apresentacao = apresentacao_reserva(booking, now)
     return render(request, 'agenda/detalhe.html', {'agendamento': booking, 'erro': error,
         'link_acesso': link_acesso,
-        'pode_cancelar': booking.status == 'CONFIRMADO' and booking.inicio > timezone.now()}, status=409 if error else 200)
+        'pode_cancelar': booking.status == 'CONFIRMADO' and booking.inicio > now}, status=409 if error else 200)
 
 
 
