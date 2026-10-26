@@ -1,12 +1,12 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Acesso ao sistema · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=planos-9">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/mensalidade.css' %}?v=profissional-30">{% endblock %}
 {% block painel_content %}
 <div class="billing-page"{% if aguardar_pagamento %} data-payment-poll="{% url 'painel:mensalidade' %}?atualizar=1" data-payment-version="{{ versao_pagamentos }}"{% endif %}>
   <header class="billing-header">
     <div class="billing-header-copy">
       <span class="billing-eyebrow">CONTA DO ESTABELECIMENTO</span>
-      <h1>Escolha o plano do seu estabelecimento</h1>
+      <h1>Plano Profissional</h1>
       <p>Renove por 30 dias quando precisar. Sem assinatura ou cobrança automática.</p>
     </div>
     <aside class="billing-expiry{% if prazo_expirado %} billing-expiry-expired{% elif dias_restantes <= 5 %} billing-expiry-soon{% endif %}" aria-label="Prazo de acesso ao sistema">
@@ -16,16 +16,16 @@
     </aside>
   </header>
 
-  <div class="billing-plan-grid">
+  <div class="billing-plan-grid billing-single-plan">
     {% for plano in planos %}
     <section class="billing-card billing-choice {% if request.tenant.plano == plano.id %}billing-choice-selected{% endif %}">
       <div class="billing-card-heading"><h2>{{ plano.nome }}</h2>{% if request.tenant.plano == plano.id %}<span class="billing-status-label">Seu plano atual</span>{% endif %}</div>
-      <p class="billing-price">R$ {{ plano.valor }}<span> / 30 dias</span></p>
+      <p class="billing-price">R$ {{ plano.valor|floatformat:2 }}<span>/mês</span></p>
       <p class="billing-plan-description">{{ plano.agenda }}</p>
       <ul class="billing-features">
         <li>{{ plano.agenda }}</li><li>Agendamentos online</li><li>WhatsApp</li><li>Histórico de clientes</li><li>Loja online e QR Code</li>
       </ul>
-      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="comprar_plano"><input type="hidden" name="plano" value="{{ plano.id }}"><button class="ui-button billing-pay" type="submit">Escolher este plano</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="comprar_plano"><input type="hidden" name="plano" value="{{ plano.id }}"><button class="ui-button billing-pay" type="submit">Renovar por 30 dias</button></form>
     </section>
     {% endfor %}
   </div>

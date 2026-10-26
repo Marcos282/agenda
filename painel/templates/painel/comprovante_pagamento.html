@@ -17,6 +17,6 @@
 <div><dt>Nova validade</dt><dd>{{ pagamento.nova_validade|date:"d/m/Y"|default:"Não registrada no pagamento antigo" }}</dd></div>
 </dl>
 {% if pagamento.nova_validade %}<p>Próximo vencimento: {{ pagamento.nova_validade|date:"d/m/Y" }}</p>{% endif %}
-<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}">Voltar aos planos</a>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}">Voltar à mensalidade</a>
 </section></div>
 {% endblock %}

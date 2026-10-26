@@ -29,13 +29,16 @@ class MensalidadeTests(TestCase):
         self.assertNotContains(page, 'Oferta de lançamento')
         self.assertNotContains(page, '20 primeiros cadastros')
         self.assertFalse(page.context['checkout_configurado'])
-        self.assertContains(page, 'Escolher este plano')
+        self.assertContains(page, 'Renovar por 30 dias')
+        self.assertContains(page, 'R$ 30,00')
+        self.assertNotContains(page, 'Plano Individual')
+        self.assertEqual(len(page.context['planos']), 1)
         self.assertEqual(page.context['dias_restantes'], 30)
         self.assertIn('no-store', page['Cache-Control'])
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, self.tenant.data_expiracao)
 
-    @override_settings(PLATFORM_ACCESS_PRICE='30.00')
+    @override_settings(PLATFORM_MONTHLY_PRICE='30.00')
     def test_expiration_is_read_only_and_payment_is_disabled(self):
         self.tenant.expira_em = date(2026, 12, 31)
         self.tenant.save()
@@ -48,9 +51,21 @@ class MensalidadeTests(TestCase):
         self.assertEqual(self.tenant.expira_em, date(2026, 12, 31))
 
     @override_settings(PLATFORM_ACCESS_PRICE='NaN')
-    def test_invalid_config_does_not_enable_checkout(self):
+    def test_legacy_price_config_is_ignored(self):
         page = self.client.get(self.url, **self.host)
         self.assertEqual(page.context['valor_acesso'], Decimal('30.00'))
+
+    @override_settings(PLATFORM_MONTHLY_PRICE='39.90', PLATFORM_ACCESS_PRICE='999')
+    def test_panel_and_platform_admin_show_configured_monthly_price(self):
+        page = self.client.get(self.url, **self.host)
+        self.assertContains(page, 'R$ 39,90')
+        self.assertNotContains(page, '50,00')
+        self.assertNotContains(page, 'Plano Individual')
+        self.assertEqual(page.context['valor_acesso'], Decimal('39.90'))
+        self.client.force_login(self.platform_admin)
+        page = self.client.get(reverse('admin:tenants_tenant_change', args=[self.tenant.pk]), HTTP_HOST='localhost')
+        self.assertContains(page, 'R$ 39,90 / mês')
+        self.assertNotContains(page, 'Plano Individual')
 
     def test_permissions_and_tenant_scope(self):
         self.assertEqual(self.client.get(self.url, HTTP_HOST='wanessa.localhost').status_code, 403)
@@ -64,7 +79,9 @@ class MensalidadeTests(TestCase):
         url = reverse('admin:tenants_tenant_change', args=[self.tenant.pk])
         page = self.client.get(url, HTTP_HOST='localhost')
         self.assertContains(page, 'name="expira_em"')
-        response = self.client.post(url, {'nome':'Marcos', 'subdomain':'marcos', 'plano':'INDIVIDUAL', 'ativo':'on',
+        self.assertContains(page, 'R$ 30,00 / mês')
+        self.assertNotContains(page, 'Plano Individual')
+        response = self.client.post(url, {'nome':'Marcos', 'subdomain':'marcos', 'plano':'PROFISSIONAL', 'ativo':'on',
             'limite_agendamentos_cliente_dia':2, 'limite_agendamentos_cliente_futuros':2,
             'timezone':'America/Sao_Paulo', 'expira_em':'31/12/2026', '_save':'Salvar'}, HTTP_HOST='localhost')
         self.assertEqual(response.status_code, 302)

@@ -18,7 +18,7 @@ class RegistroTests(TestCase):
         return dict(subdomain='meusalao', email='dono@example.test', password1='Segura!Cadastro2026', password2='Segura!Cadastro2026', **changes)
 
     def test_create_tenant_and_only_tenant_admin(self):
-        data=self.data();data.update(tipo='CLIENTE', is_superuser='true', is_staff='true', expira_em='2099-12-31')
+        data=self.data();data.update(tipo='CLIENTE', is_superuser='true', is_staff='true', expira_em='2099-12-31', plano='INDIVIDUAL', valor='0.01')
         response=self.client.post('/registro', data, HTTP_HOST='127.0.0.1:8000')
         self.assertRedirects(response, '/registro/concluido/', fetch_redirect_response=False)
         tenant=Tenant.objects.get(subdomain='meusalao');user=User.objects.get(email=data['email'])
@@ -27,6 +27,9 @@ class RegistroTests(TestCase):
         self.assertEqual(tenant.expira_em, timezone.localtime(tenant.criado_em, ZoneInfo(tenant.timezone)).date() + timedelta(days=30))
         self.assertEqual(user.tipo,User.Tipo.ADMIN)
         self.assertFalse(user.is_staff or user.is_superuser)
+        from pagamentos.models import CheckoutAcesso, PagamentoAcesso
+        self.assertFalse(CheckoutAcesso.objects.exists())
+        self.assertFalse(PagamentoAcesso.objects.exists())
         self.assertTrue(user.check_password(data['password1']))
         page=self.client.get(response.url,HTTP_HOST='127.0.0.1:8000')
         self.assertContains(page,'href="/login/"')
@@ -40,6 +43,25 @@ class RegistroTests(TestCase):
         for nome in ['Ana', 'Bia', 'Carlos']:
             Profissional.objects.create(tenant=tenant, nome=nome, ativo=True)
         self.assertEqual(Profissional.objects.filter(tenant=tenant, ativo=True).count(), 3)
+
+    @override_settings(PLATFORM_MONTHLY_PRICE='39.90', PLATFORM_ACCESS_PRICE='999')
+    def test_single_plan_price_is_shared_by_public_signup_and_metadata(self):
+        from usuarios.seo import platform_metadata
+        import json
+
+        home = self.client.get('/', HTTP_HOST='localhost')
+        signup = self.client.get('/registro', HTTP_HOST='localhost')
+        for page in (home, signup):
+            self.assertContains(page, 'Plano Profissional')
+            self.assertContains(page, '39,90')
+            self.assertNotContains(page, 'Plano Individual')
+            self.assertNotContains(page, 'plano Equipe')
+            self.assertNotContains(page, '50,00')
+        self.assertContains(home, 'class="pricing-card"', count=1)
+        offers = json.loads(platform_metadata()['seo_json'])['@graph'][2]['offers']
+        self.assertEqual(len(offers), 1)
+        self.assertEqual(offers[0]['name'], 'Plano Profissional')
+        self.assertEqual(offers[0]['price'], '39.90')
 
     def test_invalid_and_duplicate_registration(self):
         for slug in ['www','foo.bar','-salao','salao-']:

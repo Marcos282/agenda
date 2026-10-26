@@ -13,13 +13,14 @@ from mercadopago.config import RequestOptions
 from mercadopago.errors.exceptions import MercadoPagoError
 from requests.exceptions import RequestException
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.urls import reverse
 
 from tenants.models import Tenant
+from tenants.pricing import monthly_price
 from .models import CheckoutAcesso, PagamentoAcesso
 
 logger = logging.getLogger(__name__)
@@ -39,13 +40,7 @@ def provider_error(status):
 
 
 def preco_acesso():
-    try:
-        value = Decimal(str(settings.PLATFORM_ACCESS_PRICE))
-        if value.is_finite() and 0 < value <= Decimal('999999.99') and value == value.quantize(Decimal('.01')):
-            return value
-    except (InvalidOperation, ValueError, TypeError):
-        pass
-    return None
+    return monthly_price()
 
 
 def public_url():
@@ -131,11 +126,14 @@ def criar_checkout(*, tenant_id, retorno_url, diagnostico=None, preparar=False, 
     # Serialize repeated clicks for this tenant. A timeout never grants access.
     with transaction.atomic():
         tenant = Tenant.objects.select_for_update().get(pk=tenant_id, ativo=True)
-        if plano is not None:
-            tenant.plano = plano
-        if tenant.plano not in Tenant.Plano.values:
-            raise CheckoutError('Escolha um plano válido.')
-        amount = tenant.valor_plano
+        if plano not in (None, Tenant.Plano.PROFISSIONAL):
+            raise CheckoutError('Somente o Plano Profissional está disponível.')
+        tenant.plano = Tenant.Plano.PROFISSIONAL
+        try:
+            amount = preco_acesso()
+        except ImproperlyConfigured as exc:
+            logger.error('Invalid platform monthly price configuration')
+            raise CheckoutError(str(exc)) from exc
         checkouts = CheckoutAcesso.objects.filter(
             tenant_id=tenant_id, plano=tenant.plano, valor=amount, producao=settings.MERCADO_PAGO_LIVE_MODE,
             retorno_url=retorno_url, expira_em__gt=timezone.now(),
@@ -310,11 +308,8 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
         if record.creditado_em is None or status not in {'pending', 'in_process', 'authorized'}:
             record.status = status
         if status == 'approved' and record.creditado_em is None:
-            tenant.plano = checkout.plano
-            try:
-                tenant.full_clean()
-            except ValidationError as exc:
-                raise CheckoutError('Pagamento recebido, mas a troca de plano aguarda a desativação dos profissionais extras. ' + ' '.join(exc.messages)) from exc
+            # Legacy checkout snapshots remain intact; they must never downgrade access.
+            tenant.plano = Tenant.Plano.PROFISSIONAL
             today = timezone.localdate(timezone=ZoneInfo(tenant.timezone))
             record.validade_anterior = tenant.data_expiracao
             tenant.expira_em = max(today, record.validade_anterior) + timedelta(days=checkout.dias)

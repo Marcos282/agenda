@@ -2,7 +2,7 @@
 
 A página comercial possui o botão **Contratar**, que leva a `/registro` (também aceita `/registro/`). O formulário pede subdomínio, e-mail, senha e confirmação. O sufixo visual é `.tacombinado.net`.
 
-O cadastro cria atomicamente um tenant ativo e seu usuário ADMIN, sem privilégios de superusuário/staff. O nome inicial do estabelecimento é o subdomínio. O estabelecimento recebe 30 dias de acesso grátis a partir da data local do cadastro; depois, o pagamento mensal é gerenciado pela tela Mensalidade. Subdomínios reservados, inválidos ou duplicados e e-mails já utilizados são recusados. As senhas passam pelos validadores Django.
+O cadastro cria atomicamente um tenant ativo no Plano Profissional e seu usuário ADMIN, sem privilégios de superusuário/staff. O nome inicial do estabelecimento é o subdomínio. O estabelecimento recebe 30 dias de acesso grátis a partir da data local do cadastro; depois, o pagamento mensal é gerenciado pela tela Mensalidade. A tela de cadastro mostra o preço definido por `PLATFORM_MONTHLY_PRICE=30.00` (R$ 30,00/mês) e o acesso a todas as funcionalidades, sem escolha de plano. O cadastro não cria cobrança. Subdomínios reservados, inválidos ou duplicados e e-mails já utilizados são recusados. As senhas passam pelos validadores Django.
 
 Após criar a conta, o botão de acesso usa o domínio `TENANT_BASE_DOMAIN`: em desenvolvimento, `seunegocio.localhost`; em produção, configure `TENANT_BASE_DOMAIN=tacombinado.net`. O usuário entra no subdomínio com seu e-mail e senha. A sessão não é compartilhada entre domínios. O DNS wildcard e o certificado dos subdomínios devem estar configurados em produção.
 

@@ -1,5 +1,4 @@
 from datetime import timedelta
-from decimal import Decimal
 from django.utils import timezone as django_timezone
 
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -9,6 +8,7 @@ from django.core.validators import RegexValidator, MinValueValidator
 from django.db import models, transaction
 from .themes import THEME_CHOICES, ICONS
 from .theme_uploads import theme_storage, theme_upload_path
+from .pricing import monthly_price
 
 
 subdomain_validator = RegexValidator(
@@ -29,18 +29,11 @@ class Tenant(models.Model):
         INDIVIDUAL = 'INDIVIDUAL', 'Plano Individual'
         PROFISSIONAL = 'PROFISSIONAL', 'Plano Profissional'
 
-    plano = models.CharField(max_length=12, choices=Plano.choices, default=Plano.INDIVIDUAL)
+    plano = models.CharField(max_length=12, choices=[(Plano.PROFISSIONAL, Plano.PROFISSIONAL.label)], default=Plano.PROFISSIONAL)
 
     @property
     def valor_plano(self):
-        return {self.Plano.INDIVIDUAL: Decimal('30.00'), self.Plano.PROFISSIONAL: Decimal('50.00')}[self.plano]
-
-    def clean(self):
-        super().clean()
-        if self.pk and self.plano == self.Plano.INDIVIDUAL:
-            from profissionais.models import Profissional
-            if Profissional.objects.filter(tenant_id=self.pk, ativo=True).count() > 1:
-                raise ValidationError('Para escolher o Plano Individual, escolha qual profissional permanecerá ativo e desative os demais. Nenhum cadastro será excluído.')
+        return monthly_price()
 
     nome = models.CharField(max_length=150)
     razao_social = models.CharField("Razão social", max_length=200, blank=True, default="")
@@ -63,7 +56,7 @@ class Tenant(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=models.Q(plano__in=["INDIVIDUAL", "PROFISSIONAL"]), name="tenant_plano_valido"),
+            models.CheckConstraint(condition=models.Q(plano="PROFISSIONAL"), name="tenant_plano_valido"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_futuros__gte=1), name="tenant_limite_agendamentos_futuros_positivo"),
             models.CheckConstraint(condition=models.Q(limite_agendamentos_cliente_dia__gte=1), name="tenant_limite_ag_dia_positivo"),
             models.CheckConstraint(condition=models.Q(intervalo_grade_minutos__gt=0), name="tenant_grade_positiva"),

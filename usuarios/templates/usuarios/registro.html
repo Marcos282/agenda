@@ -5,6 +5,7 @@
 {% endblock %}
 {% block content %}
 <h1>Seu negócio no Tá Combinado</h1><p>Escolha o endereço do seu estabelecimento e crie seu acesso de administrador.</p>
+<p><strong>Plano Profissional — R$ {{ valor_mensalidade|floatformat:2 }}/mês.</strong> Todas as funcionalidades e profissionais ilimitados. Os primeiros 30 dias são grátis, sem cobrança automática.</p>
 <form method="post">{% csrf_token %}{{ form.non_field_errors }}
 <label for="{{ form.subdomain.id_for_label }}">{{ form.subdomain.label }}</label>
 <div class="domain-field">{{ form.subdomain }}<span id="domain-suffix">.tacombinado.net</span></div>{{ form.subdomain.errors }}

@@ -1,5 +1,6 @@
 body>main{max-width:960px;margin:28px auto;padding:28px}
 .billing-page{--billing-line:var(--line);--billing-muted:var(--muted);--billing-ink:var(--brand-ink)}
+.billing-page .billing-single-plan{grid-template-columns:minmax(0,1fr);max-width:720px}
 .billing-header{margin:4px 0 24px}
 .billing-header h1{margin:7px 0;font-size:30px;letter-spacing:-.035em}
 .billing-header p{margin:0;color:var(--billing-muted);font-size:14px}

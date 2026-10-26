@@ -107,7 +107,7 @@ Em `/loja/`, cada tenant tem uma vitrine própria, com cards de serviços, preç
 
 O domínio principal (`http://localhost:8000/`) apresenta a plataforma para donos de estabelecimentos. Os subdomínios continuam exibindo os serviços de cada tenant, incluindo sua loja em `/loja/`.
 
-Configure `PLATFORM_SALES_URL` no ambiente com o link comercial (por exemplo, WhatsApp ou formulário de contato). Sem essa variável, os botões direcionam para a apresentação dos recursos na própria página. A cor principal continua controlada por `--brand-color` em `usuarios/static/usuarios/theme.css`.
+A página apresenta somente o Plano Profissional, com todas as funcionalidades e profissionais ilimitados. O preço mostrado e cobrado vem de `PLATFORM_MONTHLY_PRICE=30.00` (R$ 30,00/mês); os botões direcionam ao cadastro.
 
 ### Agendamentos online
 
@@ -133,7 +133,7 @@ No painel, o botão **QR Code da loja**, ao lado de **WhatsApp**, mostra o QR Co
 
 ### Acesso ao sistema por 30 dias
 
-O botão **Acesso ao sistema**, ao lado do QR Code da loja, permite comprar 30 dias pelo Checkout Pro do Mercado Pago, sem assinatura ou cobrança automática. O preço padrão é R$ 30,00. O acesso é renovado após a confirmação do pagamento, preservando os dias restantes. Cada estabelecimento começa com 30 dias grátis; após o vencimento, novos agendamentos ficam pausados e o administrador pode acessar a página de renovação. Consulte [configuração e testes](docs/mensalidade.md).
+O botão **Acesso ao sistema**, ao lado do QR Code da loja, permite comprar 30 dias do Plano Profissional pelo Checkout Pro do Mercado Pago, sem assinatura ou cobrança automática. `PLATFORM_MONTHLY_PRICE=30.00` define a mensalidade de R$ 30,00/mês. O acesso é renovado após a confirmação do pagamento, preservando os dias restantes. Cada estabelecimento começa com 30 dias grátis; após o vencimento, novos agendamentos ficam pausados e o administrador pode acessar a página de renovação. A migração do plano antigo preserva vencimentos e histórico financeiro, sem cobranças adicionais. Consulte [configuração e testes](docs/mensalidade.md).
 
 ## Limite diário por cliente
 
@@ -141,6 +141,6 @@ Em **Painel → Meu cadastro → Agendamentos por cliente**, o administrador def
 
 A reserva registra o WhatsApp utilizado para preservar a identificação mesmo que o cadastro mude depois. As migrações preenchem as reservas anteriores com o número disponível no cadastro. Ao atingir o limite, o cliente recebe uma mensagem para escolher outra data ou cancelar uma reserva.
 
-- [Planos por estabelecimento e publicação](docs/planos-estabelecimento.md)
+- [Plano Profissional único, migração e publicação](docs/planos-estabelecimento.md)
 
 - [Mensalidade, confirmação Mercado Pago e comprovantes](docs/pagamentos-mensalidade.md)

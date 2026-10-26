@@ -7,7 +7,7 @@ from tenants.models import Tenant
 class CheckoutAcesso(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT, related_name='checkouts_acesso')
-    plano = models.CharField(max_length=12, choices=Tenant.Plano.choices, default=Tenant.Plano.INDIVIDUAL)
+    plano = models.CharField(max_length=12, choices=Tenant.Plano.choices, default=Tenant.Plano.PROFISSIONAL)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     dias = models.PositiveSmallIntegerField(default=30)
     producao = models.BooleanField(default=False)

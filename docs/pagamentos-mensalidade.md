@@ -2,9 +2,9 @@
 
 ## Fluxo
 
-`/painel/mensalidade/` oferece `INDIVIDUAL` (R$ 30 / 30 dias, até um profissional ativo) e `PROFISSIONAL` (R$ 50 / 30 dias, profissionais ilimitados). Cada botão cria/reutiliza uma preferência e abre o Checkout Pro. A seleção não muda o plano: somente uma aprovação verificada no backend aplica o plano comprado e a renovação.
+`/painel/mensalidade/` oferece somente o Plano Profissional, com profissionais ilimitados e todas as funcionalidades. `PLATFORM_MONTHLY_PRICE=30.00` define o preço de R$ 30,00/mês. O botão **Renovar por 30 dias** cria/reutiliza uma preferência e abre o Checkout Pro. Somente uma aprovação verificada no backend aplica a renovação. O pagamento continua avulso, sem débito automático.
 
-Reutilizamos `Tenant`, `CheckoutAcesso`, `PagamentoAcesso`, o serviço de envio de preferências e a validação de webhook já existentes. Não há um segundo sistema de cobrança. O UUID do checkout é a `external_reference` e também a chave de idempotência na criação da preferência. Preços são calculados pelo identificador do plano, nunca por valores enviados no navegador.
+Reutilizamos `Tenant`, `CheckoutAcesso`, `PagamentoAcesso`, o serviço de envio de preferências e a validação de webhook já existentes. Não há um segundo sistema de cobrança. O UUID do checkout é a `external_reference` e também a chave de idempotência na criação da preferência. Preços de novas compras vêm de `PLATFORM_MONTHLY_PRICE`, nunca de valores enviados no navegador. A confirmação usa o valor persistido da cobrança, inclusive em pagamentos antigos.
 
 ## Credenciais e configuração
 
@@ -17,6 +17,7 @@ MERCADO_PAGO_PUBLIC_URL=https://tacombinado.net
 TENANT_BASE_DOMAIN=tacombinado.net
 DJANGO_DEBUG=false
 MERCADO_PAGO_LIVE_MODE=true
+PLATFORM_MONTHLY_PRICE=30.00
 ```
 
 Mantenha `MERCADO_PAGO_ACCESS_TOKEN` e `MERCADO_PAGO_WEBHOOK_SECRET` com os valores privados já configurados. Não publique o `.env`. No painel do Mercado Pago habilite o evento **Pagamentos** e configure o webhook HTTPS com a mesma chave secreta do servidor.
@@ -41,11 +42,11 @@ A confirmação bloqueia a linha do tenant dentro de uma transação. O `payment
 
 A nova validade é `max(data atual no timezone do tenant, validade atual) + 30 dias`. Exemplo: validade em 05/11/2026 e pagamento antes disso resulta em 05/12/2026. Uma cobrança pendente/recusada não concede dias.
 
-## Downgrade
+## Plano único e pagamentos legados
 
-O Individual exige até um profissional ativo. O checkout pode ser aberto mesmo com vários profissionais ativos. A validação ocorre ao confirmar o pagamento; a aplicação do plano fica pendente até o estabelecimento escolher quem permanecerá ativo. Não depende de quais usuários estão logados. O estabelecimento deve escolher quem continuará ativo e desativar os demais; nenhum cadastro ou histórico é excluído.
+A migração para o Profissional preserva vencimentos, profissionais, checkouts e pagamentos, sem chamadas ao Mercado Pago ou cobranças adicionais. Não há downgrade nem limite de profissionais por plano. Contratações diretas de `INDIVIDUAL` ou `SIMPLES` são recusadas no backend.
 
-Se profissionais extras surgirem entre checkout e aprovação, a confirmação não altera plano nem validade; o webhook retorna 503 para permitir reenvio. Após desativar os extras, uma nova confirmação processa a cobrança uma única vez. O retorno do painel também pode reconsultar o pagamento. A regra de continuar com múltiplos profissionais até deslogar não está implementada.
+Checkouts legados mantêm seu plano e valor originais nos comprovantes. Pagamentos antigos confirmados após a migração concedem os 30 dias uma única vez, mantendo o estabelecimento no Profissional. Não exigem desativar profissionais nem pagar diferença. Veja [planos-estabelecimento.md](planos-estabelecimento.md) para a operação de migração.
 
 ## Registro e comprovantes
 
@@ -75,7 +76,7 @@ As migrations precisam ser aplicadas antes de reiniciar o processo com o novo c�
 TENANT_BASE_DOMAIN=localhost DJANGO_DEBUG=true myenv/bin/python manage.py test pagamentos painel.test_mensalidade tenants.test_plans --noinput
 ```
 
-Os testes usam o SDK simulado; não geram cobranças reais. Cobrem assinatura, validação financeira, referências, retorno forjado, isolamento de comprovantes, histórico, aprovação, pendência, vencimento, upgrade/downgrade, migração e concorrência.
+Os testes usam o SDK simulado; não geram cobranças reais. Cobrem assinatura de webhooks, validação financeira, referências, retorno forjado, isolamento de comprovantes, histórico, aprovação, pendência, vencimento, plano único, migração sem cobranças e concorrência.
 
 ## Arquivos
 
@@ -84,7 +85,7 @@ Os testes usam o SDK simulado; não geram cobranças reais. Cobrem assinatura, v
 - `tenants/models.py`, `tenants/middleware.py`, `tenants/migrations/0014_remove_tenant_tenant_plano_valido_alter_tenant_plano_and_more.py`: plano e retornos centrais.
 - `barbe/urls.py`, `painel/urls.py`: webhook, retornos e comprovante.
 - `painel/mensalidade_views.py`, `painel/templates/painel/mensalidade.html`, `painel/templates/painel/comprovante_pagamento.html`, `painel/static/painel/mensalidade.css`: interface e consulta por tenant.
-- `profissionais/models.py`: validação do plano Profissional.
+- `profissionais/models.py`: profissionais sem restrição de quantidade por plano.
 - `pagamentos/tests.py`, `pagamentos/test_receipts.py`, `painel/test_mensalidade.py`, `tenants/test_plans.py`: testes adaptados e novos.
 - Fixtures em `agenda/test_booking.py`, `agenda/tests.py`, `painel/tests.py`, `whatsapp/test_returns.py`: identificador renomeado.
 

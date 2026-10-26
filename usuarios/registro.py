@@ -12,6 +12,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_http_methods
 from tenants.domains import tenant_base_domain_for_host
 from tenants.models import Tenant, subdomain_validator
+from tenants.pricing import monthly_price
 from .models import User
 
 
@@ -75,7 +76,7 @@ def registro(request):
         else:
             request.session['registro_tenant'] = tenant.pk
             return redirect('registro_concluido')
-    return render(request, 'usuarios/registro.html', {'form':form})
+    return render(request, 'usuarios/registro.html', {'form':form, 'valor_mensalidade':monthly_price()})
 
 
 @require_http_methods(['GET'])

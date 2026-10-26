@@ -1,6 +1,6 @@
 # Acesso ao sistema por 30 dias — Checkout Pro
 
-O administrador usa **Acesso ao sistema** no painel (`/painel/mensalidade/`) para comprar 30 dias. O preço padrão é R$ 30,00. É um pagamento avulso: não há assinatura, cartão salvo pelo sistema ou cobrança automática. O SDK oficial `mercadopago==3.6.0` cria a preferência e redireciona o comprador ao `init_point` do Checkout Pro.
+O administrador usa **Acesso ao sistema** no painel (`/painel/mensalidade/`) para comprar 30 dias do Plano Profissional, único plano disponível, com todas as funcionalidades. O preço é definido por `PLATFORM_MONTHLY_PRICE=30.00`, exibido como R$ 30,00/mês. É um pagamento avulso: não há assinatura, cartão salvo pelo sistema ou cobrança automática. O SDK oficial `mercadopago==3.6.0` cria a preferência e redireciona o comprador ao `init_point` do Checkout Pro.
 
 O saldo de dias nunca fica negativo: depois do vencimento, permanece em zero e o acesso é marcado como expirado. Uma aprovação adiciona 30 dias a `max(hoje, vencimento atual)`, considerando o fuso do estabelecimento. Cada identificador de pagamento só concede acesso uma vez, inclusive quando o webhook e o retorno chegam juntos. Pagamentos pendentes ou recusados não concedem acesso. Duas cobranças distintas aprovadas concedem dois períodos de 30 dias.
 
@@ -16,14 +16,14 @@ myenv/bin/python manage.py migrate
 Configure no `.env` ou em `.local-settings.json` (arquivos ignorados pelo Git):
 
 ```dotenv
-PLATFORM_ACCESS_PRICE=30.00
+PLATFORM_MONTHLY_PRICE=30.00
 MERCADO_PAGO_ACCESS_TOKEN=seu-access-token
 MERCADO_PAGO_WEBHOOK_SECRET=segredo-da-assinatura-do-webhook
 MERCADO_PAGO_PUBLIC_URL=https://seu-dominio-publico
 MERCADO_PAGO_LIVE_MODE=false
 ```
 
-`PLATFORM_MONTHLY_PRICE` continua como fallback para o preço existente, sem implementar recorrência. O Access Token e o segredo do webhook são diferentes. Nenhum deles vai para o navegador. A configuração exige uma URL HTTPS e as duas credenciais antes de habilitar o botão.
+`PLATFORM_MONTHLY_PRICE` é a fonte única do preço, sem implementar recorrência. A configuração legada `PLATFORM_ACCESS_PRICE` não altera a mensalidade. O Access Token e o segredo do webhook são diferentes. Nenhum deles vai para o navegador. A configuração exige uma URL HTTPS e as duas credenciais antes de habilitar o botão.
 
 Em **Mercado Pago Developers → Suas integrações → sua aplicação → Webhooks**, configure o evento **Pagamentos (payment)** com a URL:
 

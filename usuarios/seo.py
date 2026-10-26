@@ -7,6 +7,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET
 from django.urls import reverse
+from tenants.pricing import monthly_price
 
 
 def platform_url():
@@ -35,9 +36,7 @@ def platform_metadata():
              'applicationCategory': 'BusinessApplication', 'operatingSystem': 'Web',
              'description': description,
              'offers': [
-                 {'@type': 'Offer', 'name': 'Plano Individual', 'price': '30.00',
-                  'priceCurrency': 'BRL', 'description': 'Acesso por 30 dias para um profissional ativo.'},
-                 {'@type': 'Offer', 'name': 'Plano Profissional', 'price': '50.00',
+                 {'@type': 'Offer', 'name': 'Plano Profissional', 'price': f'{monthly_price():.2f}',
                   'priceCurrency': 'BRL', 'description': 'Acesso por 30 dias com profissionais e agendas ilimitados.'},
              ]},
         ],

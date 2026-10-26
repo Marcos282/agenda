@@ -33,6 +33,7 @@ def home(request, profissional_id=None):
         raise Http404
 
     if request.tenant is None:
+        from tenants.pricing import monthly_price
         form = EstabelecimentoForm(request.GET if 'estabelecimento' in request.GET else None)
         if form.is_bound and form.is_valid():
             tenant = Tenant.objects.filter(subdomain=form.cleaned_data['estabelecimento'], ativo=True).first()
@@ -44,7 +45,7 @@ def home(request, profissional_id=None):
             form.add_error('estabelecimento', 'Estabelecimento não encontrado. Confira o endereço informado.')
         return render(request, 'usuarios/plataforma.html', {
             'estabelecimento_form': form,
-            'sales_url': getattr(settings, 'PLATFORM_SALES_URL', ''),
+            'valor_mensalidade': monthly_price(),
         })
 
     ofertas = ProfissionalServico.objects.for_tenant(request.tenant).disponiveis().select_related('profissional', 'servico')

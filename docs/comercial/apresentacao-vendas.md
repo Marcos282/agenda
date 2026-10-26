@@ -20,11 +20,11 @@ Indicado para barbearias, salões de beleza, manicures, profissionais de estéti
 
 - Histórico de clientes: acompanhe serviços, cancelamentos e ausências no painel.
 
-- Planos acessíveis: R$ 30,00 ou R$ 50,00 por 30 dias, conforme o tamanho da equipe.
+- Plano Profissional: R$ 30,00/mês, com todas as funcionalidades e profissionais ilimitados.
 
 ## Experimente por 30 dias grátis
 
-Novos estabelecimentos recebem 30 dias de acesso gratuito para conhecer o sistema e avaliar seu uso na rotina. Depois do período inicial, escolha o plano adequado ao seu negócio.
+Novos estabelecimentos recebem 30 dias de acesso gratuito no Plano Profissional para conhecer o sistema e avaliar seu uso na rotina. Depois do período inicial, renove pelo painel.
 
 ## Como o Tá Combinado facilita sua rotina
 
@@ -76,18 +76,18 @@ Registre faltas, atrasos e atendimentos realizados. O painel também apresenta u
 
 Defina limites de reservas por WhatsApp para o mesmo dia. Os cadastros e históricos de cada estabelecimento ficam separados dos dados dos demais negócios.
 
-## Planos e condições
+## Plano Profissional e condições
 
-|  | Plano Individual | Plano Profissional |
-| --- | --- | --- |
-| Valor por 30 dias | R$ 30,00 | R$ 50,00 |
-| Profissionais ativos | Até 1 | Sem limite |
-| Página e loja de serviços | Incluídas | Incluídas |
-| Agendamento e agenda | Incluídos | Incluídos |
-| Histórico de clientes e QR Code | Incluídos | Incluídos |
-| Recursos de WhatsApp | Incluídos, mediante ativação | Incluídos, mediante ativação |
+Um único plano de R$ 30,00/mês inclui:
 
-O Plano Individual atende quem trabalha sozinho. O Plano Profissional permite reunir a equipe e organizar os atendimentos por profissional.
+- Profissionais ativos e agendas sem limite.
+- Página e loja de serviços.
+- Agendamento online e gestão da agenda.
+- Histórico de clientes e QR Code.
+- Recursos de WhatsApp, mediante ativação.
+- Todas as funcionalidades existentes do painel.
+
+O valor publicado corresponde à configuração `PLATFORM_MONTHLY_PRICE=30.00`.
 
 A renovação compra 30 dias de acesso, com pagamento avulso pelo Mercado Pago, sem cobrança automática. A liberação acontece após a confirmação do pagamento. O painel permite acompanhar as cobranças e consultar comprovantes aprovados.
 

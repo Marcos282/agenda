@@ -22,7 +22,7 @@ from .decorators import admin_tenant_required
 
 
 class EscolhaPlanoForm(forms.Form):
-    plano = forms.ChoiceField(choices=Tenant.Plano.choices)
+    plano = forms.ChoiceField(choices=[(Tenant.Plano.PROFISSIONAL, Tenant.Plano.PROFISSIONAL.label)])
 
 
 def versao_pagamentos(tenant):
@@ -171,8 +171,7 @@ def mensalidade(request):
     return render(request, 'painel/mensalidade.html', {
         'valor_acesso': request.tenant.valor_plano,
         'planos': [
-            {'id': Tenant.Plano.INDIVIDUAL, 'nome': 'Plano Individual', 'valor': '30,00', 'agenda': '1 agenda / profissional ativo'},
-            {'id': Tenant.Plano.PROFISSIONAL, 'nome': 'Plano Profissional', 'valor': '50,00', 'agenda': 'Profissionais e agendas ilimitados'},
+            {'id': Tenant.Plano.PROFISSIONAL, 'nome': 'Plano Profissional', 'valor': request.tenant.valor_plano, 'agenda': 'Profissionais e agendas ilimitados'},
         ],
         'checkout_configurado': configurado(),
         'modo_teste': not settings.MERCADO_PAGO_LIVE_MODE,

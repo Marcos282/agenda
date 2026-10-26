@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from pagamentos.models import CheckoutAcesso, PagamentoAcesso
-from pagamentos.services import confirmar_pagamento, criar_checkout, CheckoutError
+from pagamentos.services import confirmar_pagamento, criar_checkout
 from profissionais.models import Profissional
 from tenants.models import Tenant
 from usuarios.models import User
@@ -84,7 +84,7 @@ class ReceiptTests(TestCase):
         self.assertTrue(page.url.startswith('https://marcos.localhost/painel/mensalidade/?checkout='))
         self.sdk.payment.return_value.get.assert_not_called()
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano,'INDIVIDUAL')
+        self.assertEqual(self.tenant.plano,'PROFISSIONAL')
         self.assertFalse(PagamentoAcesso.objects.exists())
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(reverse('mercado_pago_pendente'),{'external_reference':str(self.checkout.pk)},HTTP_HOST='localhost').status_code,302)
@@ -102,7 +102,7 @@ class ReceiptTests(TestCase):
         self.assertEqual(payload['external_reference'],str(checkout.pk))
         self.assertNotIn('server-secret-token',str(payload))
 
-    def test_downgrade_rechecks_professionals_at_confirmation(self):
+    def test_legacy_confirmation_renews_without_restricting_professionals(self):
         self.tenant.plano='PROFISSIONAL'
         self.tenant.save(update_fields=['plano'])
         self.checkout.plano='INDIVIDUAL'
@@ -111,13 +111,16 @@ class ReceiptTests(TestCase):
         self.sdk.payment.return_value.get.return_value['response']['transaction_amount']=30
         for name in ['Ana','Bia']:
             Profissional.objects.create(tenant=self.tenant,nome=name)
-        with self.assertRaises(CheckoutError):
-            self.approve()
-        self.assertFalse(PagamentoAcesso.objects.filter(creditado_em__isnull=False).exists())
-        second=Profissional.objects.filter(tenant=self.tenant).last()
-        second.ativo=False
-        second.save()
+        self.approve()
         self.approve()
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.plano,'INDIVIDUAL')
+        self.assertEqual(self.tenant.plano,'PROFISSIONAL')
+        self.assertEqual(self.tenant.expira_em,date(2026,12,5))
         self.assertEqual(Profissional.objects.filter(tenant=self.tenant).count(),2)
+        self.assertEqual(Profissional.objects.filter(tenant=self.tenant,ativo=True).count(),2)
+        self.checkout.refresh_from_db()
+        self.assertEqual(self.checkout.plano,'INDIVIDUAL')
+        self.assertEqual(self.checkout.valor,30)
+        page=self.client.get(reverse('painel:comprovante_pagamento',args=['789']),**self.host)
+        self.assertContains(page,'Plano Individual')
+        self.assertContains(page,'30,00')
