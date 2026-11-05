@@ -47,6 +47,59 @@ class PublicHomeTests(TestCase):
         self.assertNotContains(page,'privado@example.com')
         self.assertNotContains(page,'11987654321')
         self.assertContains(page,'confirme seu agendamento online')
+        self.assertNotContains(page, 'Registre-se')
+
+    def test_hero_has_no_action_buttons(self):
+        for path in ['/', f'/profissional/{self.prof.pk}/']:
+            with self.subTest(path=path):
+                page = self.client.get(path, HTTP_HOST='marcos.localhost')
+                self.assertNotContains(page, 'Explorar serviços')
+                self.assertNotContains(page, 'Conhecer a equipe')
+                self.assertNotContains(page, 'hero-actions')
+                self.assertNotContains(page, 'hero-primary')
+                hero = page.content.decode().split('<section class="hero">', 1)[1].split('</section>', 1)[0]
+                self.assertNotIn('<a ', hero)
+                self.assertIn('class="hero-note"', hero)
+                self.assertIn('class="hero-art"', hero)
+
+    def test_catalog_search_form_is_not_rendered(self):
+        for path in ['/', f'/profissional/{self.prof.pk}/']:
+            with self.subTest(path=path):
+                page = self.client.get(path, HTTP_HOST='marcos.localhost')
+                self.assertNotContains(page, 'Buscar serviço ou profissional')
+                self.assertNotContains(page, 'class="catalog-search"')
+                self.assertNotContains(page, 'id="service-search"')
+                self.assertNotContains(page, 'id="professional-filter"')
+                self.assertContains(page, 'class="service-grid"')
+                self.assertContains(page, 'class="team-grid"')
+                self.assertContains(page, 'class="service-card service-card-link"')
+
+    def test_entire_service_card_links_to_its_booking(self):
+        from django.urls import reverse
+
+        service = Servico.objects.create(tenant=self.tenant, nome='Barba')
+        other_offer = ProfissionalServico.objects.create(
+            tenant=self.tenant, profissional=self.prof, servico=service,
+            valor='20.00', duracao_minutos=20,
+        )
+        for path in ['/', reverse('home_profissional', args=[self.prof.pk])]:
+            with self.subTest(path=path):
+                page = self.client.get(path, HTTP_HOST='marcos.localhost')
+                self.assertNotContains(page, 'Agendar horário')
+                self.assertContains(page, 'class="service-card service-card-link"', count=2)
+                for offer in [self.offer, other_offer]:
+                    url = reverse('agenda:escolher_data', args=[offer.pk])
+                    opening = f'<a class="service-card service-card-link" href="{url}" aria-label="Agendar {offer.servico.nome} com {self.prof.nome}">'
+                    self.assertContains(page, opening, count=1)
+                    card = page.content.decode().split(opening, 1)[1].split('</a>', 1)[0]
+                    self.assertNotIn('<a ', card)
+                    self.assertNotIn('<button', card)
+                    self.assertIn('class="professional-avatar"', card)
+                    self.assertIn(f'<h3>{offer.servico.nome}</h3>', card)
+                    self.assertIn(f'{offer.duracao_minutos} min', card)
+                    self.assertIn(f'<span class="professional-name">{self.prof.nome}</span><strong class="service-price">', card)
+                    self.assertIn(f'</span><span class="service-duration">{offer.duracao_minutos} min</span></div>', card)
+                    self.assertNotIn('class="service-meta"', card)
 
     def test_search_and_filter(self):
         self.assertEqual(list(self.get('?q=corte').context['ofertas']),[self.offer])
@@ -140,7 +193,18 @@ class PublicHomeTests(TestCase):
             Image.new('RGB', (64, 64), 'green').save(photo, 'JPEG')
             self.prof.foto.save('photo.jpg', ContentFile(photo.getvalue()))
             url = reverse('profissional_foto_publica', args=[self.prof.pk])
-            self.assertContains(self.get(), 'src="'+url+'"')
+            other_prof = Profissional.objects.create(tenant=self.tenant, nome='Ana')
+            ProfissionalServico.objects.create(
+                tenant=self.tenant, profissional=other_prof, servico=self.offer.servico,
+                valor='50.00', duracao_minutos=30,
+            )
+            for path in ['/', reverse('home_profissional', args=[self.prof.pk])]:
+                with self.subTest(path=path):
+                    page = self.client.get(path, HTTP_HOST='marcos.localhost')
+                    self.assertContains(page, f'<span class="professional-avatar"><span aria-hidden="true">J</span><img src="{url}" alt="Foto de João" width="56" height="56" loading="lazy" onerror="this.hidden = true"></span>', count=1, html=True)
+                    self.assertNotContains(page, 'service-icon')
+                    if path == '/':
+                        self.assertContains(page, '<span class="professional-avatar"><span aria-hidden="true">A</span></span>', count=1, html=True)
             response = self.client.get(url, HTTP_HOST='marcos.localhost')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response['Cache-Control'], 'public, max-age=300')
@@ -155,3 +219,4 @@ class PublicHomeTests(TestCase):
             self.prof.ativo=False
             self.prof.save()
             self.assertEqual(self.client.get(url, HTTP_HOST='marcos.localhost').status_code, 404)
+

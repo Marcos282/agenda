@@ -17,7 +17,8 @@ def contato_rodape(tenant):
     if not address and owner:
         address = ', '.join(filter(None, [owner.endereco, owner.numero_endereco, owner.bairro,
             ' - '.join(filter(None, [owner.cidade, owner.estado]))]))
-    phone = getattr(tenant, 'telefone', '') or (owner.whatsapp if owner else '')
+    # The WhatsApp shown in "Meu cadastro" is the owner's; tenant.telefone is only a fallback.
+    phone = (owner.whatsapp if owner else '') or getattr(tenant, 'telefone', '')
     whatsapp_url = ''
     if phone:
         try:

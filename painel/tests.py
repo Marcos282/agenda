@@ -188,6 +188,12 @@ class PanelTests(TestCase):
         self.assertEqual(self.marcos.razao_social, 'Minha Empresa LTDA')
         self.assertEqual(self.marcos.telefone, '+5511999991234')
         self.assertEqual(self.admin.cpf, '')
+        # The owner's WhatsApp wins even if the tenant phone drifted elsewhere.
+        type(self.marcos).objects.filter(pk=self.marcos.pk).update(telefone='+5521922334455')
+        self.marcos.refresh_from_db()
+        footer = render_to_string('usuarios/footer_contact.html', {'request': SimpleNamespace(tenant=self.marcos)})
+        self.assertIn('https://wa.me/5511999991234', footer)
+        self.assertNotIn('5521922334455', footer)
         self.assertEqual(self.wanessa.razao_social, '')
         saved = self.get(reverse('painel:meu_cadastro'))
         self.assertEqual(saved.context['form']['cpf'].value(), 'Minha Empresa LTDA')

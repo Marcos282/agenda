@@ -46,12 +46,14 @@ A configuração local atual usa:
 
 ```dotenv
 DEV_PUBLIC_HOST=evergreen-distance-playmaker.ngrok-free.dev
-DEV_TENANT_SUBDOMAIN=marcos
+DEV_TENANT_SUBDOMAIN=novahost
 MERCADO_PAGO_PUBLIC_URL=https://evergreen-distance-playmaker.ngrok-free.dev
 MERCADO_PAGO_LIVE_MODE=false
 ```
 
-Quando `DEBUG=True`, o host mostra `marcos` para visitantes. As rotas de cadastro ficam disponíveis no mesmo túnel; após o login, o estabelecimento é definido pela conta autenticada, permitindo testar também novos cadastros sem subdomínios extras. Os domínios normais mantêm a separação por subdomínio. Entre com o administrador de Marcos em `https://evergreen-distance-playmaker.ngrok-free.dev/login/` e abra **Acesso ao sistema**. Se o domínio do túnel mudar, atualize as configurações locais e o webhook no Mercado Pago. Reinicie o Django após editar as configurações locais.
+Quando `DEBUG=True`, o host mostra `novahost` para visitantes. As rotas de cadastro ficam disponíveis no mesmo túnel; após o login, o estabelecimento é definido pela conta autenticada, permitindo testar também novos cadastros sem subdomínios extras. Os domínios normais mantêm a separação por subdomínio. Entre com o administrador de Novahost em `https://evergreen-distance-playmaker.ngrok-free.dev/login/` e abra **Acesso ao sistema**. Se o domínio do túnel mudar, atualize as configurações locais e o webhook no Mercado Pago. Reinicie o Django após editar as configurações locais.
+
+Use somente o hostname em `DEV_PUBLIC_HOST`, sem `https://` nem caminho. Em desenvolvimento, essa configuração adiciona o domínio exato a `ALLOWED_HOSTS` e a origem HTTPS a `CSRF_TRUSTED_ORIGINS`; não é necessário editar essas listas nem liberar todos os hosts. Em `.local-settings.json`, use um objeto JSON com as chaves `DEV_PUBLIC_HOST` e `DEV_TENANT_SUBDOMAIN`; no `.env`, use o formato acima.
 
 Use contas e meios de pagamento de teste conforme a documentação oficial. Comprador e vendedor devem ser contas distintas. A aplicação não envia um e-mail de comprador fixo: o usuário se identifica no checkout. O modo de teste aceita apenas pagamentos cujo `live_mode` retornado pelo Mercado Pago seja `false`, e pode alterar o vencimento do estabelecimento de teste. Não use uma compra real para validar este ambiente.
 

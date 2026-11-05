@@ -2,6 +2,7 @@
 from pathlib import Path
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
+from django.urls import reverse
 from playwright.sync_api import sync_playwright, expect
 from tenants.models import Tenant, TenantTheme
 from tenants.themes import THEMES
@@ -11,6 +12,57 @@ from usuarios.models import User
 @override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost'], DEV_PUBLIC_HOST='',
                    PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ThemeBrowserTests(StaticLiveServerTestCase):
+    def test_responsive_banners_keep_hero_text_and_respect_visibility(self):
+        tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
+        theme = TenantTheme.objects.create(
+            tenant=tenant, style='tatuagem',
+            hero_image=f'tenants/{tenant.pk}/desktop.webp',
+            background_image=f'tenants/{tenant.pk}/mobile.webp',
+        )
+        url = self.live_server_url.replace('localhost', 'novahost.localhost')
+        desktop_url = reverse('theme_image', args=['hero_image'])
+        mobile_url = reverse('theme_image', args=['background_image'])
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+            for width in [1440, 769, 768, 390, 320]:
+                with self.subTest(width=width):
+                    page = browser.new_page(viewport={'width': width, 'height': 1000})
+                    requests = []
+                    page.on('request', lambda request: requests.append(request.url))
+                    for image_url in [desktop_url, mobile_url]:
+                        page.route('**' + image_url + '*', lambda route: route.fulfill(
+                            content_type='image/svg+xml',
+                            body='<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="green"/></svg>',
+                        ))
+                    page.goto(url + '/')
+                    image = page.locator('.hero-banner img')
+                    expected = desktop_url if width > 768 else mobile_url
+                    other = mobile_url if width > 768 else desktop_url
+                    expect(image).to_be_visible()
+                    self.assertTrue(image.evaluate('el => el.complete && el.naturalWidth > 0'))
+                    self.assertIn(expected, image.evaluate('el => el.currentSrc'))
+                    self.assertEqual(image.evaluate('el => getComputedStyle(el).objectFit'), 'cover')
+                    self.assertEqual(len([request for request in requests if expected in request]), 1)
+                    self.assertFalse(any(other in request for request in requests))
+                    expect(page.locator('.hero-copy h1')).to_be_visible()
+                    expect(page.locator('.hero-copy>p')).to_be_visible()
+                    self.assertEqual(page.locator('.hero').evaluate('el => getComputedStyle(el).backgroundImage'), 'none')
+                    self.assertEqual(page.locator('.care-card').evaluate('el => getComputedStyle(el).visibility'), 'hidden')
+                    self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), width)
+                    page.close()
+            browser.close()
+        for field, width in [('background_image_enabled', 768), ('hero_image_enabled', 769)]:
+            setattr(theme, field, False)
+            theme.save(update_fields=[field])
+            with sync_playwright() as p:
+                browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+                page = browser.new_page(viewport={'width': width, 'height': 1000})
+                page.goto(url + '/')
+                self.assertNotIn('/aparencia/imagem/', page.locator('.hero-art').evaluate('el => getComputedStyle(el).backgroundImage'))
+                self.assertEqual(page.locator('.care-card').evaluate('el => getComputedStyle(el).visibility'), 'visible')
+                expect(page.locator('.hero-banner')).to_be_hidden()
+                browser.close()
+
     def test_gallery_palette_preview_save_content_and_mobile(self):
         tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
         admin = User.objects.create_user('theme-browser@example.test', 'Theme!Password2026', tenant=tenant, tipo='ADMIN')
@@ -57,7 +109,7 @@ class ThemeBrowserTests(StaticLiveServerTestCase):
             page.goto(url+'/')
             expect(page.locator('.hero h1')).to_have_text('Seus pés merecem cuidado especial')
             expect(page.locator('.hero-copy>p')).to_contain_text('Cuidado e bem-estar para você.')
-            expect(page.locator('.hero-primary')).to_have_attribute('href', '#servicos')
+            expect(page.locator('.hero-actions, .hero-primary, .hero a')).to_have_count(0)
             self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), 320)
             page.screenshot(path='/tmp/tenant-theme-public-mobile.png', full_page=True)
             self.assertEqual(errors, [])

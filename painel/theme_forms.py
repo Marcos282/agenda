@@ -11,8 +11,8 @@ class AppearanceForm(forms.ModelForm):
 
 class ContentForm(forms.ModelForm):
     IMAGE_ACTIONS = [('show', 'Ativar imagem'), ('hide', 'Desativar sem remover'), ('remove', 'Remover imagem do site')]
-    hero_image_action = forms.ChoiceField(label='Imagem principal: exibição', choices=IMAGE_ACTIONS, required=False)
-    background_image_action = forms.ChoiceField(label='Imagem de fundo: exibição', choices=IMAGE_ACTIONS, required=False)
+    hero_image_action = forms.ChoiceField(label='Banner Desktop: exibição', choices=IMAGE_ACTIONS, required=False)
+    background_image_action = forms.ChoiceField(label='Banner Mobile: exibição', choices=IMAGE_ACTIONS, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -44,6 +44,9 @@ class ContentForm(forms.ModelForm):
         fields = ['title', 'subtitle', 'description', 'button_text', 'icon', 'hero_image', 'background_image']
         widgets = {'description': forms.Textarea(attrs={'rows': 3}),
                    'hero_image': forms.FileInput(), 'background_image': forms.FileInput()}
+        labels = {'hero_image': 'Banner Desktop', 'background_image': 'Banner Mobile'}
+        help_texts = {'hero_image': 'Recomendado: 1920x700 px',
+                      'background_image': 'Recomendado: 1080x1350 px'}
 
     def clean_hero_image(self):
         return self.clean_upload('hero_image')

@@ -135,7 +135,8 @@ class TenantThemeTests(BookingFixture, TestCase):
         self.client.post(self.content_url, {'title':'<script>alert(1)</script>', 'button_text':'Marcar consulta'}, **self.host)
         response = self.client.get('/', **self.host)
         self.assertContains(response, '&lt;script&gt;alert(1)&lt;/script&gt;')
-        self.assertContains(response, 'href="#servicos">Marcar consulta')
+        self.assertNotContains(response, 'hero-primary')
+        self.assertEqual(TenantTheme.objects.get(tenant=self.tenant).button_text, 'Marcar consulta')
         self.assertNotContains(response, '<script>alert(1)</script>')
         csrf = Client(enforce_csrf_checks=True)
         csrf.force_login(self.admin)
@@ -251,6 +252,31 @@ class TenantThemeTests(BookingFixture, TestCase):
         self.assertFalse(theme.hero_image.name)
         self.assertTrue(theme.background_image.name)
         self.assertFalse(theme.background_image_enabled)
+
+    def test_banner_labels_help_and_responsive_preview(self):
+        response = self.client.get(self.content_url, **self.host)
+        for text in ['Banner Desktop', 'Banner Mobile',
+                     'Recomendado: 1920x700 px', 'Recomendado: 1080x1350 px']:
+            self.assertContains(response, text)
+        theme = TenantTheme.objects.create(
+            tenant=self.tenant, hero_image=f'tenants/{self.tenant.pk}/desktop.webp',
+            background_image=f'tenants/{self.tenant.pk}/mobile.webp',
+        )
+        response = self.client.get(self.content_url, **self.host)
+        self.assertContains(response, 'Ver Banner Desktop salvo')
+        self.assertContains(response, 'Ver Banner Mobile salvo')
+        for response in [
+            self.client.get('/', **self.host),
+            self.client.post(self.preview_url, {'preview_kind': 'content'}, **self.host),
+        ]:
+            self.assertContains(response, '<picture class="hero-banner">')
+            self.assertContains(response, '<source media="(min-width:769px)" srcset="')
+            self.assertContains(response, '<source media="(max-width:768px)" srcset="')
+            self.assertContains(response, 'object-fit:cover')
+            self.assertNotContains(response, '.tenant-content .hero{background-image:')
+        theme.refresh_from_db()
+        self.assertTrue(theme.hero_image.name.endswith('desktop.webp'))
+        self.assertTrue(theme.background_image.name.endswith('mobile.webp'))
 
     def test_preview_image_actions_do_not_persist(self):
         theme = TenantTheme.objects.create(tenant=self.tenant,

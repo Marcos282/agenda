@@ -95,9 +95,21 @@ Referências: [autenticação customizada do Django](https://docs.djangoproject.
 
 ## Página inicial pública
 
-A rota `/` apresenta a plataforma no domínio raiz e o catálogo do estabelecimento em cada subdomínio. No domínio raiz, é possível encontrar um tenant ativo pelo seu identificador (por exemplo, `marcos`). Nos subdomínios, a página exibe somente profissionais, serviços e vínculos ativos do tenant atual, com valores/durações reais, busca e filtro por profissional. Contatos privados e fotos administrativas não são publicados.
+O hero dos estabelecimentos apresenta título, descrição, resumo do catálogo e arte, sem os botões "Explorar serviços" e "Conhecer a equipe". A navegação para serviços e profissionais permanece no cabeçalho; os cards continuam dando acesso ao agendamento.
+
+Em `/painel/estilo/conteudo/`, os dois campos de imagem existentes são reutilizados como **Banner Desktop** (`hero_image`, recomendado 1920x700 px) e **Banner Mobile** (`background_image`, recomendado 1080x1350 px). O desktop aparece somente acima de 768 px; o mobile, até 768 px inclusive. Ambos ocupam apenas a área da arte do hero, preservando o texto. Sem banner ativo para a largura atual, a arte padrão permanece. As opções de ativar, desativar, remover e visualizar continuam independentes; arquivos existentes não são migrados ou apagados.
+
+A seleção usa `<picture>` com fontes por media query: o navegador solicita apenas o banner da largura atual no carregamento inicial. A imagem preenche a área com `object-fit: cover`, preservando a proporção (com recorte, sem distorção). Ao redimensionar a tela para a outra faixa, o navegador pode carregar o outro banner.
+
+A rota `/` apresenta a plataforma no domínio raiz e o catálogo do estabelecimento em cada subdomínio. No domínio raiz, é possível encontrar um tenant ativo pelo seu identificador (por exemplo, `marcos`). Nos subdomínios, a página exibe somente profissionais, serviços e vínculos ativos do tenant atual, com valores/durações reais, sem formulário de busca ou filtro por profissional. Os links dos profissionais e a busca por URL continuam disponíveis. Contatos privados e fotos administrativas não são publicados.
 
 O catálogo tem paginação e estados vazios. O fluxo de escolha de horários e confirmação de agendamento ainda não foi implementado; a página informa isso e oferece cadastro/login. O visual reutiliza `--brand-color` em `usuarios/static/usuarios/theme.css`; o layout da vitrine está em `usuarios/static/usuarios/home.css`.
+
+Os cards de serviços exibem a foto do profissional da oferta em um avatar circular de 56 px no canto superior direito, com `object-fit: cover`. Sem foto cadastrada ou se a imagem não carregar, o avatar exibe a inicial do nome, seguindo o padrão da equipe.
+
+A duração fica centralizada logo abaixo do avatar. Nome e valor ficam juntos na mesma linha, separados por um pequeno espaço fixo, sem linha divisória e sem distribuir o preço até a borda direita.
+
+Cada card inteiro é um link para o agendamento da oferta, sem botão interno. O link funciona por clique, toque ou teclado, com foco visível e elevação discreta no hover; a animação respeita a preferência por movimento reduzido.
 
 ## Loja de serviços
 

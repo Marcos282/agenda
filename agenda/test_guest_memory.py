@@ -68,8 +68,10 @@ class GuestReservationMemoryTests(BookingFixture, TestCase):
     def test_choose_service_has_my_bookings_button(self):
         self.reserve()
         response = self.client.get(reverse('agenda:escolher_data',args=[self.offer.pk]), **self.host)
-        self.assertContains(response, 'Meus agendamentos →')
+        self.assertNotContains(response, 'Meus agendamentos →')
+        self.assertNotContains(response, 'Voltar ao serviço')
         self.assertContains(response, reverse('agenda:meus'))
+        self.assertContains(response, f'href="{reverse("home")}">← Início</a>', html=False)
 
     def test_past_reservation_is_shown_as_history_without_changing_record(self):
         from datetime import timedelta
