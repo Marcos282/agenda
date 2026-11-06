@@ -49,6 +49,29 @@ class PublicHomeTests(TestCase):
         self.assertContains(page,'confirme seu agendamento online')
         self.assertNotContains(page, 'Registre-se')
 
+    def test_booking_button_targets_last_visible_service(self):
+        from django.urls import reverse
+
+        service = Servico.objects.create(tenant=self.tenant, nome='Barba')
+        ProfissionalServico.objects.create(
+            tenant=self.tenant, profissional=self.prof, servico=service,
+            valor='20.00', duracao_minutos=20,
+        )
+        for path in ['/', reverse('home_profissional', args=[self.prof.pk])]:
+            with self.subTest(path=path):
+                page = self.client.get(path, HTTP_HOST='marcos.localhost')
+                last = list(page.context['ofertas'])[-1]
+                url = reverse('agenda:escolher_data', args=[last.pk])
+                self.assertContains(page, f'id="ultimo-servico" href="{url}"', count=1)
+                self.assertContains(page, 'id="ultimo-servico"', count=1)
+                self.assertContains(page, 'class="ui-button mobile-booking-button" href="#ultimo-servico"')
+
+    def test_booking_button_has_target_when_catalog_is_empty(self):
+        ProfissionalServico.objects.filter(tenant=self.tenant).delete()
+        page = self.get()
+        self.assertContains(page, 'class="catalog-empty" id="ultimo-servico"', count=1)
+        self.assertContains(page, 'class="ui-button mobile-booking-button" href="#ultimo-servico"')
+
     def test_hero_has_no_action_buttons(self):
         for path in ['/', f'/profissional/{self.prof.pk}/']:
             with self.subTest(path=path):
@@ -91,9 +114,11 @@ class PublicHomeTests(TestCase):
                 page = self.client.get(path, HTTP_HOST='marcos.localhost')
                 self.assertNotContains(page, 'Agendar horário')
                 self.assertContains(page, 'class="service-card service-card-link"', count=2)
+                last = list(page.context['ofertas'])[-1]
                 for offer in [self.offer, other_offer]:
                     url = reverse('agenda:escolher_data', args=[offer.pk])
-                    opening = f'<a class="service-card service-card-link" href="{url}" aria-label="Agendar {offer.servico.nome} com {self.prof.nome}">'
+                    anchor_id = ' id="ultimo-servico"' if offer.pk == last.pk else ''
+                    opening = f'<a class="service-card service-card-link"{anchor_id} href="{url}" aria-label="Agendar {offer.servico.nome} com {self.prof.nome}">'
                     self.assertContains(page, opening, count=1)
                     card = page.content.decode().split(opening, 1)[1].split('</a>', 1)[0]
                     self.assertNotIn('<a ', card)
@@ -223,4 +248,3 @@ class PublicHomeTests(TestCase):
             self.prof.ativo=False
             self.prof.save()
             self.assertEqual(self.client.get(url, HTTP_HOST='marcos.localhost').status_code, 404)
-
