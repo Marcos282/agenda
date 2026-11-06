@@ -49,7 +49,33 @@ class PublicHomeTests(TestCase):
         self.assertContains(page,'confirme seu agendamento online')
         self.assertNotContains(page, 'Registre-se')
 
-    def test_booking_button_targets_point_after_booking_note(self):
+    def test_strip_shows_registration_address_instead_of_categories(self):
+        from .models import User
+
+        User.objects.create_user(
+            'address@example.test', tenant=self.tenant, tipo='ADMIN',
+            endereco='Rua das Flores', numero_endereco='123', bairro='Centro',
+            cidade='Niterói', estado='RJ', whatsapp='21990921092',
+        )
+        User.objects.create_user(
+            'other-address@example.test', tenant=self.other, tipo='ADMIN',
+            endereco='Rua de outro estabelecimento',
+        )
+        for path in ['/', f'/profissional/{self.prof.pk}/']:
+            with self.subTest(path=path):
+                page = self.client.get(path, HTTP_HOST='marcos.localhost')
+                self.assertContains(page, '<span>Rua das Flores, 123 — Centro — Niterói / RJ</span>', html=True)
+                self.assertContains(page, 'class="category-strip contact-strip"')
+                self.assertContains(page, 'WhatsApp:')
+                self.assertContains(page, '>+5521990921092</a>')
+                self.assertContains(page, 'href="https://wa.me/5521990921092"')
+                self.assertNotContains(page, 'Seu momento especial')
+                self.assertNotContains(page, 'Rua de outro estabelecimento')
+
+    def test_address_strip_is_hidden_without_registration_address(self):
+        self.assertNotContains(self.get(), 'class="category-strip"')
+
+    def test_booking_button_targets_booking_note(self):
         from django.urls import reverse
 
         service = Servico.objects.create(tenant=self.tenant, nome='Barba')
@@ -60,14 +86,14 @@ class PublicHomeTests(TestCase):
         for path in ['/', reverse('home_profissional', args=[self.prof.pk])]:
             with self.subTest(path=path):
                 page = self.client.get(path, HTTP_HOST='marcos.localhost')
-                self.assertContains(page, 'agendamento online.</p><div id="fim-servicos"></div>', count=1)
+                self.assertContains(page, '<p class="booking-note" id="fim-servicos">Escolha seu serviço, consulte os horários e confirme seu agendamento online.</p>', count=1)
                 self.assertContains(page, 'class="ui-button mobile-booking-button" href="#fim-servicos"')
                 self.assertNotContains(page, 'ultimo-servico')
 
     def test_booking_button_has_target_when_catalog_is_empty(self):
         ProfissionalServico.objects.filter(tenant=self.tenant).delete()
         page = self.get()
-        self.assertContains(page, 'agendamento online.</p><div id="fim-servicos"></div>', count=1)
+        self.assertContains(page, '<p class="booking-note" id="fim-servicos">Escolha seu serviço, consulte os horários e confirme seu agendamento online.</p>', count=1)
         self.assertContains(page, 'class="ui-button mobile-booking-button" href="#fim-servicos"')
 
     def test_hero_has_no_action_buttons(self):

@@ -1,4 +1,4 @@
-{% load static %}
+{% load static footer_contact %}
 <!doctype html><html lang="pt-BR"><head>
 {% include 'usuarios/google_tag.html' %}
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -17,7 +17,7 @@
 <meta name="twitter:image" content="{{ profile_image }}">
 {% endif %}
 <meta name="description" content="Conheça serviços e profissionais de beleza, bem-estar e cuidados pessoais. Seu próximo cuidado começa aqui.">
-<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/home.css' %}?v=hero-logo-130">
+<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/home.css' %}?v=contact-strip-1">
 <link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"><link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
 {% include 'usuarios/tenant_theme_head.html' %}
 </head><body {% if theme_preview %}inert{% endif %} class="public-booking-page{% if site_theme %} tenant-content{% endif %}{% if theme_active %} tenant-site theme-{{ site_theme.style }}{% endif %}">
@@ -29,7 +29,9 @@
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Banner de {{ request.tenant.nome }}" decoding="async">
 </picture>{% endif %}
 <h1 class="hero-title">{% if theme_media.logo_image %}<img class="hero-logo" src="{{ theme_media.logo_image }}" alt="{{ request.tenant.nome }}" decoding="async">{% else %}<span class="visually-hidden">{{ request.tenant.nome|default:'agenda' }}</span>{% endif %}</h1></section>
+{% if request.tenant %}{% contato_rodape request.tenant as home_contact %}{% if profile_address or home_contact.whatsapp %}<div class="category-strip contact-strip" aria-label="Contato do estabelecimento">{% if profile_address %}<span>{{ profile_address }}</span>{% endif %}{% if home_contact.whatsapp %}<span>WhatsApp: {% if home_contact.whatsapp_url %}<a href="{{ home_contact.whatsapp_url }}" target="_blank" rel="noopener noreferrer">{{ home_contact.whatsapp }}</a>{% else %}{{ home_contact.whatsapp }}{% endif %}</span>{% endif %}</div>{% endif %}{% else %}
 <div class="category-strip" aria-label="Serviços profissionais"><span>Beleza</span><i>✦</i><span>Estilo</span><i>✦</i><span>Elegância</span><i>✦</i><span>Autoestima</span><i>✦</i><span>Bem-estar</span><i>✦</i><span>Seu momento especial</span></div>
+{% endif %}
 {% if request.tenant %}
 <section id="servicos" class="section"><div class="section-heading"><div><span class="overline">ESCOLHA O SEU CUIDADO</span><h2>O que você precisa hoje?</h2></div><p>Serviços, valores e durações<br>de cada profissional.</p></div>
 <div class="service-grid">{% for oferta in ofertas %}<a class="service-card service-card-link" href="{% url 'agenda:escolher_data' oferta.pk %}" aria-label="Agendar {{ oferta.servico.nome }} com {{ oferta.profissional.nome }}">
@@ -38,7 +40,7 @@
 <div class="professional-info"><span class="professional-name">{{ oferta.profissional.nome }}</span><strong class="service-price">R$ {{ oferta.valor|floatformat:2 }}</strong></div>
 </a>{% empty %}<div class="catalog-empty"><span aria-hidden="true">✧</span><h3>{% if termo or profissional_selecionado %}Nenhum serviço encontrado{% else %}Novos cuidados vêm aí{% endif %}</h3><p>{% if termo or profissional_selecionado %}Tente outro nome ou veja todos os profissionais.{% else %}O catálogo deste estabelecimento está sendo preparado. Volte em breve para conhecer os serviços.{% endif %}</p>{% if termo or profissional_selecionado %}<a class="ui-button ui-button-secondary" href="{% url 'home' %}#servicos">Ver todos os serviços</a>{% endif %}</div>{% endfor %}</div>
 {% if ofertas.has_other_pages %}<nav class="catalog-pagination" aria-label="Páginas de serviços">{% if ofertas.has_previous %}<a class="ui-button ui-button-secondary" href="?q={{ termo|urlencode }}&amp;page={{ ofertas.previous_page_number }}#servicos">← Anterior</a>{% endif %}<span>{{ ofertas.number }} / {{ ofertas.paginator.num_pages }}</span>{% if ofertas.has_next %}<a class="ui-button ui-button-secondary" href="?q={{ termo|urlencode }}&amp;page={{ ofertas.next_page_number }}#servicos">Próxima →</a>{% endif %}</nav>{% endif %}
-<p class="booking-note">Escolha seu serviço, consulte os horários e confirme seu agendamento online.</p><div id="fim-servicos"></div></section>
+<p class="booking-note" id="fim-servicos">Escolha seu serviço, consulte os horários e confirme seu agendamento online.</p></section>
 <section id="profissionais" class="section team-section"><div class="section-heading"><div><span class="overline">QUEM CUIDA DE VOCÊ</span><h2 id="talento-com-nome-proprio">Talento com nome próprio.</h2></div><p>Conheça a equipe de<br>{{ request.tenant.nome }}.</p></div><div class="team-grid">{% for pessoa in equipe %}<article class="team-card">{% if pessoa.foto %}<img class="team-avatar team-photo" src="{% url 'profissional_foto_publica' pessoa.pk %}" alt="Foto de {{ pessoa.nome }}" width="64" height="64" loading="lazy">{% else %}<span class="team-avatar" aria-hidden="true">{{ pessoa.nome|first|upper }}</span>{% endif %}<div><h3>{{ pessoa.nome }}</h3><p>{{ pessoa.total_servicos }} serviço{{ pessoa.total_servicos|pluralize }} no catálogo</p></div><a class="ui-button ui-button-secondary" href="{% url 'home_profissional' pessoa.pk %}#servicos" aria-label="Ver serviços de {{ pessoa.nome }}">Ver serviços ↗</a></article>{% empty %}<p class="muted">Em breve, você poderá conhecer nossa equipe por aqui.</p>{% endfor %}</div></section>
 <section class="join-banner"><div><span class="overline">SEU PRÓXIMO PASSO</span><h2>Seu cuidado começa<br>com uma conexão.</h2><p>Agende com seu nome e WhatsApp. Sem senha.</p></div><a class="ui-button" href="{% url 'loja' %}">Escolher meu horário →</a></section>
 {% else %}

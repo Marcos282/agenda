@@ -31,4 +31,5 @@ def contato_rodape(tenant):
         'cpf': f'{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}' if cpf else '',
         'endereco': address,
         'whatsapp_url': whatsapp_url,
+        'whatsapp': phone,
     }

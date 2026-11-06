@@ -12,6 +12,28 @@ from usuarios.models import User
 @override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost'], DEV_PUBLIC_HOST='',
                    PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ThemeBrowserTests(StaticLiveServerTestCase):
+    def test_floating_booking_button_scrolls_to_visible_note(self):
+        tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
+        url = self.live_server_url.replace('localhost', 'novahost.localhost') + '/'
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+            for width in (320, 390, 767):
+                with self.subTest(width=width):
+                    page = browser.new_page(viewport={'width': width, 'height': 844})
+                    page.goto(url)
+                    page.locator('.mobile-booking-button').click()
+                    expect(page).to_have_url(url + '#fim-servicos')
+                    page.wait_for_function("""() => {
+                        const note = document.querySelector('.booking-note').getBoundingClientRect();
+                        const button = document.querySelector('.mobile-booking-button').getBoundingClientRect();
+                        return window.scrollY > 0 && note.top >= 0 && note.bottom < button.top;
+                    }""")
+                    page.evaluate("window.scrollTo({top: 0, behavior: 'instant'})")
+                    page.locator('.mobile-booking-button').click()
+                    page.wait_for_function("() => window.scrollY > 0 && document.querySelector('.booking-note').getBoundingClientRect().top < 200")
+                    page.close()
+            browser.close()
+
     def test_logo_is_thirty_percent_larger_and_stays_inside_hero(self):
         tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
         TenantTheme.objects.create(tenant=tenant, logo_image=f'tenants/{tenant.pk}/logo.webp')
@@ -29,6 +51,7 @@ class ThemeBrowserTests(StaticLiveServerTestCase):
                         page.goto(url)
                         logo = page.locator('.hero-logo')
                         expect(logo).to_be_visible()
+                        self.assertEqual(logo.evaluate('el => getComputedStyle(el).filter'), 'none')
                         self.assertTrue(logo.evaluate('el => el.complete && el.naturalWidth > 0'))
                         enlarged = logo.bounding_box()
                         logo.evaluate("el => el.style.transform = 'none'")

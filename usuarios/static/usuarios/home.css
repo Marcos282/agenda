@@ -31,7 +31,10 @@ html{scroll-behavior:smooth;scroll-padding-top:24px}body{background:#fcfcfa}.lan
 .service-card-heading h3{margin:10px 0 0}
 
 #talento-com-nome-proprio{scroll-margin-top:100px}
+#fim-servicos{scroll-margin-top:100px}
 
 .public-booking-page .landing .hero.hero-transparent{background:transparent;border-color:transparent;box-shadow:none}
 
-.hero-logo{transform:scale(1.3)}
+.hero-logo{transform:scale(1.3);filter:none}
+.category-strip.contact-strip{justify-content:center;text-align:center;flex-direction:column;gap:8px;overflow-wrap:anywhere}
+.contact-strip a{color:inherit}
