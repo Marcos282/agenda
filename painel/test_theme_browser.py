@@ -12,6 +12,37 @@ from usuarios.models import User
 @override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost'], DEV_PUBLIC_HOST='',
                    PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ThemeBrowserTests(StaticLiveServerTestCase):
+    def test_address_and_whatsapp_are_centered_and_visible(self):
+        tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
+        User.objects.create_user(
+            'contact-browser@example.test', tenant=tenant, tipo='ADMIN',
+            endereco='Rua das Flores', numero_endereco='123', bairro='Centro',
+            cidade='Niterói', estado='RJ', whatsapp='21990921092',
+        )
+        url = self.live_server_url.replace('localhost', 'novahost.localhost') + '/'
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+            for width in (1440, 390, 320):
+                with self.subTest(width=width):
+                    page = browser.new_page(viewport={'width': width, 'height': 844})
+                    page.goto(url)
+                    strip = page.locator('.contact-strip')
+                    spans = strip.locator(':scope > span')
+                    expect(spans).to_have_count(2)
+                    container = strip.bounding_box()
+                    for span in spans.all():
+                        expect(span).to_be_visible()
+                        self.assertEqual(span.evaluate('el => getComputedStyle(el).textAlign'), 'center')
+                        box = span.bounding_box()
+                        self.assertAlmostEqual(
+                            box['x'] + box['width'] / 2,
+                            container['x'] + container['width'] / 2, delta=0.1)
+                    self.assertEqual(strip.evaluate('el => getComputedStyle(el).paddingLeft'), '2px')
+                    self.assertEqual(strip.evaluate('el => getComputedStyle(el).paddingRight'), '2px')
+                    self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), width)
+                    page.close()
+            browser.close()
+
     def test_floating_booking_button_scrolls_to_visible_note(self):
         tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
         url = self.live_server_url.replace('localhost', 'novahost.localhost') + '/'
