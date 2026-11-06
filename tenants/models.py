@@ -137,4 +137,5 @@ class TenantTheme(models.Model):
     hero_image_enabled = models.BooleanField(default=True)
     background_image_enabled = models.BooleanField(default=True)
     logo_image_enabled = models.BooleanField(default=True)
+    hero_transparent = models.BooleanField('Hero sem cor', default=False, help_text='Deixa o fundo do hero transparente, sem alterar o banner ou a logomarca.')
     updated_at = models.DateTimeField(auto_now=True)

@@ -12,12 +12,66 @@ from usuarios.models import User
 @override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost'], DEV_PUBLIC_HOST='',
                    PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ThemeBrowserTests(StaticLiveServerTestCase):
+    def test_logo_is_thirty_percent_larger_and_stays_inside_hero(self):
+        tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
+        TenantTheme.objects.create(tenant=tenant, logo_image=f'tenants/{tenant.pk}/logo.webp')
+        url = self.live_server_url.replace('localhost', 'novahost.localhost') + '/'
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+            for width in (1440, 769, 768, 390, 320):
+                for image_width, image_height in ((100, 50), (900, 300), (200, 800)):
+                    with self.subTest(width=width, image=(image_width, image_height)):
+                        page = browser.new_page(viewport={'width': width, 'height': 1000})
+                        page.route('**/aparencia/imagem/logo_image/**', lambda route: route.fulfill(
+                            content_type='image/svg+xml',
+                            body=f'<svg xmlns="http://www.w3.org/2000/svg" width="{image_width}" height="{image_height}"/>',
+                        ))
+                        page.goto(url)
+                        logo = page.locator('.hero-logo')
+                        expect(logo).to_be_visible()
+                        self.assertTrue(logo.evaluate('el => el.complete && el.naturalWidth > 0'))
+                        enlarged = logo.bounding_box()
+                        logo.evaluate("el => el.style.transform = 'none'")
+                        original = logo.bounding_box()
+                        self.assertAlmostEqual(enlarged['width'], original['width'] * 1.3, delta=0.1)
+                        self.assertAlmostEqual(enlarged['height'], original['height'] * 1.3, delta=0.1)
+                        hero = page.locator('.hero').bounding_box()
+                        self.assertGreaterEqual(enlarged['x'], hero['x'])
+                        self.assertGreaterEqual(enlarged['y'], hero['y'])
+                        self.assertLessEqual(enlarged['x'] + enlarged['width'], hero['x'] + hero['width'])
+                        self.assertLessEqual(enlarged['y'] + enlarged['height'], hero['y'] + hero['height'])
+                        self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), width)
+                        page.close()
+            browser.close()
+
+    def test_transparent_hero_overrides_all_styles(self):
+        tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
+        theme = TenantTheme.objects.create(tenant=tenant, hero_transparent=True)
+        url = self.live_server_url.replace('localhost', 'novahost.localhost') + '/'
+        for style in ['original', *(item[0] for item in THEMES)]:
+            TenantTheme.objects.filter(pk=theme.pk).update(style=style)
+            with sync_playwright() as p:
+                browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+                for width in (1440, 390):
+                    with self.subTest(style=style, width=width):
+                        page = browser.new_page(viewport={'width': width, 'height': 1000})
+                        page.goto(url)
+                        styles = page.locator('.hero').evaluate("""el => {
+                            const css = getComputedStyle(el);
+                            return [css.backgroundColor, css.backgroundImage, css.borderTopColor, css.boxShadow];
+                        }""")
+                        self.assertEqual(styles, ['rgba(0, 0, 0, 0)', 'none', 'rgba(0, 0, 0, 0)', 'none'])
+                        self.assertEqual(page.locator('.hero').bounding_box()['height'], 252 if width > 768 else 154)
+                        page.close()
+                browser.close()
+
     def test_responsive_banner_strip_and_visibility(self):
         tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
         theme = TenantTheme.objects.create(
             tenant=tenant, style='tatuagem',
             hero_image=f'tenants/{tenant.pk}/desktop.webp',
             background_image=f'tenants/{tenant.pk}/mobile.webp',
+            hero_transparent=True,
         )
         url = self.live_server_url.replace('localhost', 'novahost.localhost')
         desktop_url = reverse('theme_image', args=['hero_image'])

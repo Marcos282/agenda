@@ -22,7 +22,7 @@ class ContentForm(forms.ModelForm):
             self.fields[field + '_action'].initial = 'show' if getattr(self.instance, field + '_enabled') else 'hide'
         self.order_fields(['title', 'subtitle', 'description', 'button_text', 'icon',
                            'hero_image', 'hero_image_action', 'background_image', 'background_image_action',
-                           'logo_image', 'logo_image_action'])
+                           'logo_image', 'logo_image_action', 'hero_transparent'])
 
     def clean(self):
         cleaned = super().clean()
@@ -44,7 +44,7 @@ class ContentForm(forms.ModelForm):
 
     class Meta:
         model = TenantTheme
-        fields = ['title', 'subtitle', 'description', 'button_text', 'icon', 'hero_image', 'background_image', 'logo_image']
+        fields = ['title', 'subtitle', 'description', 'button_text', 'icon', 'hero_image', 'background_image', 'logo_image', 'hero_transparent']
         widgets = {'description': forms.Textarea(attrs={'rows': 3}),
                    'hero_image': forms.FileInput(), 'background_image': forms.FileInput(),
                    'logo_image': forms.FileInput()}

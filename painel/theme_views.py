@@ -78,7 +78,7 @@ def restore(request):
     defaults = {'style': 'original', 'primary_color': '#287454', 'title': '', 'subtitle': '',
                 'description': '', 'button_text': '', 'icon': '', 'hero_image': '', 'background_image': '',
                 'logo_image': '', 'hero_image_enabled': True, 'background_image_enabled': True,
-                'logo_image_enabled': True}
+                'logo_image_enabled': True, 'hero_transparent': False}
     TenantTheme.objects.filter(tenant=request.tenant).update(**defaults)
     messages.success(request, 'Aparência original restaurada. Os arquivos de imagem foram preservados.')
     return redirect('painel:estilo')

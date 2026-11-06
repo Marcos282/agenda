@@ -92,6 +92,31 @@ class TenantThemeTests(BookingFixture, TestCase):
         self.client.post(self.preview_url, {'style':'retro','primary_color':'#b34b32'}, **self.host)
         self.assertFalse(TenantTheme.objects.filter(tenant=self.tenant).exists())
 
+    def test_transparent_hero_preview_save_disable_and_restore(self):
+        theme = TenantTheme.objects.create(tenant=self.tenant, style='gradiente')
+        other = TenantTheme.objects.create(tenant=self.other)
+        response = self.client.get(self.content_url, **self.host)
+        self.assertContains(response, 'Hero sem cor')
+        data = {'preview_kind': 'content', 'hero_transparent': 'on'}
+        response = self.client.post(self.preview_url, data, **self.host)
+        self.assertContains(response, 'class="hero hero-transparent"')
+        theme.refresh_from_db()
+        self.assertFalse(theme.hero_transparent)
+        self.assertEqual(self.client.post(self.content_url, data, **self.host).status_code, 302)
+        theme.refresh_from_db()
+        self.assertTrue(theme.hero_transparent)
+        self.assertContains(self.client.get('/', **self.host), 'class="hero hero-transparent"')
+        other.refresh_from_db()
+        self.assertFalse(other.hero_transparent)
+        self.client.post(self.content_url, {}, **self.host)
+        theme.refresh_from_db()
+        self.assertFalse(theme.hero_transparent)
+        self.assertNotContains(self.client.get('/', **self.host), 'class="hero hero-transparent"')
+        self.client.post(self.content_url, data, **self.host)
+        self.client.post(self.restore_url, {'confirm': 'yes'}, **self.host)
+        theme.refresh_from_db()
+        self.assertFalse(theme.hero_transparent)
+
     def test_platform_and_other_tenant_unchanged(self):
         public = Client()
         before = public.get('/', HTTP_HOST='localhost').content
