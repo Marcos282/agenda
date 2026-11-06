@@ -23,7 +23,7 @@
 {% if item.foto %}<img class="agenda-avatar" src="{% url 'painel:profissional_foto' item.pk %}" alt="">{% else %}<span class="agenda-avatar initials" aria-hidden="true">{{ item.nome|first|upper }}</span>{% endif %}
 <span><strong>{{ item.nome }}</strong><span class="tab-status {% if item.ativo and item.tem_periodos %}open{% endif %}">{% if not item.ativo %}○ Inativo{% elif item.tem_periodos %}● Aberta{% else %}○ Fechada{% endif %}</span></span>
 </a>
-{% empty %}<div class="empty-professionals"><p>Cadastre seu primeiro profissional para começar a organizar a agenda.</p><a class="agenda-button" href="{% url 'painel:profissional_novo' %}">+ Novo profissional</a></div>{% endfor %}
+{% empty %}<div class="empty-professionals"><p>Nenhum profissional ativo neste estabelecimento. Ative um profissional cadastrado ou cadastre um novo para organizar a agenda.</p><a class="agenda-button secondary" href="{% url 'painel:profissionais' %}">Gerenciar profissionais</a> <a class="agenda-button" href="{% url 'painel:profissional_novo' %}">+ Novo profissional</a></div>{% endfor %}
 </nav>
 {% if profissional %}
 <section class="day-card" aria-labelledby="professional-heading">
@@ -65,4 +65,4 @@
 {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}<script src="{% static 'painel/agenda.js' %}?v=ajax-4" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'painel/agenda.js' %}?v=ajax-5" defer></script>{% endblock %}

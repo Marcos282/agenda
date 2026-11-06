@@ -40,7 +40,7 @@ def agenda(request, profissional_id=None):
     if dia is None:
         return HttpResponseBadRequest('Data inválida. Use AAAA-MM-DD.')
     selected = profissional_id if profissional_id is not None else request.GET.get('profissional')
-    profissionais = Profissional.objects.for_tenant(request.tenant).annotate(
+    profissionais = Profissional.objects.for_tenant(request.tenant).ativos().annotate(
         tem_periodos=Exists(Disponibilidade.objects.for_tenant(request.tenant).filter(
             profissional_id=OuterRef('pk'), data=dia, ativo=True,
         ))
@@ -50,7 +50,15 @@ def agenda(request, profissional_id=None):
             selected = int(selected)
         except (ValueError, TypeError):
             raise Http404
-        profissional = get_object_or_404(profissionais, pk=selected)
+        if not 0 < selected <= 9223372036854775807:
+            raise Http404
+        requested = get_object_or_404(Profissional.objects.for_tenant(request.tenant), pk=selected)
+        if not requested.ativo:
+            # Redirect even on POST: never apply an inactive professional's edits to another.
+            replacement = profissionais.first()
+            return redirect(agenda_url(replacement.pk, dia) if replacement else
+                            reverse('painel:agenda') + '?' + urlencode({'data': dia.isoformat()}))
+        profissional = profissionais.get(pk=selected)
     else:
         profissional = profissionais.first()
     if request.method == 'POST' and profissional is None:
@@ -112,8 +120,13 @@ def agenda_dados(request):
     except (TypeError, ValueError):
         raise Http404
     profissional = get_object_or_404(Profissional.objects.for_tenant(request.tenant), pk=pk)
+    if not profissional.ativo:
+        replacement = Profissional.objects.for_tenant(request.tenant).ativos().first()
+        target = (agenda_url(replacement.pk, dia) if replacement else
+                  reverse('painel:agenda') + '?' + urlencode({'data': dia.isoformat()}))
+        return JsonResponse({'redirect_url': target})
     periodos = list(Disponibilidade.objects.for_tenant(request.tenant).filter(
-        profissional=profissional, data=dia, ativo=True).order_by('hora_inicio', 'pk')) if profissional.ativo else []
+        profissional=profissional, data=dia, ativo=True).order_by('hora_inicio', 'pk'))
     timeline = timeline_payload(profissional, dia, periodos)
     return JsonResponse({'timeline': timeline, 'aberta': bool(periodos),
         'resumo_html': render_to_string('painel/agenda/resumo.html', {'timeline': timeline}, request=request)})

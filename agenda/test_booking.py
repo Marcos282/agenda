@@ -187,7 +187,13 @@ class BookingTests(BookingFixture, TestCase):
         self.assertEqual(response.context['timeline']['appointments'][0]['id'],booking.pk)
         self.assertContains(response,'Cliente Teste')
         self.prof.ativo=False;self.prof.save()
-        self.assertContains(self.client.get(reverse('painel:agenda'),{'profissional':self.prof.pk,'data':self.day.isoformat()},HTTP_HOST='marcos.localhost'),'Cliente Teste')
+        response = self.client.get(reverse('painel:agenda'),
+            {'profissional': self.prof.pk, 'data': self.day.isoformat()},
+            HTTP_HOST='marcos.localhost', follow=True)
+        self.assertContains(response, 'Nenhum profissional ativo')
+        self.assertNotContains(response, 'Cliente Teste')
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'CONFIRMADO')
 
 
     def test_agenda_refresh_includes_new_booking_and_releases_cancelled_interval(self):

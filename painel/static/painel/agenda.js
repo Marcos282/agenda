@@ -197,6 +197,10 @@
           });
           if (!response.ok || response.redirected) throw new Error('Agenda unavailable');
           const result = await response.json();
+          if (result.redirect_url) {
+            window.location.assign(result.redirect_url);
+            return;
+          }
           if (pendingRatings.size || revision !== ratingRevision) return;
           const data = result.timeline;
           timelineData = data;

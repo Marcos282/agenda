@@ -161,7 +161,7 @@ class TenantThemeTests(BookingFixture, TestCase):
         response = self.client.get('/', **self.host)
         self.assertNotContains(response, 'hero-primary')
         self.assertNotContains(response, 'hero-copy')
-        self.assertEqual(TenantTheme.objects.get(tenant=self.tenant).button_text, 'Marcar consulta')
+        self.assertEqual(TenantTheme.objects.get(tenant=self.tenant).button_text, '')
         self.assertNotContains(response, '<script>alert(1)</script>')
         csrf = Client(enforce_csrf_checks=True)
         csrf.force_login(self.admin)
@@ -184,33 +184,33 @@ class TenantThemeTests(BookingFixture, TestCase):
         with TemporaryDirectory() as directory:
             from django.core.files.storage import FileSystemStorage
             storage = FileSystemStorage(location=directory)
-            field = TenantTheme._meta.get_field('hero_image')
+            field = TenantTheme._meta.get_field('logo_image')
             with patch.object(field, 'storage', storage):
                 before = list(TenantTheme.objects.values())
-                preview = self.client.post(self.preview_url, {'preview_kind':'content', 'hero_image':self.upload()}, **self.host)
+                preview = self.client.post(self.preview_url, {'preview_kind':'content', 'logo_image':self.upload()}, **self.host)
                 self.assertContains(preview, 'data:image/webp;base64,')
                 self.assertEqual(before, list(TenantTheme.objects.values()))
-                self.assertEqual(self.client.post(self.content_url, {'hero_image':self.upload()}, **self.host).status_code, 302)
+                self.assertEqual(self.client.post(self.content_url, {'logo_image':self.upload()}, **self.host).status_code, 302)
                 theme = TenantTheme.objects.get(tenant=self.tenant)
-                self.assertTrue(theme.hero_image.name.startswith(f'tenants/{self.tenant.pk}/'))
-                with Image.open(theme.hero_image) as optimized:
+                self.assertTrue(theme.logo_image.name.startswith(f'tenants/{self.tenant.pk}/'))
+                with Image.open(theme.logo_image) as optimized:
                     self.assertEqual(optimized.format, 'WEBP')
-                    self.assertEqual(optimized.size, (1920, 960))
-                image_url = reverse('theme_image', args=['hero_image'])
+                    self.assertEqual(optimized.size, (800, 400))
+                image_url = reverse('theme_image', args=['logo_image'])
                 self.assertEqual(self.client.get(image_url, **self.host).status_code, 200)
                 self.assertEqual(Client().get(image_url, HTTP_HOST='wanessa.localhost').status_code, 404)
                 self.assertEqual(self.client.get(reverse('theme_image',args=['other']), **self.host).status_code, 404)
-                original_name = theme.hero_image.name
-                self.client.post(self.content_url, {'hero_image':self.upload()}, **self.host)
+                original_name = theme.logo_image.name
+                self.client.post(self.content_url, {'logo_image':self.upload()}, **self.host)
                 theme.refresh_from_db()
-                self.assertNotEqual(original_name, theme.hero_image.name)
+                self.assertNotEqual(original_name, theme.logo_image.name)
                 self.assertTrue(storage.exists(original_name))
-                replacement_name = theme.hero_image.name
+                replacement_name = theme.logo_image.name
                 self.client.post(self.restore_url, {'confirm':'yes'}, **self.host)
                 self.assertTrue(storage.exists(original_name))
                 self.assertTrue(storage.exists(replacement_name))
         for upload in [SimpleUploadedFile('bad.png', b'not an image'), SimpleUploadedFile('fake.svg', b'<svg/>')]:
-            form = ContentForm({}, {'hero_image':upload}, instance=TenantTheme(tenant=self.tenant))
+            form = ContentForm({}, {'logo_image':upload}, instance=TenantTheme(tenant=self.tenant))
             self.assertFalse(form.is_valid())
         from tenants.theme_uploads import optimize_image
         from django.core.exceptions import ValidationError
@@ -264,7 +264,7 @@ class TenantThemeTests(BookingFixture, TestCase):
         response = self.client.get(self.url, **self.host)
         self.assertContains(response, 'Estúdio de Tatuagem')
         response = self.client.get(self.content_url, **self.host)
-        self.assertContains(response, 'Sua história, marcada em arte')
+        self.assertNotContains(response, 'Usar sugestão no título')
         self.assertEqual(self.apply(style='tatuagem', primary_color='#d6a86c').status_code, 302)
         self.assertEqual(self.client.post(self.content_url, {
             'title':'Sua história, marcada em arte', 'icon':'✒', 'button_text':'Conheça nossos serviços'
@@ -278,46 +278,50 @@ class TenantThemeTests(BookingFixture, TestCase):
         self.assertContains(response, 'theme-tatuagem')
         self.assertEqual(before, list(TenantTheme.objects.values()))
 
-    def test_image_can_be_disabled_reenabled_and_removed_independently(self):
-        theme = TenantTheme.objects.create(tenant=self.tenant,
-            hero_image=f'tenants/{self.tenant.pk}/hero.webp',
-            background_image=f'tenants/{self.tenant.pk}/background.webp')
-        response = self.client.post(self.content_url, {
-            'hero_image_action':'hide', 'background_image_action':'show'
-        }, **self.host)
-        self.assertEqual(response.status_code, 302)
-        theme.refresh_from_db()
-        self.assertFalse(theme.hero_image_enabled)
-        self.assertTrue(theme.hero_image.name)
-        self.assertTrue(theme.background_image_enabled)
-        response = self.client.get('/', **self.host)
-        self.assertNotIn('hero_image', response.context['theme_media'])
-        self.assertIn('background_image', response.context['theme_media'])
-        self.client.post(self.content_url, {'hero_image_action':'show', 'background_image_action':'hide'}, **self.host)
-        response = self.client.get('/', **self.host)
-        self.assertIn('hero_image', response.context['theme_media'])
-        self.assertNotIn('background_image', response.context['theme_media'])
-        with patch.object(theme.hero_image.storage, 'delete') as delete:
-            response = self.client.post(self.content_url, {'hero_image_action':'remove'}, **self.host)
-            self.assertEqual(response.status_code, 302)
-            delete.assert_not_called()
-        theme.refresh_from_db()
-        self.assertFalse(theme.hero_image.name)
-        self.assertTrue(theme.background_image.name)
-        self.assertFalse(theme.background_image_enabled)
+    def test_content_save_preserves_removed_fields_and_ignores_submitted_values(self):
+        preserved = dict(title='Título antigo', subtitle='Subtítulo antigo',
+                         description='Descrição antiga', button_text='Agendar agora',
+                         hero_image=f'tenants/{self.tenant.pk}/desktop.webp',
+                         background_image=f'tenants/{self.tenant.pk}/mobile.webp',
+                         hero_image_enabled=False, background_image_enabled=False)
+        theme = TenantTheme.objects.create(tenant=self.tenant, **preserved)
+        other = TenantTheme.objects.create(tenant=self.other, title='Outro site')
+        other_before = TenantTheme.objects.filter(pk=other.pk).values().get()
+        for extra in [{}, {'title': 'Substituído', 'subtitle': '', 'description': '',
+                          'button_text': '', 'hero_image_action': 'remove',
+                          'background_image_action': 'show', 'hero_image': self.upload(),
+                          'background_image': self.upload()}]:
+            response = self.client.post(self.content_url, {
+                'icon': '✒', 'hero_transparent': 'on', **extra,
+            }, **self.host)
+            self.assertRedirects(response, self.content_url, fetch_redirect_response=False)
+            theme.refresh_from_db()
+            for field, value in preserved.items():
+                self.assertEqual(getattr(theme, field), value)
+            self.assertEqual(theme.icon, '✒')
+            self.assertTrue(theme.hero_transparent)
+        self.assertEqual(other_before, TenantTheme.objects.filter(pk=other.pk).values().get())
 
     def test_banner_labels_help_and_responsive_preview(self):
         response = self.client.get(self.content_url, **self.host)
-        for text in ['Banner Desktop', 'Banner Mobile',
+        for name in ['title', 'subtitle', 'description', 'button_text', 'hero_image',
+                     'hero_image_action', 'background_image', 'background_image_action']:
+            self.assertNotContains(response, f'name="{name}"')
+        for text in ['Título principal', 'Subtítulo', 'Descrição do estabelecimento',
+                     'Texto do botão principal', 'Banner Desktop', 'Banner Mobile',
                      'Recomendado: 1920x700 px', 'Recomendado: 1080x1350 px']:
-            self.assertContains(response, text)
+            self.assertNotContains(response, text)
+        self.assertContains(response, 'PNG ou WebP com fundo transparente. Recomendado: 600x200 px, ou 300x300px. Exibida centralizada sobre o banner.')
+        for name in ['icon', 'logo_image', 'logo_image_action', 'hero_transparent']:
+            self.assertContains(response, f'name="{name}"')
+        self.assertContains(response, 'Salvar e aplicar')
         theme = TenantTheme.objects.create(
             tenant=self.tenant, hero_image=f'tenants/{self.tenant.pk}/desktop.webp',
             background_image=f'tenants/{self.tenant.pk}/mobile.webp',
         )
         response = self.client.get(self.content_url, **self.host)
-        self.assertContains(response, 'Ver Banner Desktop salvo')
-        self.assertContains(response, 'Ver Banner Mobile salvo')
+        self.assertNotContains(response, 'Banner Desktop')
+        self.assertNotContains(response, 'Banner Mobile')
         for response in [
             self.client.get('/', **self.host),
             self.client.post(self.preview_url, {'preview_kind': 'content'}, **self.host),
@@ -333,19 +337,19 @@ class TenantThemeTests(BookingFixture, TestCase):
 
     def test_preview_image_actions_do_not_persist(self):
         theme = TenantTheme.objects.create(tenant=self.tenant,
-            hero_image=f'tenants/{self.tenant.pk}/hero.webp')
+            logo_image=f'tenants/{self.tenant.pk}/logo.webp')
         for action in ['hide','remove']:
             response = self.client.post(self.preview_url, {
-                'preview_kind':'content', 'hero_image_action':action
+                'preview_kind':'content', 'logo_image_action':action
             }, **self.host)
             self.assertEqual(response.status_code, 200)
-            self.assertNotIn('hero_image', response.context['theme_media'])
+            self.assertNotIn('logo_image', response.context['theme_media'])
             theme.refresh_from_db()
-            self.assertTrue(theme.hero_image.name)
-            self.assertTrue(theme.hero_image_enabled)
+            self.assertTrue(theme.logo_image.name)
+            self.assertTrue(theme.logo_image_enabled)
         response = self.client.post(self.content_url, {
-            'hero_image':self.upload(), 'hero_image_action':'remove'
+            'logo_image':self.upload(), 'logo_image_action':'remove'
         }, **self.host)
         self.assertEqual(response.status_code, 200)
         theme.refresh_from_db()
-        self.assertTrue(theme.hero_image.name.endswith('hero.webp'))
+        self.assertTrue(theme.logo_image.name.endswith('logo.webp'))

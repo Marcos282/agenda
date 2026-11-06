@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
 from tenants.models import TenantTheme
-from tenants.themes import gallery, PALETTE, SUGGESTIONS
+from tenants.themes import gallery, PALETTE
 from tenants.decorators import tenant_required
 from .decorators import admin_tenant_required
 from .theme_forms import AppearanceForm, ContentForm
@@ -43,7 +43,7 @@ def content(request):
             TenantTheme.objects.update_or_create(tenant=request.tenant, defaults=form.visual_values())
         messages.success(request, 'Conteúdo visual salvo.')
         return redirect('painel:estilo_conteudo')
-    return render(request, 'painel/estilo_conteudo.html', {'form': form, 'suggestions': SUGGESTIONS})
+    return render(request, 'painel/estilo_conteudo.html', {'form': form})
 
 
 @admin_tenant_required
