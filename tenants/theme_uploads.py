@@ -17,7 +17,7 @@ def theme_upload_path(instance, filename):
     return f'tenants/{instance.tenant_id}/{uuid4().hex}.webp'
 
 
-def optimize_image(upload):
+def optimize_image(upload, *, keep_transparency=False, max_size=1920):
     if upload.size > 5 * 1024 * 1024:
         raise ValidationError('A imagem deve ter no máximo 5 MB.')
     try:
@@ -27,8 +27,9 @@ def optimize_image(upload):
             if source.width * source.height > 20_000_000:
                 raise ValidationError('A imagem deve ter no máximo 20 megapixels.')
             source.load()
-            image = ImageOps.exif_transpose(source).convert('RGB')
-            image.thumbnail((1920, 1920))
+            image = ImageOps.exif_transpose(source)
+            image = image.convert('RGBA' if keep_transparency and image.mode in ('RGBA', 'LA', 'P') else 'RGB')
+            image.thumbnail((max_size, max_size))
             output = BytesIO()
             image.save(output, format='WEBP', quality=85)
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:

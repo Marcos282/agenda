@@ -15,7 +15,7 @@ def site_theme(request):
     if theme is None:
         return {}
     media = {}
-    for field in ('hero_image', 'background_image'):
+    for field in ('hero_image', 'background_image', 'logo_image'):
         image = getattr(theme, field)
         if image and getattr(theme, field + '_enabled'):
             if preview is not None and not image._committed:

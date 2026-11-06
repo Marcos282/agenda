@@ -17,31 +17,18 @@
 <meta name="twitter:image" content="{{ profile_image }}">
 {% endif %}
 <meta name="description" content="Conheça serviços e profissionais de beleza, bem-estar e cuidados pessoais. Seu próximo cuidado começa aqui.">
-<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/home.css' %}?v=mobile-team-card-1">
+<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}"><link rel="stylesheet" href="{% static 'usuarios/home.css' %}?v=hero-style-2">
 <link rel="stylesheet" href="{% static 'usuarios/mobile-booking.css' %}"><link rel="stylesheet" href="{% static 'usuarios/footer-contact.css' %}">
 {% include 'usuarios/tenant_theme_head.html' %}
 </head><body {% if theme_preview %}inert{% endif %} class="public-booking-page{% if site_theme %} tenant-content{% endif %}{% if theme_active %} tenant-site theme-{{ site_theme.style }}{% endif %}">
-<header class="site-header"><a class="wordmark" href="{% url 'home' %}"><span class="brand-symbol" aria-hidden="true">a<span>•</span></span>{{ request.tenant.nome|default:'agenda' }}</a>
-<nav aria-label="Navegação principal"><a class="ui-button ui-button-quiet" href="#servicos">{% if request.tenant %}Serviços{% else %}Para quem{% endif %}</a><a class="ui-button ui-button-quiet" href="{% if request.tenant %}#profissionais{% else %}#como-funciona{% endif %}">{% if request.tenant %}Profissionais{% else %}Como funciona{% endif %}</a>
-{% if request.tenant %}{% if user.is_authenticated and user.tipo != 'ADMIN' %}<a class="ui-button" href="{% url 'conta' %}">Minha conta</a>{% endif %}{% else %}<a class="ui-button" href="#encontre">Encontrar meu espaço ↗</a>{% endif %}</nav></header>
 <main class="landing">
-<section class="hero"><div class="hero-copy"><div class="overline"><span class="live-dot"></span> SEU TEMPO, BEM CUIDADO</div>
-<h1>{% if site_theme.title %}{{ site_theme.title }}{% else %}Um tempo para você.<br><em>Um cuidado<br>que faz bem.</em>{% endif %}</h1>
-<p>{% if site_theme.subtitle %}{{ site_theme.subtitle }}{% elif request.tenant %}Conheça os serviços e os profissionais de {{ request.tenant.nome }}. Encontre o cuidado que combina com o seu momento.{% else %}Beleza, bem-estar e serviços profissionais. Um jeito mais simples de conectar sua rotina a quem cuida de você.{% endif %}{% if site_theme.description %}<br>{{ site_theme.description }}{% endif %}</p>
-<div class="hero-note"><span aria-hidden="true">✦</span> {% if request.tenant %}{{ total_servicos }} serviço{{ total_servicos|pluralize }} · {{ total_profissionais }} profissiona{{ total_profissionais|pluralize:'l,is' }} · Um cuidado só seu{% else %}Salões, barbearias, estúdios e muito mais{% endif %}</div></div>
-<div class="hero-art" aria-label="Serviços profissionais de cuidado e bem-estar">
+<section class="hero{% if theme_media.hero_image %} has-desktop-banner{% endif %}{% if theme_media.background_image %} has-mobile-banner{% endif %}">
 {% if theme_media.hero_image or theme_media.background_image %}<picture class="hero-banner">
 {% if theme_media.background_image %}<source media="(max-width:768px)" srcset="{{ theme_media.background_image }}">{% endif %}
 {% if theme_media.hero_image %}<source media="(min-width:769px)" srcset="{{ theme_media.hero_image }}">{% endif %}
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Banner de {{ request.tenant.nome }}" decoding="async">
 </picture>{% endif %}
-<div class="art-ring ring-one"></div><div class="art-ring ring-two"></div><span class="art-caption">ESCOLHA SEU MOMENTO</span>
-<div class="care-card"><div class="care-top"><span class="care-logo">{{ site_theme.icon|default:"✦" }}</span><span>{{ request.tenant.nome|default:'Feito para o seu dia' }}</span><span class="care-dots" aria-hidden="true">•••</span></div>
-<div class="care-title">Pequenas pausas.<br>Grandes cuidados.</div>
-<div class="care-item"><span class="care-icon" aria-hidden="true">✂</span><div><strong>Seu estilo</strong><small>Beleza & expressão</small></div><span aria-hidden="true">↗</span></div>
-<div class="care-item"><span class="care-icon" aria-hidden="true">✧</span><div><strong>Seu bem-estar</strong><small>Tempo para se cuidar</small></div><span aria-hidden="true">↗</span></div>
-<div class="care-bottom"><span class="live-dot"></span> Uma experiência no seu ritmo</div></div>
-<div class="floating-note"><span aria-hidden="true">♡</span><div><strong>Você em primeiro lugar</strong><small>Do começo ao fim.</small></div></div><span class="art-foot">MAIS CUIDADO. MENOS COMPLICAÇÃO.</span></div></section>
+<h1 class="hero-title">{% if theme_media.logo_image %}<img class="hero-logo" src="{{ theme_media.logo_image }}" alt="{{ request.tenant.nome }}" decoding="async">{% else %}<span class="visually-hidden">{{ request.tenant.nome|default:'agenda' }}</span>{% endif %}</h1></section>
 <div class="category-strip" aria-label="Serviços profissionais"><span>Beleza</span><i>✦</i><span>Estilo</span><i>✦</i><span>Elegância</span><i>✦</i><span>Autoestima</span><i>✦</i><span>Bem-estar</span><i>✦</i><span>Seu momento especial</span></div>
 {% if request.tenant %}
 <section id="servicos" class="section"><div class="section-heading"><div><span class="overline">ESCOLHA O SEU CUIDADO</span><h2>O que você precisa hoje?</h2></div><p>Serviços, valores e durações<br>de cada profissional.</p></div>

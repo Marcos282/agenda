@@ -134,8 +134,8 @@ class TenantThemeTests(BookingFixture, TestCase):
             self.assertFalse(TenantTheme.objects.exists())
         self.client.post(self.content_url, {'title':'<script>alert(1)</script>', 'button_text':'Marcar consulta'}, **self.host)
         response = self.client.get('/', **self.host)
-        self.assertContains(response, '&lt;script&gt;alert(1)&lt;/script&gt;')
         self.assertNotContains(response, 'hero-primary')
+        self.assertNotContains(response, 'hero-copy')
         self.assertEqual(TenantTheme.objects.get(tenant=self.tenant).button_text, 'Marcar consulta')
         self.assertNotContains(response, '<script>alert(1)</script>')
         csrf = Client(enforce_csrf_checks=True)
@@ -192,6 +192,36 @@ class TenantThemeTests(BookingFixture, TestCase):
         with self.assertRaises(ValidationError):
             optimize_image(SimpleUploadedFile('huge.png', b'x'*(5*1024*1024+1)))
 
+    def test_logo_upload_keeps_transparency_and_renders_over_banner(self):
+        response = self.client.get(self.content_url, **self.host)
+        self.assertContains(response, 'Logomarca')
+        self.assertContains(response, 'fundo transparente')
+        buf = BytesIO()
+        Image.new('RGBA', (1200, 400), (255, 0, 0, 0)).save(buf, 'PNG')
+        logo = SimpleUploadedFile('logo.png', buf.getvalue(), content_type='image/png')
+        with TemporaryDirectory() as directory:
+            from django.core.files.storage import FileSystemStorage
+            storage = FileSystemStorage(location=directory)
+            with patch.object(TenantTheme._meta.get_field('logo_image'), 'storage', storage):
+                self.assertEqual(self.client.post(self.content_url, {'logo_image': logo}, **self.host).status_code, 302)
+                theme = TenantTheme.objects.get(tenant=self.tenant)
+                self.assertTrue(theme.logo_image.name.startswith(f'tenants/{self.tenant.pk}/'))
+                with Image.open(theme.logo_image) as optimized:
+                    self.assertEqual((optimized.format, optimized.mode, optimized.size), ('WEBP', 'RGBA', (800, 267)))
+                logo_url = reverse('theme_image', args=['logo_image'])
+                self.assertEqual(self.client.get(logo_url, **self.host).status_code, 200)
+                self.assertEqual(Client().get(logo_url, HTTP_HOST='wanessa.localhost').status_code, 404)
+                self.assertContains(self.client.get(self.content_url, **self.host), 'Ver Logomarca salva')
+                home = self.client.get('/', **self.host).content.decode()
+                hero = home.split('<section class="hero', 1)[1].split('</section>', 1)[0]
+                self.assertIn(f'<h1 class="hero-title"><img class="hero-logo" src="{logo_url}?v=', hero)
+                self.assertNotIn('visually-hidden', hero)
+                self.client.post(self.content_url, {'logo_image_action': 'hide'}, **self.host)
+                self.assertNotContains(self.client.get('/', **self.host), 'class="hero-logo"')
+                self.client.post(self.content_url, {'logo_image_action': 'remove'}, **self.host)
+                theme.refresh_from_db()
+                self.assertFalse(theme.logo_image.name)
+
     def test_all_themes_valid_and_accessible_primary_contrast(self):
         for entry in THEMES:
             self.assertEqual(self.apply(style=entry[0], primary_color=entry[3]).status_code, 302)
@@ -216,8 +246,6 @@ class TenantThemeTests(BookingFixture, TestCase):
         }, **self.host).status_code, 302)
         response = self.client.get('/', **self.host)
         self.assertContains(response, 'theme-tatuagem')
-        self.assertContains(response, 'Sua história, marcada em arte')
-        self.assertContains(response, '✒')
         theme = TenantTheme.objects.get(tenant=self.tenant)
         self.assertEqual((theme.style,theme.icon),('tatuagem','✒'))
         before = list(TenantTheme.objects.values())
@@ -272,7 +300,7 @@ class TenantThemeTests(BookingFixture, TestCase):
             self.assertContains(response, '<picture class="hero-banner">')
             self.assertContains(response, '<source media="(min-width:769px)" srcset="')
             self.assertContains(response, '<source media="(max-width:768px)" srcset="')
-            self.assertContains(response, 'object-fit:cover')
+            self.assertContains(response, '<section class="hero has-desktop-banner has-mobile-banner">')
             self.assertNotContains(response, '.tenant-content .hero{background-image:')
         theme.refresh_from_db()
         self.assertTrue(theme.hero_image.name.endswith('desktop.webp'))

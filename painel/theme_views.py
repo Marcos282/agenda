@@ -77,7 +77,8 @@ def restore(request):
     # File references are cleared, files themselves are retained for recovery.
     defaults = {'style': 'original', 'primary_color': '#287454', 'title': '', 'subtitle': '',
                 'description': '', 'button_text': '', 'icon': '', 'hero_image': '', 'background_image': '',
-                'hero_image_enabled': True, 'background_image_enabled': True}
+                'logo_image': '', 'hero_image_enabled': True, 'background_image_enabled': True,
+                'logo_image_enabled': True}
     TenantTheme.objects.filter(tenant=request.tenant).update(**defaults)
     messages.success(request, 'Aparência original restaurada. Os arquivos de imagem foram preservados.')
     return redirect('painel:estilo')
@@ -86,7 +87,7 @@ def restore(request):
 @tenant_required
 @require_http_methods(['GET'])
 def image(request, field):
-    if field not in {'hero_image', 'background_image'}:
+    if field not in {'hero_image', 'background_image', 'logo_image'}:
         raise Http404
     theme = TenantTheme.objects.filter(tenant=request.tenant).first()
     file = getattr(theme, field, None)

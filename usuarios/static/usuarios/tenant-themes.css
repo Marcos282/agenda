@@ -10,34 +10,31 @@
  --line:color-mix(in srgb,var(--theme-text) 20%,var(--theme-background));--focus:var(--theme-primary);
  background:var(--page);color:var(--text);font-family:var(--theme-font);
 }
-.tenant-site :is(h1,h2,h3,.care-title,.wordmark,.shop-brand){font-family:var(--theme-font);color:var(--text)}
+.tenant-site :is(h1,h2,h3,.wordmark,.shop-brand){font-family:var(--theme-font);color:var(--text)}
 .tenant-site :is(.service-card,.team-card,.care-card,.product-card,.shop-filters,.card,.booking-status,.detail-art){background:var(--surface);color:var(--text);border-color:var(--line);border-radius:var(--theme-radius);box-shadow:var(--theme-shadow)}
 .tenant-site :is(button,.ui-button){border-radius:var(--theme-radius);background:var(--theme-primary);border-color:var(--theme-primary);color:var(--theme-on-primary)}
 .tenant-site :is(.ui-button-secondary,.ui-button-quiet){background:var(--brand-soft);color:var(--text);border-color:var(--brand-border)}
 .tenant-site :is(input,select,textarea){background:var(--surface);color:var(--text);border-color:var(--line);border-radius:var(--theme-radius)}
-.tenant-site :is(.category-strip,.shop-benefits,.join-banner,.hero-stamp,.hero-art,.product-art,.team-avatar,.floating-note){background-color:var(--brand-soft);border-color:var(--brand-border);color:var(--text);border-radius:var(--theme-radius)}
-.tenant-site :is(.overline,.eyebrow,.professional-name,.service-category,.service-duration,.hero-copy>p,.team-card p,.site-footer p,.shop-footer p){color:var(--muted)}
-.tenant-site :is(.care-icon,.care-logo,.brand-period){color:var(--theme-accent-ink,var(--text));background:var(--brand-soft);border-color:var(--brand-border)}
-.tenant-site .hero h1 em{color:var(--theme-accent-ink,var(--text))}
+.tenant-site :is(.category-strip,.shop-benefits,.join-banner,.hero-stamp,.hero,.product-art,.team-avatar){background-color:var(--brand-soft);border-color:var(--brand-border);color:var(--text);border-radius:var(--theme-radius)}
+.tenant-site :is(.overline,.eyebrow,.professional-name,.service-category,.service-duration,.team-card p,.site-footer p,.shop-footer p){color:var(--muted)}
+.tenant-site .brand-period{color:var(--theme-accent-ink,var(--text));background:var(--brand-soft);border-color:var(--brand-border)}
 .tenant-site button:not(.ui-button-secondary):hover{background:var(--theme-primary);box-shadow:0 0 0 3px var(--brand-border)}
 .tenant-site.theme-glassmorphism :is(.care-card,.service-card,.team-card){backdrop-filter:blur(16px)}
 .tenant-site.theme-brutalista :is(.service-card,.team-card,.care-card,.ui-button){border:2px solid var(--text);font-weight:800}
-.tenant-site.theme-gradiente :is(.hero-art,.join-banner,.product-art){background:linear-gradient(130deg,var(--brand-soft),color-mix(in srgb,var(--theme-primary) 35%,var(--surface)))}
+.tenant-site.theme-gradiente :is(.hero,.join-banner,.product-art){background:linear-gradient(130deg,var(--brand-soft),color-mix(in srgb,var(--theme-primary) 35%,var(--surface)))}
 .tenant-site.theme-personal-trainer :is(h1,h2,h3,.ui-button){font-weight:900;text-transform:uppercase;letter-spacing:-.035em}
 .tenant-site.theme-personal-trainer .overline{color:#b6ff00}
-.tenant-site.theme-odontologia .hero-art{background:linear-gradient(130deg,var(--brand-soft),#00bcd425)}
-.tenant-site.theme-retro :is(h1,h2,.care-title){font-style:italic}
+.tenant-site.theme-odontologia .hero{background:linear-gradient(130deg,var(--brand-soft),#00bcd425)}
+.tenant-site.theme-retro :is(h1,h2){font-style:italic}
 .tenant-site.theme-futurista :is(.service-card,.team-card){border-color:var(--brand-border)}
 .tenant-site :focus-visible{outline:3px solid var(--focus);outline-offset:3px}
-
-.tenant-content :is(.hero-copy h1,.hero-copy p){overflow-wrap:anywhere}
 .tenant-site :is(.brand-symbol,.shop-announcement){background:var(--theme-primary);color:var(--theme-on-primary)}
 
 /* Full-screen height belongs only to the public page, never theme thumbnails. */
 body.tenant-site{min-height:100vh}
 
 /* Tattoo studio: charcoal surfaces, warm ink accents and editorial typography. */
-.tenant-site.theme-tatuagem :is(h1,h2,h3,.care-title){font-family:Georgia,serif;font-weight:700;letter-spacing:-.025em}
+.tenant-site.theme-tatuagem :is(h1,h2,h3){font-family:Georgia,serif;font-weight:700;letter-spacing:-.025em}
 .tenant-site.theme-tatuagem :is(.ui-button,.mini-cta){font-family:system-ui,sans-serif;font-weight:700;letter-spacing:.025em}
 .tenant-site.theme-tatuagem :is(.service-card,.team-card,.care-card,.product-card){border-color:var(--brand-border)}
-.tenant-site.theme-tatuagem .hero-art{background:radial-gradient(ellipse at 70% 15%,var(--brand-border),transparent 65%),var(--theme-surface)}
+.tenant-site.theme-tatuagem .hero{background:radial-gradient(ellipse at 70% 15%,var(--brand-border),transparent 65%),var(--theme-surface)}

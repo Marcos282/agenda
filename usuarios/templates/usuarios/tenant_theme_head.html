@@ -1,5 +1,5 @@
 {% load static %}{% if site_theme %}
-<link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}?v=tatuagem-1">
+<link rel="stylesheet" href="{% static 'usuarios/tenant-themes.css' %}?v=hero-style-1">
 <style>
 {% if theme_active %}.tenant-site {
 --theme-primary: {{ theme_tokens.primary }}; --theme-accent-ink: {{ theme_tokens.accent_ink }}; --theme-on-primary: {{ theme_tokens.on_primary }};
@@ -7,7 +7,4 @@
 --theme-text: {{ theme_tokens.text }}; --theme-radius: {{ theme_tokens.radius }};
 --theme-shadow: {{ theme_tokens.shadow }}; --theme-font: {{ theme_tokens.font }};
 }{% endif %}
-.hero-banner{display:none;position:absolute;inset:0}.hero-banner>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
-{% if theme_media.hero_image %}@media(min-width:769px){.tenant-content .hero .hero-art>.hero-banner{display:block}.tenant-content .hero .hero-art>:not(.hero-banner){visibility:hidden}}{% endif %}
-{% if theme_media.background_image %}@media(max-width:768px){.tenant-content .hero .hero-art>.hero-banner{display:block}.tenant-content .hero .hero-art>:not(.hero-banner){visibility:hidden}}{% endif %}
 </style>{% endif %}

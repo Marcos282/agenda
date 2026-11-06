@@ -12,7 +12,7 @@ from usuarios.models import User
 @override_settings(TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost'], DEV_PUBLIC_HOST='',
                    PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ThemeBrowserTests(StaticLiveServerTestCase):
-    def test_responsive_banners_keep_hero_text_and_respect_visibility(self):
+    def test_responsive_banner_strip_and_visibility(self):
         tenant = Tenant.objects.create(nome='NovaHost', subdomain='novahost')
         theme = TenantTheme.objects.create(
             tenant=tenant, style='tatuagem',
@@ -44,10 +44,11 @@ class ThemeBrowserTests(StaticLiveServerTestCase):
                     self.assertEqual(image.evaluate('el => getComputedStyle(el).objectFit'), 'cover')
                     self.assertEqual(len([request for request in requests if expected in request]), 1)
                     self.assertFalse(any(other in request for request in requests))
-                    expect(page.locator('.hero-copy h1')).to_be_visible()
-                    expect(page.locator('.hero-copy>p')).to_be_visible()
-                    self.assertEqual(page.locator('.hero').evaluate('el => getComputedStyle(el).backgroundImage'), 'none')
-                    self.assertEqual(page.locator('.care-card').evaluate('el => getComputedStyle(el).visibility'), 'hidden')
+                    expect(page.locator('.hero-copy, .hero-art')).to_have_count(0)
+                    hero = page.locator('.hero').bounding_box()
+                    self.assertEqual(hero['height'], 252 if width > 768 else 154)
+                    banner = page.locator('.hero-banner').bounding_box()
+                    self.assertEqual((banner['width'], banner['height']), (hero['width'], hero['height']))
                     self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), width)
                     page.close()
             browser.close()
@@ -58,9 +59,9 @@ class ThemeBrowserTests(StaticLiveServerTestCase):
                 browser = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
                 page = browser.new_page(viewport={'width': width, 'height': 1000})
                 page.goto(url + '/')
-                self.assertNotIn('/aparencia/imagem/', page.locator('.hero-art').evaluate('el => getComputedStyle(el).backgroundImage'))
-                self.assertEqual(page.locator('.care-card').evaluate('el => getComputedStyle(el).visibility'), 'visible')
                 expect(page.locator('.hero-banner')).to_be_hidden()
+                expect(page.locator('.hero h1')).to_have_text('NovaHost')
+                self.assertEqual(page.locator('.hero h1 span').bounding_box()['width'], 1)
                 browser.close()
 
     def test_gallery_palette_preview_save_content_and_mobile(self):
@@ -107,8 +108,8 @@ class ThemeBrowserTests(StaticLiveServerTestCase):
             page.locator('#id_button_text').fill('Conheça nossos serviços')
             page.get_by_role('button', name='Salvar e aplicar').click()
             page.goto(url+'/')
-            expect(page.locator('.hero h1')).to_have_text('Seus pés merecem cuidado especial')
-            expect(page.locator('.hero-copy>p')).to_contain_text('Cuidado e bem-estar para você.')
+            expect(page.locator('.hero h1')).to_have_text('NovaHost')
+            expect(page.locator('.hero-copy, .hero-art')).to_have_count(0)
             expect(page.locator('.hero-actions, .hero-primary, .hero a')).to_have_count(0)
             self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), 320)
             page.screenshot(path='/tmp/tenant-theme-public-mobile.png', full_page=True)

@@ -59,8 +59,12 @@ class PublicHomeTests(TestCase):
                 self.assertNotContains(page, 'hero-primary')
                 hero = page.content.decode().split('<section class="hero">', 1)[1].split('</section>', 1)[0]
                 self.assertNotIn('<a ', hero)
-                self.assertIn('class="hero-note"', hero)
-                self.assertIn('class="hero-art"', hero)
+                self.assertIn('<h1 class="hero-title"><span class="visually-hidden">Marcos</span></h1>', hero)
+                self.assertNotIn('class="hero-logo"', hero)
+                self.assertNotContains(page, '<header')
+                self.assertNotContains(page, 'site-header')
+                for removed in ('hero-copy', 'hero-art', 'hero-note', 'care-card', 'floating-note', 'picture'):
+                    self.assertNotIn(removed, hero)
 
     def test_catalog_search_form_is_not_rendered(self):
         for path in ['/', f'/profissional/{self.prof.pk}/']:
