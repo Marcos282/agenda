@@ -27,7 +27,9 @@ class CustomerLoginDisabledTests(TestCase):
         response = self.client.get('/conta/', HTTP_HOST='marcos.localhost')
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith('/login/'))
-        self.assertEqual(self.client.get('/loja/', HTTP_HOST='marcos.localhost').status_code, 200)
+        public_page = self.client.get('/loja/', HTTP_HOST='marcos.localhost', follow=True)
+        self.assertRedirects(public_page, '/inicio/')
+        self.assertFalse(public_page.wsgi_request.user.is_authenticated)
 
     def test_customer_signup_redirects_without_creating_account(self):
         count = User.objects.count()

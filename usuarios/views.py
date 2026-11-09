@@ -6,6 +6,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
 from tenants.domains import is_development_public_host, tenant_base_domain_for_host
 from tenants.decorators import tenant_required
+from django.conf import settings
+from . import ratelimit, turnstile
 from .forms import LoginForm, WhatsAppForm
 
 
@@ -120,7 +122,25 @@ def entrar(request):
     if request.user.is_authenticated:
         return redirect('admin:index' if request.tenant is None else (destino_apos_login(request) or 'conta'))
     form = LoginForm(request.POST if request.method == 'POST' else None, request=request)
-    if request.method == 'POST' and form.is_valid():
+    erro_seguranca, status = '', 200
+    if request.method == 'POST':
+        ip = turnstile.client_ip(request)
+        email = request.POST.get('email', '').strip().lower()[:254]
+        if (ratelimit.is_limited('login-ip', ip, settings.LOGIN_RATE_LIMIT_PER_IP)
+                or ratelimit.is_limited('login-email', email, settings.LOGIN_RATE_LIMIT_PER_EMAIL)):
+            erro_seguranca, status = ratelimit.MESSAGE, 429
+        else:
+            ratelimit.hit('login-ip', ip, settings.AUTH_RATE_LIMIT_WINDOW_SECONDS)
+            verificacao = turnstile.verify(request, turnstile.AUTH, turnstile.ACTION_LOGIN)
+            if not verificacao.ok:
+                erro_seguranca, status = verificacao.message, 400
+            elif form.is_valid():
+                ratelimit.reset('login-email', email)
+            else:
+                ratelimit.hit('login-email', email, settings.AUTH_RATE_LIMIT_WINDOW_SECONDS)
+        if erro_seguranca:
+            form = LoginForm(initial={'email': email}, request=request)
+    if request.method == 'POST' and not erro_seguranca and form.is_valid():
         if request.tenant is None and form.user.tenant_id:
             if is_development_public_host(request.get_host()):
                 login(request, form.user)
@@ -136,7 +156,10 @@ def entrar(request):
             destino = destino_apos_login(request)
             return redirect(reverse('conta') + ('?' + urlencode({'next': destino}) if destino else ''))
         return redirect(destino_apos_login(request) or 'conta')
-    return render(request, 'usuarios/form.html', {'form': form, 'titulo': 'Entrar', 'botao': 'Entrar', 'destino': destino_apos_login(request), 'login_form': True})
+    return render(request, 'usuarios/form.html', {
+        'form': form, 'titulo': 'Entrar', 'botao': 'Entrar', 'destino': destino_apos_login(request), 'login_form': True,
+        'erro_seguranca': erro_seguranca, 'turnstile': turnstile.widget_context(turnstile.AUTH, turnstile.ACTION_LOGIN),
+    }, status=status)
 
 
 @tenant_required

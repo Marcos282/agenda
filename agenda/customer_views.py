@@ -18,6 +18,7 @@ from django.views.decorators.http import require_http_methods
 
 from catalogo.models import ProfissionalServico
 from tenants.decorators import tenant_required
+from usuarios import turnstile
 from .booking import cancelar, horarios_disponiveis, reservar, reservar_por_whatsapp
 from .customer_forms import ConfirmarAgendamentoForm, DataAgendamentoForm
 from .models import Agendamento
@@ -83,7 +84,11 @@ def horarios(request, oferta_id, dia):
     status = 200
     if request.method == 'POST':
         status = 400
-        if form.is_valid():
+        verificacao = turnstile.verify(request, turnstile.PUBLIC, turnstile.ACTION_BOOKING)
+        if not verificacao.ok:
+            form.add_error(None, verificacao.message)
+            status = 403
+        elif form.is_valid():
             try:
                 quoted = signing.loads(form.cleaned_data['cotacao'], salt='agendamento', max_age=86400)
                 if quoted['oferta'] != oferta.pk:
@@ -119,6 +124,7 @@ def horarios(request, oferta_id, dia):
                 return redirect('agenda:detalhe', pk=booking.pk)
     return render(request, 'agenda/horarios.html', {
         'oferta': oferta, 'dia': data, 'horarios': horarios_disponiveis(oferta, data), 'form': form,
+        'turnstile': turnstile.widget_context(turnstile.PUBLIC, turnstile.ACTION_BOOKING),
     }, status=status)
 
 

@@ -1,0 +1,119 @@
+{% extends 'usuarios/plataforma.html' %}
+{% load static %}
+{% block title %}Política de Privacidade · Tá Combinado{% endblock %}
+{% block description %}Saiba como o Tá Combinado trata dados pessoais, protege informações e recebe solicitações relacionadas à privacidade.{% endblock %}
+{% block tracking %}{% endblock %}
+{% block body_class %}privacy-page{% endblock %}
+{% block extra_head %}
+<link rel="canonical" href="https://tacombinado.net/politica-de-privacidade/">
+<link rel="stylesheet" href="{% static 'usuarios/privacy.css' %}">
+{% endblock %}
+{% block navigation %}<a href="https://tacombinado.net/">Conhecer a plataforma</a><a href="#contato">Contato e direitos</a>{% endblock %}
+{% block floating_contact %}{% endblock %}
+{% block content %}
+<article class="privacy-document container" aria-labelledby="privacy-title">
+  <header>
+    <span class="eyebrow">TRANSPARÊNCIA E CUIDADO</span>
+    <h1 id="privacy-title">Política de Privacidade</h1>
+    <p>Última atualização: <time datetime="2026-11-09">9 de novembro de 2026</time>.</p>
+    <p>Conheça as finalidades do tratamento de dados pessoais e os canais para exercer seus direitos.</p>
+  </header>
+  <nav class="privacy-summary" aria-label="Seções da política">
+    <ol>
+      <li><a href="#introducao">Introdução</a></li>
+      <li><a href="#dados">Dados pessoais coletados</a></li>
+      <li><a href="#finalidades">Finalidade do tratamento</a></li>
+      <li><a href="#whatsapp">Integração com WhatsApp</a></li>
+      <li><a href="#turnstile">Proteção Cloudflare Turnstile</a></li>
+      <li><a href="#compartilhamento">Compartilhamento de dados</a></li>
+      <li><a href="#seguranca">Segurança das informações</a></li>
+      <li><a href="#direitos">Direitos dos titulares</a></li>
+      <li><a href="#responsabilidades">Responsabilidades</a></li>
+      <li><a href="#contato">Contato e atualização</a></li>
+    </ol>
+  </nav>
+  <section id="introducao">
+    <h2>1. Introdução</h2>
+    <p>O Tá Combinado é uma plataforma de agendamento online utilizada por estabelecimentos e profissionais para organizar serviços, horários e o atendimento aos seus clientes. Esta política descreve o tratamento de dados pessoais relacionado à plataforma, considerando os princípios de finalidade, adequação, necessidade, transparência, segurança e os direitos previstos na Lei Geral de Proteção de Dados Pessoais (LGPD).</p>
+    <p>Os dados tratados dependem da funcionalidade utilizada e das configurações de cada estabelecimento. A leitura desta política não representa consentimento genérico para qualquer tratamento.</p>
+  </section>
+  <section id="dados">
+    <h2>2. Dados pessoais coletados</h2>
+    <p>A plataforma pode tratar:</p>
+    <ul>
+      <li>Nome do cliente e número de WhatsApp informado no agendamento.</li>
+      <li>Serviços, profissionais, datas e horários agendados, valores e situação dos atendimentos, incluindo histórico de agendamentos, cancelamentos e faltas.</li>
+      <li>Dados cadastrais dos estabelecimentos e de seus responsáveis e profissionais, como nome, e-mail, telefone, endereço e documentos de identificação, conforme os campos utilizados. Documentos e contatos cadastrados para exibição pública podem aparecer na página do estabelecimento.</li>
+      <li>Dados de conta e autenticação dos responsáveis, incluindo senhas armazenadas na forma de hash, e informações de cobrança e pagamento quando essas funcionalidades forem utilizadas.</li>
+      <li>Informações técnicas necessárias ao funcionamento e à segurança, como endereço IP, dados do navegador, cookies de sessão e registros técnicos de acesso, conforme a infraestrutura e os recursos utilizados.</li>
+    </ul>
+    <p>As páginas públicas institucionais e dos estabelecimentos utilizam Google Analytics para medição de acesso. Esse serviço pode tratar identificadores, cookies e dados de navegação. Esta página de política não carrega a tag de Analytics.</p>
+  </section>
+  <section id="finalidades">
+    <h2>3. Finalidade do tratamento</h2>
+    <ul>
+      <li>Registrar e gerenciar agendamentos, alterações e cancelamentos.</li>
+      <li>Identificar clientes e permitir o acompanhamento dos seus atendimentos.</li>
+      <li>Enviar notificações relacionadas aos agendamentos.</li>
+      <li>Permitir o gerenciamento dos estabelecimentos, equipes, serviços, histórico de atendimento e acesso à plataforma.</li>
+      <li>Processar cobranças e pagamentos relacionados ao uso da plataforma, quando aplicável.</li>
+      <li>Prevenir fraudes, acessos automatizados e uso indevido, além de manter o funcionamento da plataforma.</li>
+      <li>Compreender a utilização das páginas públicas por meio de métricas de acesso.</li>
+    </ul>
+    <p>O tratamento deve observar a base legal adequada à operação, como execução de contrato ou procedimentos preliminares, cumprimento de obrigação legal, legítimo interesse com avaliação dos direitos do titular, ou consentimento quando exigido. A definição depende da finalidade e do responsável por cada tratamento.</p>
+  </section>
+  <section id="whatsapp">
+    <h2>4. Integração com WhatsApp</h2>
+    <p>O sistema pode utilizar integrações com o WhatsApp para enviar confirmações, lembretes e notificações relacionadas aos agendamentos, conforme os recursos e as configurações do estabelecimento. O envio pode envolver o número de telefone, nome e informações necessárias sobre o atendimento, além de fornecedores da integração e do próprio WhatsApp.</p>
+    <p>A disponibilidade das mensagens depende da conexão e dos serviços envolvidos. O uso do WhatsApp também está sujeito às regras e políticas de seus fornecedores. Para esclarecer ou ajustar comunicações, procure o estabelecimento ou o canal institucional indicado nesta política.</p>
+  </section>
+  <section id="turnstile">
+    <h2>5. Proteção Cloudflare Turnstile</h2>
+    <aside class="privacy-notice" aria-label="Onde a verificação é utilizada">
+      <p><strong>Onde a verificação é utilizada:</strong> na confirmação de agendamentos públicos, de forma invisível, e no acesso ao painel e no cadastro de estabelecimentos, com verificação gerenciada que pode solicitar uma interação quando a Cloudflare considerar necessário. A leitura desta página não exige CAPTCHA.</p>
+    </aside>
+    <p>O Tá Combinado utiliza o Cloudflare Turnstile como mecanismo de proteção contra robôs, spam, tentativas automatizadas de acesso e outras atividades potencialmente maliciosas.</p>
+    <p>O Cloudflare Turnstile pode realizar verificações de segurança de forma invisível, sem exigir interação direta do visitante.</p>
+    <p>Durante esse processo, informações técnicas podem ser tratadas pela Cloudflare para identificar acessos automatizados e proteger a plataforma.</p>
+    <p>Para mais informações, consulte o Adendo de Privacidade do Cloudflare Turnstile:</p>
+    <p><a href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy/" target="_blank" rel="noopener noreferrer">https://www.cloudflare.com/en-gb/turnstile-privacy-policy/</a></p>
+  </section>
+  <section id="compartilhamento">
+    <h2>6. Compartilhamento de dados</h2>
+    <p>Os dados necessários ao atendimento podem ser acessados pelo estabelecimento responsável pelo agendamento e pelos profissionais autorizados. Também pode haver compartilhamento com fornecedores de hospedagem, infraestrutura, segurança, integrações de WhatsApp, e-mail, métricas e pagamentos, na medida necessária à operação de cada recurso, além de autoridades quando houver obrigação legal ou solicitação válida.</p>
+    <p>Esses serviços podem envolver processamento fora do Brasil. As condições, os fornecedores e as garantias aplicáveis às transferências internacionais devem ser avaliados pelo responsável pelo tratamento conforme a LGPD.</p>
+    <p>O tempo de manutenção dos dados depende da finalidade, das obrigações legais e da necessidade de exercício regular de direitos. Solicitações de exclusão são avaliadas considerando essas condições; esta política não estabelece um prazo único de retenção para todos os dados.</p>
+  </section>
+  <section id="seguranca">
+    <h2>7. Segurança das informações</h2>
+    <p>O sistema utiliza autenticação para áreas restritas, permissões de acesso por perfil, separação lógica dos dados por estabelecimento e validações no servidor. As senhas de conta são armazenadas com hash, não em texto simples. Há proteção contra falsificação de requisições (CSRF) nas operações que a exigem e cookies de sessão restritos ao host, sem compartilhamento entre subdomínios. A confirmação de agendamentos, o acesso ao painel e o cadastro de estabelecimentos passam por verificação anti-robô validada no servidor, e as tentativas de acesso e de cadastro são limitadas por período.</p>
+    <p>Esses controles apoiam a organização do acesso aos dados pelos responsáveis autorizados. Nenhuma medida elimina todos os riscos: não é possível prometer segurança absoluta. Suspeitas de acesso indevido ou incidentes devem ser comunicadas pelo canal institucional para avaliação e adoção das medidas cabíveis, incluindo comunicações legalmente exigidas.</p>
+  </section>
+  <section id="direitos">
+    <h2>8. Direitos dos titulares</h2>
+    <p>Nos termos da LGPD e conforme o caso, você pode solicitar:</p>
+    <ul>
+      <li>Confirmação da existência de tratamento e acesso aos seus dados.</li>
+      <li>Correção de dados incompletos, inexatos ou desatualizados.</li>
+      <li>Anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados em desconformidade com a lei.</li>
+      <li>Portabilidade, observada a regulamentação aplicável e os segredos comercial e industrial.</li>
+      <li>Eliminação dos dados tratados com consentimento, ressalvadas as hipóteses legais de conservação.</li>
+      <li>Informação sobre compartilhamentos e sobre a possibilidade e as consequências de não fornecer consentimento, além de sua revogação.</li>
+      <li>Oposição ao tratamento realizado em desconformidade com a lei e revisão de decisões tomadas unicamente com base em tratamento automatizado que afetem seus interesses, quando aplicável.</li>
+      <li>Peticionamento perante a Autoridade Nacional de Proteção de Dados (ANPD) e os órgãos de defesa do consumidor.</li>
+    </ul>
+    <p>Para proteger seus dados, pode ser necessário confirmar sua identidade por meios proporcionais à solicitação. Os pedidos serão avaliados segundo os requisitos e prazos legais, inclusive quando houver necessidade de conservação de informações. Você pode procurar o estabelecimento responsável pelo atendimento ou o Tá Combinado pelo canal abaixo.</p>
+  </section>
+  <section id="responsabilidades">
+    <h2>9. Responsabilidades</h2>
+    <p>Os estabelecimentos podem atuar como controladores dos dados dos clientes ao decidir as finalidades e os elementos essenciais do tratamento para seus atendimentos. Nesses casos, o Tá Combinado pode atuar como operador, tratando dados conforme as instruções do estabelecimento e as obrigações aplicáveis.</p>
+    <p>Essa divisão não se aplica automaticamente a todos os tratamentos. Em operações cujas finalidades e decisões sejam definidas pela própria plataforma, como gestão de suas contas, relação contratual, cobrança e segurança própria, o Tá Combinado pode atuar como controlador. As responsabilidades devem ser analisadas por operação e formalizadas nos instrumentos aplicáveis.</p>
+  </section>
+  <section id="contato">
+    <h2>10. Contato e atualização</h2>
+    <p>Para solicitações de privacidade, exercício de direitos ou esclarecimentos, utilize o <a href="#contato-institucional">e-mail institucional informado no rodapé desta página</a>. Informe o contexto e, quando aplicável, o estabelecimento envolvido para viabilizar o encaminhamento ao responsável. Não envie senhas, tokens ou documentos desnecessários.</p>
+    <p>Os dados institucionais e canais de contato existentes no site são reproduzidos no rodapé. A vinculação jurídica da entidade ao Tá Combinado e a designação do responsável pelo atendimento de privacidade precisam ser confirmadas antes da publicação definitiva.</p>
+    <p>Esta política poderá ser atualizada para refletir mudanças no serviço e nas práticas de tratamento. A data da versão vigente é apresentada no início desta página.</p>
+  </section>
+</article>
+{% endblock %}

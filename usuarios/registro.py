@@ -13,6 +13,7 @@ from django.views.decorators.http import require_http_methods
 from tenants.domains import tenant_base_domain_for_host
 from tenants.models import Tenant, subdomain_validator
 from tenants.pricing import monthly_price
+from . import ratelimit, turnstile
 from .models import User
 
 
@@ -62,7 +63,20 @@ def registro(request):
     if request.tenant is not None:
         raise Http404
     form = RegistroForm(request.POST if request.method == 'POST' else None)
-    if request.method == 'POST' and form.is_valid():
+    erro_seguranca, status = '', 200
+    if request.method == 'POST':
+        ip = turnstile.client_ip(request)
+        if ratelimit.is_limited('registro-ip', ip, settings.REGISTRATION_RATE_LIMIT_PER_IP):
+            erro_seguranca, status = ratelimit.MESSAGE, 429
+        else:
+            ratelimit.hit('registro-ip', ip, settings.AUTH_RATE_LIMIT_WINDOW_SECONDS)
+            verificacao = turnstile.verify(request, turnstile.AUTH, turnstile.ACTION_REGISTRATION)
+            if not verificacao.ok:
+                erro_seguranca, status = verificacao.message, 400
+        if erro_seguranca:
+            form = RegistroForm(initial={'subdomain': request.POST.get('subdomain', '')[:63],
+                                         'email': request.POST.get('email', '')[:254]})
+    if request.method == 'POST' and not erro_seguranca and form.is_valid():
         try:
             with transaction.atomic():
                 tenant = Tenant.objects.create(
@@ -76,7 +90,10 @@ def registro(request):
         else:
             request.session['registro_tenant'] = tenant.pk
             return redirect('registro_concluido')
-    return render(request, 'usuarios/registro.html', {'form':form, 'valor_mensalidade':monthly_price()})
+    return render(request, 'usuarios/registro.html', {
+        'form': form, 'valor_mensalidade': monthly_price(), 'erro_seguranca': erro_seguranca,
+        'turnstile': turnstile.widget_context(turnstile.AUTH, turnstile.ACTION_REGISTRATION),
+    }, status=status)
 
 
 @require_http_methods(['GET'])

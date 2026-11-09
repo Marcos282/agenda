@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
+import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -241,3 +243,38 @@ WHATSAPP_TESTS_PIN = os.environ.get("WHATSAPP_TESTS_PIN", "1031")
 WHATSAPP_TEST_RECIPIENTS = os.environ.get('WHATSAPP_TEST_RECIPIENTS', 'marcos:21990921092')
 
 WHATSAPP_TESTS_DB = Path(os.environ.get("WHATSAPP_TESTS_DB", str(BASE_DIR / "whatsapp-tests.sqlite3")))
+
+RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+# Cloudflare Turnstile: secret keys are only used server-side by usuarios.turnstile.
+# Public booking (invisible widget). CLOUDFLARE_TURNSTILE_* kept as legacy fallback names.
+TURNSTILE_PUBLIC_SITE_KEY = os.environ.get('TURNSTILE_PUBLIC_SITE_KEY', os.environ.get('CLOUDFLARE_TURNSTILE_SITE_KEY', '')).strip()
+TURNSTILE_PUBLIC_SECRET_KEY = os.environ.get('TURNSTILE_PUBLIC_SECRET_KEY', os.environ.get('CLOUDFLARE_TURNSTILE_SECRET_KEY', '')).strip()
+# Panel login and establishment registration (managed widget).
+TURNSTILE_AUTH_SITE_KEY = os.environ.get('TURNSTILE_AUTH_SITE_KEY', '').strip()
+TURNSTILE_AUTH_SECRET_KEY = os.environ.get('TURNSTILE_AUTH_SECRET_KEY', '').strip()
+# Always on in production; opt-in during local development; off in the test runner unless overridden.
+TURNSTILE_ENABLED = os.environ.get(
+    'TURNSTILE_ENABLED', 'false' if RUNNING_TESTS or DEBUG else 'true').strip().lower() == 'true'
+TURNSTILE_VERIFY_HOSTNAME = os.environ.get('TURNSTILE_VERIFY_HOSTNAME', 'true').strip().lower() == 'true'
+TURNSTILE_TIMEOUT_SECONDS = float(os.environ.get('TURNSTILE_TIMEOUT_SECONDS', '5'))
+
+# Header with the real client IP set by the trusted reverse proxy (e.g. CF-Connecting-IP).
+# Leave empty unless the proxy always overwrites it; REMOTE_ADDR is used otherwise.
+CLIENT_IP_HEADER = os.environ.get('CLIENT_IP_HEADER', '').strip()
+
+# Login/registration attempt limits.
+AUTH_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get('AUTH_RATE_LIMIT_WINDOW_SECONDS', '900'))
+LOGIN_RATE_LIMIT_PER_IP = int(os.environ.get('LOGIN_RATE_LIMIT_PER_IP', '20'))
+LOGIN_RATE_LIMIT_PER_EMAIL = int(os.environ.get('LOGIN_RATE_LIMIT_PER_EMAIL', '10'))
+REGISTRATION_RATE_LIMIT_PER_IP = int(os.environ.get('REGISTRATION_RATE_LIMIT_PER_IP', '10'))
+
+# 'security' is shared by all Gunicorn workers of the host (rate limits and used Turnstile tokens).
+CACHES = {
+    'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
+    # Tests needing counters enable a real cache explicitly (see usuarios/test_turnstile.py).
+    'security': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'} if RUNNING_TESTS else {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.environ.get('SECURITY_CACHE_DIR', str(Path(tempfile.gettempdir()) / 'tacombinado-security-cache')),
+    },
+}

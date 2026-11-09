@@ -119,7 +119,7 @@ class RegistroTests(TestCase):
     def test_cta_and_field_order(self):
         page=self.client.get('/',HTTP_HOST='localhost')
         self.assertContains(page,'href="/registro"')
-        self.assertNotContains(page,'Conhecer a plataforma')
+        self.assertContains(page, '<a class="text-link" href="#como-funciona">Conhecer a plataforma <span aria-hidden="true">→</span></a>', html=True)
         page=self.client.get('/registro',HTTP_HOST='localhost')
         self.assertContains(page,'.tacombinado.net')
         self.assertLess(page.content.index(b'name="subdomain"'),page.content.index(b'name="email"'))

@@ -25,7 +25,9 @@ class PlatformLoginTests(TestCase):
 
     def test_root_login_and_single_use(self):
         self.assertContains(self.client.get('/login/',HTTP_HOST='localhost'),'E-mail')
-        self.assertContains(self.client.get('/',HTTP_HOST='localhost'),'href="/login/" class="ui-button ui-button-secondary">Já sou cliente')
+        self.assertContains(self.client.get('/', HTTP_HOST='localhost'),
+                            '<a href="/login/" class="button button-outline">Entrar <span aria-hidden="true">↗</span></a>',
+                            html=True)
         ticket=self.ticket()
         response=self.complete(ticket)
         self.assertEqual(response.url,'/painel/')

@@ -1,0 +1,3 @@
+{% if erro_seguranca %}<p class="errorlist security-error" role="alert">{{ erro_seguranca }}</p>{% endif %}
+{% if turnstile %}<div class="cf-turnstile turnstile-auth" data-sitekey="{{ turnstile.site_key }}" data-action="{{ turnstile.action }}" data-response-field-name="{{ turnstile.field }}" data-language="pt-br" data-theme="light" data-size="flexible"></div>
+<noscript><p class="errorlist">Ative o JavaScript para concluir a verificação de segurança.</p></noscript>{% endif %}

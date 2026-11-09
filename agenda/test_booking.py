@@ -130,6 +130,11 @@ class BookingTests(BookingFixture, TestCase):
         anon=self.client.get(self.slots_url(),HTTP_HOST='marcos.localhost')
         self.assertContains(anon,'Confirmar agendamento')
         self.assertNotContains(anon,'Entrar para agendar')
+        # Use administrators: customer password access is disabled.
+        # Legacy customer sessions are rejected by TenantBackend.
+        for user in (self.user, self.second):
+            user.tipo = User.Tipo.ADMIN
+            user.save(update_fields=['tipo'])
         self.client.force_login(self.user)
         response=self.client.post(self.slots_url(),self.payload(tenant_id=self.other.pk,cliente_id=self.foreign.pk,valor='0.01'),HTTP_HOST='marcos.localhost')
         self.assertEqual(response.status_code,302)
@@ -160,6 +165,8 @@ class BookingTests(BookingFixture, TestCase):
         self.assertFalse(Agendamento.objects.exists())
 
     def test_login_next_is_preserved_and_external_redirect_blocked(self):
+        self.user.tipo = User.Tipo.ADMIN
+        self.user.save(update_fields=['tipo'])
         url=reverse('login')+'?next='+self.slots_url()
         response=self.client.post(url,{'email':self.user.email,'password':'Booking!Password2026'},HTTP_HOST='marcos.localhost')
         self.assertEqual(response.url,self.slots_url())

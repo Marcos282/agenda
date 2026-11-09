@@ -36,4 +36,4 @@
     {% endif %}
   </nav>{% endif %}
   {% endblock %}
-</main>{% block public_footer %}{% if not request.tenant %}{% include 'usuarios/public_footer.html' %}{% endif %}{% endblock %}{% block scripts %}{% endblock %}</body></html>
+</main>{% block public_footer %}{% if not request.tenant %}{% include 'usuarios/public_footer.html' %}{% else %}<footer class="footer-contact">{% include 'usuarios/privacy_link.html' %}</footer>{% endif %}{% endblock %}{% block scripts %}{% endblock %}</body></html>

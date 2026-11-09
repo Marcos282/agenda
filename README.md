@@ -35,6 +35,39 @@ Na página principal da plataforma, telas de até 680 px exibem uma faixa flutua
 
 As páginas públicas da plataforma, início do estabelecimento e loja carregam a tag do Google Analytics `G-QNYYDDRTKK`, pelo componente `usuarios/google_tag.html`. O componente não é incluído na base compartilhada de login, conta, agendamentos e painel administrativo.
 
+## Política de Privacidade
+
+A URL pública `/politica-de-privacidade/` reutiliza o visual institucional, sem autenticação, CAPTCHA, Analytics ou contexto de estabelecimento. O documento é servido também em subdomínios, inclusive de estabelecimentos inativos ou inexistentes, desde que o Host seja permitido. Somente essa rota recebe a exceção no middleware: a autenticação e o isolamento das demais URLs permanecem inalterados. Os rodapés compartilham um link absoluto para `https://tacombinado.net/politica-de-privacidade/`.
+
+O código integra o Turnstile à confirmação de agendamentos, ao login e ao cadastro de estabelecimentos. Sua ativação depende da configuração do ambiente. A data da política é uma data de versão fixa, não a data de cada acesso.
+
+Antes de publicar, obter revisão e aprovação jurídica/operacional, sem presumir conformidade integral à LGPD:
+
+- Confirmar que a razão social, o CNPJ e o e-mail já informados no rodapé institucional correspondem ao responsável pelo Tá Combinado e que esse canal receberá e atenderá pedidos de privacidade; definir o encarregado/responsável e divulgar seu contato quando aplicável.
+- Validar o inventário de dados e as bases legais por finalidade, incluindo histórico de faltas/reputação, dados cadastrais publicados, cobrança, mensagens e métricas do Google Analytics. Avaliar mecanismos de consentimento/cookies exigíveis; esta alteração não os implementa.
+- Documentar prazos e rotinas reais de retenção, exclusão, resposta aos titulares, incidentes e controles organizacionais. A política não promete backups, criptografia em repouso ou segurança absoluta não comprovados.
+- Confirmar fornecedores ativos de hospedagem, WhatsApp/Evolution, e-mail/Resend, pagamentos/Mercado Pago e métricas/Google, contratos, compartilhamentos e eventuais transferências internacionais com suas garantias.
+- Formalizar os papéis de controlador/operador por operação e revisar o texto e a ativação do Turnstile antes da publicação.
+
+Validação focada: `python manage.py check` e `python manage.py test usuarios.test_privacidade usuarios.test_privacidade_browser`. O teste de navegador usa Playwright e `/usr/bin/google-chrome`, conforme os testes de UI existentes, e bloqueia requisições externas.
+
+Regressão adicional: `TENANT_BASE_DOMAIN=localhost DEV_PUBLIC_HOST='' DEV_TENANT_SUBDOMAIN='' EVOLUTION_API_URL='' EVOLUTION_API_KEY='' python manage.py test usuarios.tests usuarios.test_home usuarios.test_registro usuarios.test_login_platform usuarios.test_ngrok agenda.test_guest_booking agenda.test_booking`. Essas variáveis valem somente para o processo de teste: as suítes legadas usam `*.localhost`, não o domínio de produção, e a integração externa de WhatsApp deve ficar desabilitada na validação.
+
+## Testar o Turnstile localmente
+
+Para testar em `*.localhost`, sem modificar o `.env`, execute o servidor com as chaves públicas de teste documentadas pela [Cloudflare](https://developers.cloudflare.com/turnstile/troubleshooting/testing/):
+
+```bash
+DJANGO_DEBUG=true TURNSTILE_ENABLED=true TURNSTILE_VERIFY_HOSTNAME=true \
+TURNSTILE_PUBLIC_SITE_KEY=1x00000000000000000000BB \
+TURNSTILE_PUBLIC_SECRET_KEY=1x0000000000000000000000000000000AA \
+TURNSTILE_AUTH_SITE_KEY=1x00000000000000000000AA \
+TURNSTILE_AUTH_SECRET_KEY=1x0000000000000000000000000000000AA \
+python manage.py runserver 127.0.0.1:8791
+```
+
+Essas chaves e o token de teste não fornecem proteção real. Apenas com `DEBUG=true`, hostname local e conexão de loopback, o backend aceita a resposta específica de teste da Cloudflare, que usa `example.com` e não contém `action`; a API Siteverify continua sendo consultada. Tokens reais continuam sujeitos à verificação de `action`, hostname e uso único. Em produção, o Turnstile permanece obrigatório: use as quatro chaves reais, mantenha a verificação de hostname ativa e nunca utilize essas chaves de teste. Configurações que tentem desativar a proteção ou a conferência de hostname geram erros no `manage.py check`.
+
 ## Instalação em outro ambiente
 
 Use Python 3.12+ e um PostgreSQL acessível:

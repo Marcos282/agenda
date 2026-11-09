@@ -42,6 +42,11 @@ class TenantMiddleware:
 
     def __call__(self, request):
         host = request.get_host()
+        # This institutional document never resolves or exposes tenant data.
+        if request.path_info == reverse('politica_privacidade'):
+            request.tenant = None
+            with timezone.override(settings.TIME_ZONE):
+                return self.get_response(request)
         dev_host = is_development_public_host(host)
         user = request.user
         dev_registration = dev_host and request.path_info.rstrip('/') in {'/registro', '/registro/concluido'}

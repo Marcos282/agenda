@@ -10,6 +10,10 @@ from usuarios.seo import robots, sitemap
 from painel.theme_views import image as theme_image
 
 urlpatterns = [
+    path('politica-de-privacidade/', TemplateView.as_view(
+        template_name='usuarios/politica_privacidade.html',
+        extra_context={'institutional_home': 'https://tacombinado.net/'},
+    ), name='politica_privacidade'),
     path('aparencia/imagem/<str:field>/', theme_image, name='theme_image'),
     path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='sitemap'),

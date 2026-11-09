@@ -52,6 +52,13 @@ class GuestBookingTests(BookingFixture, TestCase):
         self.assertContains(self.client.get(response.url, **self.host), 'Cancelado')
 
     def test_phone_reused_but_prior_bookings_and_accounts_not_exposed(self):
+        # This isolation scenario needs three bookings for the same phone.
+        # Daily and future limits are covered separately; keep them enabled here.
+        self.tenant.limite_agendamentos_cliente_dia = 3
+        self.tenant.limite_agendamentos_cliente_futuros = 3
+        self.tenant.save(update_fields=[
+            'limite_agendamentos_cliente_dia', 'limite_agendamentos_cliente_futuros',
+        ])
         account_booking = self.book(time(13,11))
         self.client.post(self.slots_url(), self.payload(nome='Primeiro Nome'), **self.host)
         first = Agendamento.objects.get(cliente__isnull=True)
@@ -70,6 +77,23 @@ class GuestBookingTests(BookingFixture, TestCase):
             self.assertEqual(visitor.post(url, **self.host).status_code, 404)
         self.assertEqual(visitor.get(reverse('agenda:acompanhar', args=[uuid4()]), **self.host).status_code, 404)
         self.assertEqual(visitor.get(response.url, HTTP_HOST='wanessa.localhost').status_code, 404)
+
+    def test_default_limits_count_account_and_guest_bookings_for_same_phone(self):
+        self.assertEqual(self.tenant.limite_agendamentos_cliente_dia, 2)
+        self.assertEqual(self.tenant.limite_agendamentos_cliente_futuros, 2)
+        self.book(time(13, 11))
+        response = self.client.post(self.slots_url(), self.payload(), **self.host)
+        self.assertEqual(response.status_code, 302)
+
+        visitor = Client()
+        response = visitor.post(self.slots_url(), self.payload(
+            nome='Outro Nome', hora='09:47', whatsapp='+5511999991234',
+        ), **self.host)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(Agendamento.objects.count(), 2)
+        self.assertEqual(ContatoCliente.objects.count(), 1)
+        self.assertEqual(visitor.get(reverse('agenda:meus'), **self.host)
+                         .context['agendamentos'].paginator.count, 0)
 
     def test_invalid_input_conflict_quote_and_csrf(self):
         for changes in [{'nome':' '}, {'whatsapp':''}, {'whatsapp':'123'}, {'cotacao':'invalid'}]:

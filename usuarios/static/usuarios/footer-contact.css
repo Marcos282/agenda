@@ -6,3 +6,5 @@
 .footer-contact-links .footer-whatsapp{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#25d366;border-radius:50%}
 .footer-whatsapp:hover{background:#25d36618}
 .footer-contact-links a:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.privacy-link{display:inline-block;max-width:100%;margin-top:12px;padding:12px 0;color:inherit;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.privacy-link:focus-visible{outline:2px solid currentColor;outline-offset:3px}
