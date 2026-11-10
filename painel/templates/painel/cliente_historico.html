@@ -26,6 +26,11 @@
   <article class="client-row">
     <div class="client-identity">
       <span class="client-status {{ item.status|lower }}">{{ item.get_status_display }}</span>
+      <p>{{ item.whatsapp_confirmation }}</p>
+      {% if item.lembrete.presenca_confirmada_em %}<p>Presença confirmada em {{ item.lembrete.presenca_confirmada_em|date:'d/m/Y H:i' }}.</p>{% endif %}
+      {% for resposta in item.lembrete.respostas.all %}
+        <small>WhatsApp · {{ resposta.recebido_em|date:'d/m/Y H:i' }} · {{ resposta.get_resultado_display }}</small>
+      {% endfor %}
       <h3>{{ item.servico_nome }}</h3>
       {% if item.avaliacao_reputacao %}
         <p>{{ item.avaliacao_reputacao.get_tipo_display }} · {% if item.avaliacao_reputacao.tipo == 'DESMARCOU' %}não entra na reputação{% else %}{{ item.avaliacao_reputacao.pontuacao }} ponto{{ item.avaliacao_reputacao.pontuacao|pluralize }}{% endif %} · Atendimento em {{ item.avaliacao_reputacao.data_atendimento|date:'d/m/Y H:i' }}</p>

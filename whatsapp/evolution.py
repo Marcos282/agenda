@@ -7,7 +7,9 @@ from django.conf import settings
 
 
 class EvolutionError(Exception):
-    pass
+    def __init__(self, message, *, retry_safe=False):
+        super().__init__(message)
+        self.retry_safe = retry_safe
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -28,7 +30,7 @@ def instance(tenant):
 
 def request(method, path, payload=None):
     if not configured():
-        raise EvolutionError('Configure a URL e a chave da Evolution API no servidor.')
+        raise EvolutionError('Configure a URL e a chave da Evolution API no servidor.', retry_safe=True)
     req = Request(settings.EVOLUTION_API_URL.rstrip('/') + path,
                   data=json.dumps(payload).encode() if payload is not None else None,
                   headers={'apikey': settings.EVOLUTION_API_KEY, 'Content-Type': 'application/json'}, method=method)
@@ -42,7 +44,7 @@ def request(method, path, payload=None):
             404: 'Endpoint ou instância não encontrada. Confira a URL, a versão e o prefixo.',
             429: 'Limite de requisições da Evolution atingido. Aguarde e tente novamente.',
         }.get(exc.code, 'A Evolution retornou um erro. Confira o serviço e seus logs.')
-        raise EvolutionError(f'HTTP {exc.code}: {detail}') from None
+        raise EvolutionError(f'HTTP {exc.code}: {detail}', retry_safe=exc.code in {400, 401, 403, 404, 429}) from None
     except (TimeoutError, URLError, OSError):
         raise EvolutionError('Não foi possível conectar à Evolution: conexão recusada, endereço inacessível ou tempo esgotado. Confira a URL, a porta e se o serviço está iniciado.') from None
     except ValueError:

@@ -5,11 +5,13 @@ from django.views.generic import TemplateView
 from pagamentos.views import webhook, retorno
 from whatsapp.console import testezap, testes
 from whatsapp.inbox_views import receive
+from whatsapp.reply_views import receive as receive_appointment_reply
 from usuarios.seo import robots, sitemap
 
 from painel.theme_views import image as theme_image
 
 urlpatterns = [
+    path('whatsapp/respostas/', receive_appointment_reply, name='whatsapp_appointment_reply'),
     path('politica-de-privacidade/', TemplateView.as_view(
         template_name='usuarios/politica_privacidade.html',
         extra_context={'institutional_home': 'https://tacombinado.net/'},

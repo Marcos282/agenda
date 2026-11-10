@@ -62,6 +62,15 @@
 <p>A data e a hora usam o fuso do estabelecimento. Alterações valem para os lembretes ainda não enviados. Agendamentos feitos dentro da antecedência recebem o lembrete no próximo processamento, antes do início.</p>
 <button name="acao" value="salvar">Salvar configurações</button>
 </form><p class="helptext">O envio exige WhatsApp conectado e processamento automático ativo no servidor.</p></section>
+<section class="card"><h2>Confirmação por WhatsApp</h2>
+<form method="post">{% csrf_token %}{{ resposta_form.as_p }}
+<p>Ative os lembretes acima para enviar as opções. A confirmação de presença não registra comparecimento nem altera a reputação. O cancelamento permitido libera o horário e registra a desmarcação.</p>
+<p>Quando houver mais de um lembrete válido, o cliente deverá usar “Responder” na mensagem desejada. Cada opção pode ser ativada separadamente. Com ambas desativadas, a mensagem personalizada do lembrete é preservada.</p>
+<button name="acao" value="salvar_respostas">Salvar respostas por WhatsApp</button></form>
+<h3>Retornos das respostas</h3>
+{% for envio in respostas_envios %}<div class="send-row">Agendamento #{{ envio.resposta.lembrete.agendamento_id|default:'—' }} · {{ envio.resposta.get_resultado_display }}<br>{{ envio.get_status_display }} · {{ envio.tentativas }} tentativa(s){% if envio.erro %}<p>{{ envio.erro }}</p>{% endif %}</div>{% empty %}<p>Nenhuma resposta processada ainda.</p>{% endfor %}
+<p class="helptext">Falhas anteriores ao envio podem ser repetidas pelo processamento automático. Resultados incertos exigem conferência e não são repetidos automaticamente.</p>
+</section>
 <section class="card"><h2>Últimas confirmações de agendamento</h2>
 {% for envio in confirmacoes %}<div class="send-row"><strong>{{ envio.agendamento.cliente_nome }}</strong> · {{ envio.destinatario }}<br>{{ envio.get_status_display }} · {{ envio.criado_em|date:'d/m/Y H:i' }}{% if envio.erro %}<p>{{ envio.erro }}</p>{% endif %}</div>{% empty %}<p>Nenhuma confirmação processada ainda.</p>{% endfor %}
 {% if confirmacoes.has_other_pages %}<nav class="send-pagination" aria-label="Páginas de confirmações">

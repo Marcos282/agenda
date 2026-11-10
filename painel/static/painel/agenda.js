@@ -92,9 +92,11 @@
       block.style.top = `${item.top}px`; block.style.height = `${item.height}px`;
       const title = appointment ? `${item.kind === 'no-show' ? 'Não compareceu' : item.kind === 'cancelled' ? 'Cancelado' : 'Ocupado'} · ${appointment.cliente} · ${appointment.servico}` : item.kind === 'closed' ? 'Intervalo / fechado' : 'Livre';
       const details = `${clock(item.start)} → ${clock(item.end)}${appointment ? ` · ${Math.round((appointment.end - appointment.start) / 60)} min · R$ ${appointment.valor} · ${appointment.statusLabel || appointment.status}` : ''}`;
-      block.setAttribute('aria-label', `${title}. ${details}`); block.title = `${title}. ${details}`;
+      const confirmation = appointment && appointment.whatsappConfirmation || '';
+      block.setAttribute('aria-label', `${title}. ${details}. ${confirmation}`); block.title = `${title}. ${details}. ${confirmation}`;
       const heading = document.createElement('strong');
       if (appointment) {
+        if (confirmation) heading.append(document.createTextNode(`${confirmation.split(' ')[0]} `));
         heading.append(root.CustomerReputation.renderRating(appointment.reputacao));
         heading.append(document.createTextNode(`${appointment.cliente} · ${appointment.servico}`));
       } else heading.textContent = title;
@@ -108,6 +110,10 @@
         const p = document.createElement('p'); p.textContent = details;
         const close = document.createElement('button'); close.textContent = 'Fechar'; close.addEventListener('click', () => dialog.close());
         dialog.append(h, p);
+        if (confirmation) {
+          const indicator = document.createElement('p'); indicator.textContent = confirmation;
+          dialog.append(indicator);
+        }
         if (appointment.cancelUrl) {
           const cancel = document.createElement('a'); cancel.className = 'ui-button ui-button-secondary';
           cancel.href = appointment.cancelUrl; cancel.textContent = 'Desmarcou'; dialog.append(cancel);

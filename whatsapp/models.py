@@ -2,8 +2,10 @@ from string import Formatter
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.utils import timezone
 
 DEFAULT_MESSAGE = 'Olá, {cliente}! Lembramos do seu agendamento de {servico} com {profissional} em {estabelecimento}, dia {data} às {hora}. Esperamos você!'
+INTERACTIVE_MESSAGE = 'Olá, {cliente}! 👋\n\nLembramos do seu agendamento de {servico} com {profissional} em {estabelecimento}, dia {data} às {hora}.\n\nPor favor, confirme sua presença:\n\n{opcoes}\n\nEsperamos você!'
 DEFAULT_CONFIRMATION = 'Olá, {cliente}! 😊\n\nAgradecemos pela preferência!\n\nSeu horário está reservado para {data} às {horario}, com {profissional}.\n\nServiço: {servico}\n\nAguardamos você no horário combinado.\n\n{empresa}'
 VARIABLES = {'cliente', 'servico', 'profissional', 'empresa', 'horario', 'estabelecimento', 'data', 'hora'}
 DEFAULT_RETURN_MESSAGE = 'Olá, {nome}! 😊 Já se passaram cerca de 30 dias desde o seu último atendimento. Que tal renovar o visual? Estamos esperando por você! ✂️'
@@ -38,9 +40,16 @@ class Configuracao(models.Model):
     confirmacoes_ativas = models.BooleanField(default=True, verbose_name='Enviar confirmação após o agendamento')
     mensagem_confirmacao = models.TextField(default=DEFAULT_CONFIRMATION, max_length=2000, validators=[validate_message], verbose_name='Mensagem de confirmação e agradecimento')
     atualizado_em = models.DateTimeField(auto_now=True)
+    confirmar_presenca_whatsapp = models.BooleanField(default=False, verbose_name='Ativar confirmação automática de presença')
+    cancelar_whatsapp = models.BooleanField(default=False, verbose_name='Permitir cancelamento por WhatsApp')
+    cancelamento_antecedencia_minutos = models.PositiveIntegerField(default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(10080)],
+        verbose_name='Antecedência mínima para cancelamento em minutos',
+        help_text='0 permite cancelar até o início. Aplica-se ao cancelamento por WhatsApp.')
 
     class Meta:
-        constraints = [models.CheckConstraint(condition=models.Q(antecedencia_minutos__gte=1, antecedencia_minutos__lte=10080), name='whatsapp_antecedencia_valida')]
+        constraints = [models.CheckConstraint(condition=models.Q(antecedencia_minutos__gte=1, antecedencia_minutos__lte=10080), name='whatsapp_antecedencia_valida'),
+            models.CheckConstraint(condition=models.Q(cancelamento_antecedencia_minutos__lte=10080), name='wa_prazo_cancelamento_valido')]
 
 
 class Lembrete(models.Model):
@@ -53,6 +62,58 @@ class Lembrete(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
     enviado_em = models.DateTimeField(null=True, blank=True)
     erro = models.CharField(max_length=250, blank=True)
+    instancia = models.CharField(max_length=200, blank=True)
+    destinatario = models.CharField(max_length=16, blank=True)
+    mensagem_id = models.CharField(max_length=200, blank=True)
+    valido_ate = models.DateTimeField(null=True, blank=True)
+    permite_confirmar = models.BooleanField(default=False)
+    permite_cancelar = models.BooleanField(default=False)
+    presenca_confirmada_em = models.DateTimeField(null=True, blank=True)
+    cancelado_pelo_cliente_em = models.DateTimeField(null=True, blank=True)
+
+
+class RespostaLembrete(models.Model):
+    """Minimal audit of authenticated inbound events; no raw provider payload."""
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    instancia = models.CharField(max_length=200)
+    mensagem_id = models.CharField(max_length=200)
+    destinatario = models.CharField(max_length=16)
+    lembrete = models.ForeignKey(Lembrete, null=True, blank=True, on_delete=models.PROTECT, related_name='respostas')
+    opcao = models.CharField(max_length=5)
+    resultado = models.CharField(max_length=40, default='RECEBIDO')
+    ocorrido_em = models.DateTimeField()
+    recebido_em = models.DateTimeField(auto_now_add=True)
+
+    def get_resultado_display(self):
+        return {
+            'CONFIRMADO': 'Presença confirmada', 'CANCELADO': 'Cancelado pelo cliente',
+            'FORA_DO_PRAZO': 'Tentativa de cancelamento fora do prazo',
+            'JA_CONFIRMADO': 'Confirmação já registrada', 'INATIVO': 'Agendamento já encerrado ou cancelado',
+            'EXPIRADO': 'Resposta fora da validade', 'AMBIGUO': 'Solicitada identificação do agendamento',
+            'SEM_LEMBRETE': 'Nenhum lembrete correspondente', 'DESATIVADO': 'Opção desativada',
+            'DATA_INVALIDA': 'Horário da mensagem inválido', 'ORIENTADO': 'Opções informadas ao cliente',
+            'RECEBIDO': 'Resposta recebida',
+        }.get(self.resultado, 'Resposta registrada')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['tenant', 'instancia', 'mensagem_id'], name='wa_resposta_evento_unico')]
+
+
+class RetornoResposta(models.Model):
+    class Status(models.TextChoices):
+        PENDENTE = 'PENDENTE', 'Aguardando envio'
+        PROCESSANDO = 'PROCESSANDO', 'Envio iniciado'
+        ENVIADO = 'ENVIADO', 'Aceito pela API'
+        FALHA = 'FALHA', 'Falha segura para nova tentativa'
+        INCERTO = 'INCERTO', 'Verificar envio antes de repetir'
+    resposta = models.OneToOneField(RespostaLembrete, on_delete=models.PROTECT, related_name='retorno')
+    mensagem = models.TextField()
+    status = models.CharField(max_length=20, choices=Status, default=Status.PENDENTE)
+    tentativas = models.PositiveIntegerField(default=0)
+    proxima_tentativa_em = models.DateTimeField(default=timezone.now)
+    enviado_em = models.DateTimeField(null=True, blank=True)
+    mensagem_id = models.CharField(max_length=200, blank=True)
+    erro = models.CharField(max_length=100, blank=True)
 
 
 class Confirmacao(models.Model):

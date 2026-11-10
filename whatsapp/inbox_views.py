@@ -64,6 +64,10 @@ def receive(request):
             if not isinstance(message_id, str) or not message_id or len(message_id) > 200:
                 raise ValueError
             stored += inbox.save_message(request.tenant.pk, message_id, number, text)
+        # Preserve existing test inbox installations while routing authenticated
+        # production replies to the durable PostgreSQL workflow as well.
+        from .reply_views import process_payload
+        process_payload(request.tenant, payload)
         return JsonResponse({'received': stored})
     except (ValueError, TypeError, AttributeError, ValidationError):
         return JsonResponse({'error': 'Mensagem inválida.'}, status=400)

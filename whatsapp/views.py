@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from painel.decorators import admin_tenant_required
-from .models import Configuracao, Lembrete, Confirmacao, LembreteRetorno
+from .models import Configuracao, Lembrete, Confirmacao, LembreteRetorno, RetornoResposta
 from .services import message_values
 from . import evolution
 
@@ -34,6 +34,12 @@ class RetornoForm(forms.ModelForm):
         widgets = {'mensagem_retorno': forms.Textarea(attrs={'rows': 4})}
 
 
+class RespostaForm(forms.ModelForm):
+    class Meta:
+        model = Configuracao
+        fields = ['confirmar_presenca_whatsapp', 'cancelar_whatsapp', 'cancelamento_antecedencia_minutos']
+
+
 @admin_tenant_required
 @require_http_methods(['GET', 'POST'])
 def configuracao_whatsapp(request):
@@ -41,10 +47,17 @@ def configuracao_whatsapp(request):
     form = ConfiguracaoForm(instance=config)
     confirmacao_form = ConfirmacaoForm(instance=config)
     retorno_form = RetornoForm(instance=config)
+    resposta_form = RespostaForm(instance=config)
     qr, status = '', ''
     if request.method == 'POST':
         action = request.POST.get('acao')
-        if action == 'salvar_retorno':
+        if action == 'salvar_respostas':
+            resposta_form = RespostaForm(request.POST, instance=config)
+            if resposta_form.is_valid():
+                resposta_form.save()
+                messages.success(request, 'Configuração das respostas por WhatsApp salva.')
+                return redirect('painel:whatsapp')
+        elif action == 'salvar_retorno':
             retorno_form = RetornoForm(request.POST, instance=config)
             if retorno_form.is_valid():
                 retorno_form.save()
@@ -91,6 +104,9 @@ def configuracao_whatsapp(request):
                               cliente_nome='Maria', servico_nome='Serviço escolhido',
                               profissional_nome='Profissional escolhido')
     return render(request, 'whatsapp/configuracao.html', {
+        'resposta_form': resposta_form,
+        'respostas_envios': RetornoResposta.objects.filter(resposta__tenant=request.tenant)
+            .select_related('resposta__lembrete__agendamento').order_by('-pk')[:20],
         'retorno_form': retorno_form,
         'retornos': Paginator(LembreteRetorno.objects.filter(agendamento__tenant=request.tenant)
             .select_related('agendamento').order_by('-criado_em', '-pk'), 10

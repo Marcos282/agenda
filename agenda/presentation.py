@@ -22,7 +22,7 @@ def timeline_payload(profissional, data, periodos):
     from .reputation import atualizar_reputacoes, reputacoes, reputacao_agendamento
     atualizar_reputacoes(profissional.tenant)
     ratings = reputacoes(profissional.tenant)
-    bookings = Agendamento.objects.for_tenant(profissional.tenant).filter(profissional=profissional, status__in=['CONFIRMADO', 'NAO_COMPARECEU']).annotate(dia_local=TruncDate('inicio', tzinfo=ZoneInfo(profissional.tenant.timezone))).filter(dia_local=data)
+    bookings = Agendamento.objects.for_tenant(profissional.tenant).select_related('lembrete').filter(profissional=profissional, status__in=['CONFIRMADO', 'NAO_COMPARECEU']).annotate(dia_local=TruncDate('inicio', tzinfo=ZoneInfo(profissional.tenant.timezone))).filter(dia_local=data)
     pending_ids = set(bookings.filter(avaliacao_reputacao__isnull=True).values_list('pk', flat=True))
     payload = {
         'professionalId': profissional.pk,
@@ -38,5 +38,9 @@ def timeline_payload(profissional, data, periodos):
             'fim_label': a.fim.astimezone(ZoneInfo(profissional.tenant.timezone)).strftime('%H:%M')} for a in bookings],
     }
 
+    from whatsapp.replies import confirmation_indicator
+    indicators = {a.pk: confirmation_indicator(a) for a in bookings}
+    for appointment in payload['appointments']:
+        appointment['whatsappConfirmation'] = indicators[appointment['id']]
     payload['pendingAppointments'] = [a for a in payload['appointments'] if a['id'] in pending_ids]
     return payload

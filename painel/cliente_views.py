@@ -154,9 +154,11 @@ def historico(request, pk):
 def render_historico(request, cliente, bookings, contato=False):
     resumo = bookings.aggregate(total=Count('pk'), confirmados=Count('pk', filter=Q(status='CONFIRMADO')),
         cancelados=Count('pk', filter=Q(status='CANCELADO')), faltas=Count('pk', filter=Q(status='NAO_COMPARECEU')))
-    page = Paginator(bookings.select_related('avaliacao_reputacao').prefetch_related(
-        'avaliacao_reputacao__alteracoes__alterado_por').order_by('inicio', 'pk'), 15).get_page(request.GET.get('page'))
+    page = Paginator(bookings.select_related('avaliacao_reputacao', 'lembrete').prefetch_related(
+        'lembrete__respostas', 'avaliacao_reputacao__alteracoes__alterado_por').order_by('inicio', 'pk'), 15).get_page(request.GET.get('page'))
+    from whatsapp.replies import confirmation_indicator
     for booking in page:
+        booking.whatsapp_confirmation = confirmation_indicator(booking)
         day = timezone.localtime(booking.inicio, ZoneInfo(request.tenant.timezone)).date()
         booking.link_agenda = agenda_url(booking.profissional_id, day)
     reputacao = cliente.get('reputacao', resumir()) if isinstance(cliente, dict) else calculate_customer_reputation(cliente, request.tenant)

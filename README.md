@@ -174,6 +174,8 @@ No agendamento pelo painel, informe o nome do cliente em texto e o WhatsApp obri
 
 O painel possui configuração por estabelecimento, conexão Evolution API por QR code e mensagem de lembrete com antecedência ajustável (padrão: 2 horas). Consulte [configuração e execução periódica](docs/whatsapp.md) para ativar o envio automático.
 
+Para respostas `1` (confirmar presença) e `2` (cancelar), consulte [confirmação e cancelamento pelo WhatsApp](docs/whatsapp-respostas.md), incluindo migração, webhook autenticado e processamento de retornos.
+
 ### QR Code da loja
 
 No painel, o botão **QR Code da loja**, ao lado de **WhatsApp**, mostra o QR Code do endereço público do estabelecimento (por exemplo, `https://marcos.tacombinado.net/`). É possível baixar a imagem PNG para compartilhar ou imprimir. O domínio público é configurado por `STORE_BASE_DOMAIN` (padrão: `tacombinado.net`), independente do endereço local usado para acessar o painel. A imagem é gerada no próprio servidor, sem serviços externos.
