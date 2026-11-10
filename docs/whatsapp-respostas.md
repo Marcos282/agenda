@@ -58,6 +58,22 @@ No painel do estabelecimento, abra **WhatsApp**:
 2. Em **Confirmação por WhatsApp**, ative confirmação e/ou cancelamento.
 3. Defina a antecedência mínima de cancelamento e salve.
 
+O recebimento é configurado automaticamente ao usar **Conectar / gerar QR code**
+ou **Verificar conexão**, inclusive para estabelecimentos novos. Nenhum comando
+por cliente é necessário. A configuração é conferida na própria Evolution;
+se já estiver correta, não é gravada novamente. Cabeçalhos de autenticação
+anteriores são corrigidos quando a chave Django mudar.
+
+Falhas não desfazem a conexão nem escondem o QR code. O painel informa a
+pendência e oferece **Tentar configurar recebimento novamente**. Integrações
+desconhecidas são preservadas; nesse caso é necessário suporte para definir o
+encaminhamento. A automação não ativa lembretes, confirmação ou cancelamento
+sem a escolha do administrador. Simplesmente abrir a página não altera webhooks.
+
+A configuração automática usa o endereço público do próprio estabelecimento.
+Ao testar por localhost ou túnel com endereço diferente, ela informa a pendência
+em vez de apontar inadvertidamente a instância local para um callback de produção.
+
 Não havia campo de prazo mínimo de cancelamento na implementação inspecionada:
 o cancelamento existente só proíbe atendimento já iniciado. Foi acrescentado
 `Configuracao.cancelamento_antecedencia_minutos`, de 0 a 10080 minutos,
@@ -80,7 +96,8 @@ O Django exige o cabeçalho `X-Agendamento-Token`, derivado da chave Django e do
 tenant. O comando configura esse cabeçalho sem imprimir seu valor. Não use a
 chave global da Evolution no navegador ou em parâmetros de URL.
 
-Após publicar e migrar, consulte primeiro:
+Os comandos abaixo continuam disponíveis para diagnóstico/manutenção. O fluxo
+normal pelo painel dispensa sua execução. Para consultar sem alterar:
 
 ```bash
 python manage.py configurar_webhook_agendamentos --tenant marcos
@@ -92,8 +109,8 @@ Para gravar efetivamente a configuração remota:
 python manage.py configurar_webhook_agendamentos --tenant marcos --aplicar
 ```
 
-Repita para cada instância/estabelecimento que optar pelo recurso. O comando
-reutiliza `evolution.instance(tenant)`, mantém os eventos e cabeçalhos existentes,
+A automação e o comando reutilizam `evolution.instance(tenant)` através de
+`whatsapp/webhooks.py`, mantêm os eventos e cabeçalhos existentes,
 adiciona `MESSAGES_UPSERT` e desativa o sufixo por evento (`byEvents=false`).
 Recusa sobrescrever webhooks de integrações desconhecidas. Os endpoints de
 caixa de testes conhecidos (`/teste/receber/` e `/testes/whatsapp/receber`) foram
@@ -152,6 +169,7 @@ integrações externas. Não execute a suíte contra um banco compartilhado.
 
 ```bash
 python manage.py test whatsapp.test_replies whatsapp.test_replies_browser
+python manage.py test whatsapp.test_auto_webhook whatsapp.test_auto_webhook_browser
 python manage.py test whatsapp.tests whatsapp.test_confirmations whatsapp.test_returns whatsapp.test_webhook_setup whatsapp.test_console
 python manage.py test painel.test_agenda_reputacao painel.test_clientes painel.test_agendamento agenda.test_reputation agenda.test_booking
 python manage.py check
@@ -167,7 +185,12 @@ Evolution e de um aparelho real antes da ativação em produção.
 - 117 testes do WhatsApp e navegador: aprovados.
 - 18 testes adicionais de envio e concorrência: aprovados, incluindo resposta
   recebida enquanto o lembrete ainda está sendo enviado.
-- 35 testes novos no total (34 de backend/concorrência e um de navegador).
+- Fluxo de respostas: 35 testes novos (34 de backend/concorrência e um de navegador).
+- Atualização de configuração automática: 21 testes novos (20 de serviço/painel
+  e um de navegador). A regressão de 96 testes passou, seguida de 19 verificações
+  finais de serviço/painel e 12 verificações do serviço, incluindo campos nulos
+  devolvidos pela Evolution para uma instância nova. Os conjuntos se sobrepõem.
+  O Chrome também confirmou falha, nova tentativa e verificação sem nova gravação.
 - `manage.py check`: sem problemas. `makemigrations --check --dry-run`: sem
   mudanças pendentes. A migração foi aplicada pelos bancos descartáveis de teste.
 - Regressão ampliada de agenda/reputação: 51 de 59 testes aprovados. Os outros
@@ -185,9 +208,11 @@ Evolution e de um aparelho real antes da ativação em produção.
 - Envio: `whatsapp/reminders.py`, `whatsapp/evolution.py`.
 - Comandos: `whatsapp/management/commands/configurar_webhook_agendamentos.py`,
   `whatsapp/management/commands/enviar_respostas_whatsapp.py`.
+- Configuração automática compartilhada: `whatsapp/webhooks.py`.
 - Configurações: `whatsapp/views.py`, `whatsapp/templates/whatsapp/configuracao.html`.
 - Agenda: `agenda/presentation.py`, `painel/static/painel/agenda.js`,
   `painel/templates/painel/agenda/dia.html`, `painel/templates/painel/agenda/resumo.html`.
 - Histórico: `painel/cliente_views.py`, `painel/templates/painel/cliente_historico.html`.
 - Testes: `whatsapp/test_replies.py`, `whatsapp/test_replies_browser.py`.
+- Testes da automação: `whatsapp/test_auto_webhook.py`, `whatsapp/test_auto_webhook_browser.py`.
 - Documentação: `README.md`, `docs/whatsapp-respostas.md`.

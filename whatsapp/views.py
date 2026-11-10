@@ -10,6 +10,7 @@ from painel.decorators import admin_tenant_required
 from .models import Configuracao, Lembrete, Confirmacao, LembreteRetorno, RetornoResposta
 from .services import message_values
 from . import evolution
+from .webhooks import ensure_webhook, WebhookSetupError
 
 
 class ConfiguracaoForm(forms.ModelForm):
@@ -49,6 +50,8 @@ def configuracao_whatsapp(request):
     retorno_form = RetornoForm(instance=config)
     resposta_form = RespostaForm(instance=config)
     qr, status = '', ''
+    setup_receiving = False
+    receiving = None
     if request.method == 'POST':
         action = request.POST.get('acao')
         if action == 'salvar_respostas':
@@ -75,14 +78,17 @@ def configuracao_whatsapp(request):
                 form.save()
                 messages.success(request, 'Configurações do WhatsApp salvas.')
                 return redirect('painel:whatsapp')
-        elif action in {'conectar', 'verificar', 'desconectar'}:
+        elif action in {'conectar', 'verificar', 'desconectar', 'configurar_recebimento'}:
             try:
                 if action == 'conectar':
                     qr = evolution.connect(request.tenant)
+                    setup_receiving = True
                     status = 'Escaneie o QR code e depois verifique a conexão.' if qr else 'QR code ainda indisponível. Verifique a conexão ou gere novamente.'
                 elif action == 'desconectar':
                     evolution.request('DELETE', '/instance/logout/' + evolution.instance(request.tenant))
                     status = 'WhatsApp desconectado.'
+                else:
+                    setup_receiving = True
 
             except evolution.EvolutionError as exc:
                 messages.error(request, str(exc))
@@ -100,10 +106,20 @@ def configuracao_whatsapp(request):
                 connection.update(label='Status indisponível', kind='unknown')
         except evolution.EvolutionError:
             connection.update(label='Status indisponível', kind='unknown')
+    if setup_receiving:
+        try:
+            ensure_webhook(request.tenant, request=request)
+        except WebhookSetupError as exc:
+            receiving = {'ready': False, 'message': str(exc)}
+        except evolution.EvolutionError:
+            receiving = {'ready': False, 'message': 'Não foi possível preparar o recebimento das respostas. Sua conexão foi preservada. Tente novamente em instantes.'}
+        else:
+            receiving = {'ready': True, 'message': 'Recebimento de respostas configurado.'}
     example = SimpleNamespace(tenant_id=request.tenant.pk, inicio=timezone.now(),
                               cliente_nome='Maria', servico_nome='Serviço escolhido',
                               profissional_nome='Profissional escolhido')
     return render(request, 'whatsapp/configuracao.html', {
+        'receiving': receiving,
         'resposta_form': resposta_form,
         'respostas_envios': RetornoResposta.objects.filter(resposta__tenant=request.tenant)
             .select_related('resposta__lembrete__agendamento').order_by('-pk')[:20],

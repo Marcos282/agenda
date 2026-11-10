@@ -37,6 +37,9 @@
 <button name="acao" value="conectar">Conectar / gerar QR code</button>
 <button class="ui-button ui-button-secondary" name="acao" value="verificar">Verificar conexão</button>
 <button class="ui-button ui-button-quiet" name="acao" value="desconectar">Desconectar</button></div></form>
+{% if receiving %}<p role="status">{{ receiving.message }}</p>{% if not receiving.ready %}
+<form method="post">{% csrf_token %}<button name="acao" value="configurar_recebimento" class="ui-button ui-button-secondary">Tentar configurar recebimento novamente</button></form>
+{% endif %}{% else %}<p class="helptext">O recebimento de respostas é preparado automaticamente ao conectar ou verificar a conexão.</p>{% endif %}
 {% else %}<p class="notice">Conexão pendente: a Evolution API precisa ser configurada no servidor. Você já pode preparar a mensagem e a antecedência abaixo.</p>{% endif %}
 {% if status %}<p role="status">{{ status }}</p>{% endif %}
 {% if qr %}<img class="whatsapp-qr" src="{{ qr }}" alt="QR code para conectar o WhatsApp do estabelecimento"><p>Se o código expirar, gere outro.</p>{% endif %}
