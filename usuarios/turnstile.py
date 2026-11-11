@@ -66,8 +66,12 @@ class Result:
         return MESSAGE_FAILED
 
 
-def enabled():
-    return settings.TURNSTILE_ENABLED or (not settings.DEBUG and not settings.RUNNING_TESTS)
+def enabled(*, use_database=True):
+    configured = settings.TURNSTILE_ENABLED or (not settings.DEBUG and not settings.RUNNING_TESTS)
+    if not configured or not use_database:
+        return configured
+    from .models import ConfiguracaoTurnstile
+    return ConfiguracaoTurnstile.ativo()
 
 
 def _keys(widget):

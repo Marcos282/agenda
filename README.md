@@ -66,7 +66,26 @@ TURNSTILE_AUTH_SECRET_KEY=1x0000000000000000000000000000000AA \
 python manage.py runserver 127.0.0.1:8791
 ```
 
-Essas chaves e o token de teste não fornecem proteção real. Apenas com `DEBUG=true`, hostname local e conexão de loopback, o backend aceita a resposta específica de teste da Cloudflare, que usa `example.com` e não contém `action`; a API Siteverify continua sendo consultada. Tokens reais continuam sujeitos à verificação de `action`, hostname e uso único. Em produção, o Turnstile permanece obrigatório: use as quatro chaves reais, mantenha a verificação de hostname ativa e nunca utilize essas chaves de teste. Configurações que tentem desativar a proteção ou a conferência de hostname geram erros no `manage.py check`.
+Essas chaves e o token de teste não fornecem proteção real. Apenas com `DEBUG=true`, hostname local e conexão de loopback, o backend aceita a resposta específica de teste da Cloudflare, que usa `example.com` e não contém `action`; a API Siteverify continua sendo consultada. Tokens reais continuam sujeitos à verificação de `action`, hostname e uso único. Em produção, use as quatro chaves reais, mantenha `TURNSTILE_ENABLED=true` e a verificação de hostname ativa; nunca utilize chaves de teste. Essas configurações são verificadas pelo `manage.py check`. Para suspender temporariamente a proteção, use a configuração global no admin descrita abaixo.
+
+## Ativar ou desativar o Cloudflare Turnstile
+
+No admin global (`https://tacombinado.net/admin/`), abra **Usuários → Configuração do Cloudflare Turnstile → Cloudflare Turnstile**. Somente o superadministrador global acessa essa configuração única; não é uma configuração por estabelecimento.
+
+O campo **Ativar Cloudflare Turnstile** começa marcado. Desmarcar e salvar oculta os widgets e dispensa a validação de CAPTCHA no login, no cadastro e na confirmação pública de agendamentos, incluindo a verificação invisível. A alteração vale na próxima requisição, em todos os workers, sem reiniciar o serviço. Os limites de tentativas e as outras validações permanecem. Reative assim que a indisponibilidade terminar. A tela mostra um aviso quando desativado e registra data, autor e histórico de alterações do admin.
+
+A migração `usuarios.0011_configuracaoturnstile` cria o registro único já ativado. Não é possível adicionar ou excluir registros pelo admin; o banco restringe a configuração ao ID 1. Se a configuração não existir ou não puder ser consultada, a proteção permanece ativada. O admin também não permite suspender a validação de hostname ou usar chaves de teste em produção.
+
+Após enviar o código ao servidor, aplique e reinicie:
+
+```bash
+cd /var/www/html/combinado
+venv/bin/python manage.py migrate
+venv/bin/python manage.py check
+sudo systemctl restart combinado
+```
+
+Validação: `python manage.py test usuarios.test_turnstile_config usuarios.test_turnstile --noinput`.
 
 ## Instalação em outro ambiente
 

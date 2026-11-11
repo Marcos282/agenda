@@ -6,7 +6,7 @@ from . import turnstile
 
 @register()
 def turnstile_keys(app_configs, **kwargs):
-    if not turnstile.enabled():
+    if not turnstile.enabled(use_database=False):
         return []
     missing = [name for name in ('TURNSTILE_PUBLIC_SITE_KEY', 'TURNSTILE_PUBLIC_SECRET_KEY',
                                  'TURNSTILE_AUTH_SITE_KEY', 'TURNSTILE_AUTH_SECRET_KEY')

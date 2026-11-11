@@ -10,6 +10,7 @@ from agenda.models import Agendamento
 from agenda.test_booking import BookingFixture
 from tenants.models import Tenant
 from . import turnstile
+from .models import ConfiguracaoTurnstile
 
 KEYS = dict(
     TURNSTILE_ENABLED=True, TURNSTILE_VERIFY_HOSTNAME=True, CLIENT_IP_HEADER='',
@@ -35,6 +36,9 @@ def ok(action, hostname):
 @override_settings(**KEYS)
 class VerifyTests(SimpleTestCase):
     def setUp(self):
+        active = patch('usuarios.models.ConfiguracaoTurnstile.ativo', return_value=True)
+        active.start()
+        self.addCleanup(active.stop)
         caches['security'].clear()
         self.factory = RequestFactory()
 
@@ -329,6 +333,17 @@ class PublicBookingTurnstileTests(SecurityCacheMixin, BookingFixture, TestCase):
         self.assertContains(page, 'name="whatsapp"')
         self.assertNoSecrets(page)
 
+    def test_disabled_configuration_allows_booking_without_captcha(self):
+        ConfiguracaoTurnstile.objects.update_or_create(pk=1, defaults={'turnstile_ativo': False})
+        page = self.client.get(self.slots_url(), **self.host)
+        self.assertNotContains(page, 'data-turnstile-form')
+        self.assertNotContains(page, 'turnstile-agendamento.js')
+        with patch(SITEVERIFY) as call:
+            response = self.post(token='')
+        call.assert_not_called()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Agendamento.objects.get().tenant_id, self.tenant.pk)
+
     def test_booking_requires_valid_token(self):
         with patch(SITEVERIFY) as call:
             response = self.post(token='')
@@ -416,6 +431,17 @@ class LoginTurnstileTests(SecurityCacheMixin, TestCase):
             self.assertEqual(self.client.post('/login/', data, **host).status_code, 302)
         self.assertEqual(int(self.client.session['_auth_user_id']), admin.pk)
 
+    def test_disabled_configuration_allows_login_but_still_requires_password(self):
+        ConfiguracaoTurnstile.objects.update_or_create(pk=1, defaults={'turnstile_ativo': False})
+        self.assertNotContains(self.client.get('/login/', **self.host), turnstile.SCRIPT_URL)
+        with patch(SITEVERIFY) as call:
+            self.post(password='wrong-password', token='')
+            self.assertNotIn('_auth_user_id', self.client.session)
+            response = self.post(token='')
+        call.assert_not_called()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.user.pk)
+
     def test_login_requires_token_before_authenticating(self):
         with patch(SITEVERIFY) as call, patch('usuarios.forms.authenticate') as auth:
             response = self.post(token='')
@@ -481,6 +507,15 @@ class RegistrationTurnstileTests(SecurityCacheMixin, TestCase):
         self.assertContains(page, 'data-sitekey="auth-site-key"')
         self.assertContains(page, 'data-action="cadastro"')
         self.assertNoSecrets(page)
+
+    def test_disabled_configuration_allows_registration_without_captcha(self):
+        ConfiguracaoTurnstile.objects.update_or_create(pk=1, defaults={'turnstile_ativo': False})
+        self.assertNotContains(self.client.get('/registro/', **self.host), turnstile.SCRIPT_URL)
+        with patch(SITEVERIFY) as call:
+            response = self.client.post('/registro/', self.data(token=''), **self.host)
+        call.assert_not_called()
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Tenant.objects.filter(subdomain='novo1').exists())
 
     def test_registration_requires_valid_token(self):
         with patch(SITEVERIFY) as call:

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from barbe.admin import site
-from .models import User, Cliente, ContatoCliente
+from .models import User, Cliente, ContatoCliente, ConfiguracaoTurnstile
 
 
 @admin.register(ContatoCliente, site=site)
@@ -61,3 +61,31 @@ class UserAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ConfiguracaoTurnstile, site=site)
+class ConfiguracaoTurnstileAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'turnstile_ativo', 'atualizado_em', 'atualizado_por')
+    fields = ('turnstile_ativo', 'atualizado_em', 'atualizado_por')
+    readonly_fields = ('atualizado_em', 'atualizado_por')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        obj.atualizado_por = request.user
+        super().save_model(request, obj, form, change)
+        if not obj.turnstile_ativo:
+            self.message_user(
+                request,
+                'Cloudflare Turnstile desativado: login, cadastro e agendamentos estão sem CAPTCHA.',
+                level='WARNING',
+            )
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if ConfiguracaoTurnstile.objects.filter(pk=1, turnstile_ativo=False).exists():
+            self.message_user(request, 'Cloudflare Turnstile está desativado globalmente.', level='WARNING')
+        return super().change_view(request, object_id, form_url, extra_context)

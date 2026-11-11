@@ -113,3 +113,42 @@ class WhatsAppBloqueado(models.Model):
     def save(self, *args, **kwargs):
         self.whatsapp = preparar_whatsapp(self.whatsapp)
         return super().save(*args, **kwargs)
+
+
+class ConfiguracaoTurnstile(models.Model):
+    """Configuração global: a constraint permite somente o registro de ID 1."""
+    turnstile_ativo = models.BooleanField(
+        'Ativar Cloudflare Turnstile', default=True,
+        help_text='Protege login, cadastro e confirmação de agendamentos. '
+                  'Ao desmarcar, esses formulários ficam sem CAPTCHA.',
+    )
+    atualizado_em = models.DateTimeField('Última alteração', auto_now=True)
+    atualizado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name='Alterado por',
+        on_delete=models.SET_NULL, null=True, blank=True, editable=False,
+    )
+
+    class Meta:
+        verbose_name = 'Configuração do Cloudflare Turnstile'
+        verbose_name_plural = 'Configuração do Cloudflare Turnstile'
+        constraints = [models.CheckConstraint(
+            condition=models.Q(pk=1), name='turnstile_config_singleton',
+        )]
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return 'Cloudflare Turnstile'
+
+    @classmethod
+    def ativo(cls):
+        # Sem cache: a alteração vale também para os demais workers imediatamente.
+        from django.db import OperationalError, ProgrammingError
+        try:
+            value = cls.objects.filter(pk=1).values_list('turnstile_ativo', flat=True).first()
+        except (OperationalError, ProgrammingError):
+            # Migração ainda não aplicada ou banco indisponível: nunca desativar por falha.
+            return True
+        return value is not False
