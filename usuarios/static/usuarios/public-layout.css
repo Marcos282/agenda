@@ -19,3 +19,6 @@ body.public-site{background:#fcfcfa;color:var(--text);font-family:system-ui,-app
 @media(max-width:680px){.public-site .public-header,.public-site .public-footer{padding:20px;flex-wrap:wrap}.public-site .public-header nav{width:100%;gap:8px}.public-site .public-header nav .ui-button{flex:1 1 auto}.public-site main.public-card{width:calc(100% - 32px);margin:24px auto 40px;padding:24px 20px}.public-site .public-footer{gap:12px}}
 
 .public-site main.public-booking-card{max-width:820px}
+.public-header .public-signup-button{background:#245dab;border-color:#245dab;color:#fff;font-weight:650}
+.public-header .public-signup-button:hover{background:#1c4a89;border-color:#1c4a89;color:#fff}
+.public-header .public-signup-button:focus-visible{outline:3px solid #8db8ef;outline-offset:3px}

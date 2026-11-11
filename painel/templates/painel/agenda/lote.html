@@ -1,0 +1,32 @@
+{% extends 'painel/base.html' %}{% load static %}
+{% block title %}Abertura de agendas em lote · Painel{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/agenda-lote.css' %}"><link rel="stylesheet" href="{% static 'painel/data-br.css' %}">{% endblock %}
+{% block painel_content %}
+<div class="batch-page">
+<a class="ui-button ui-button-secondary" href="{{ batch_back_url }}">← Voltar à agenda</a>
+<header class="batch-heading"><span class="eyebrow">MAIS TEMPO PARA ATENDER</span><h1>Abra agendas em poucos toques.</h1><p>Escolha a equipe, marque os dias e defina os turnos. Horários de {{ request.tenant.timezone }}.</p></header>
+<div role="status" aria-live="polite" id="batch-status" tabindex="-1">{% if batch_success %}{{ batch_success }}{% endif %}{{ form.errors }}</div>
+<form method="post" id="batch-form">{% csrf_token %}
+<section class="batch-card"><div class="batch-title"><div><span class="eyebrow">01 · SUA EQUIPE</span><h2>Quem vai atender?</h2></div><button type="button" class="ui-button ui-button-secondary" data-professionals-all>Selecionar todos os profissionais</button></div>
+<div class="batch-professionals">{% for row in batch_professionals %}<label class="batch-choice professional-choice">
+<input type="checkbox" name="profissionais" value="{{ row.object.pk }}"{% if row.selected %} checked{% endif %}>
+{% if row.object.foto %}<img src="{% url 'painel:profissional_foto' row.object.pk %}" alt="" class="batch-avatar">{% else %}<span class="batch-avatar" aria-hidden="true">{{ row.object.nome|first|upper }}</span>{% endif %}<strong>{{ row.object.nome }}</strong></label>
+{% empty %}<p>Nenhum profissional ativo. Ative um profissional antes de abrir a agenda.</p>{% endfor %}</div></section>
+<section class="batch-card"><div class="batch-title"><div><span class="eyebrow">02 · SEU PERÍODO</span><h2>Quais dias vamos abrir?</h2></div><span>De 1 a 7 dias</span></div>
+<div class="batch-period"><p>{{ form.data_inicial.label_tag }}{{ form.data_inicial }}</p><p>{{ form.quantidade_dias.label_tag }}{{ form.quantidade_dias }}</p></div>
+<div class="batch-shortcuts" aria-label="Atalhos para selecionar dias"><button type="button" data-days="all" class="ui-button ui-button-secondary">Selecionar todos</button><button type="button" data-days="week" class="ui-button ui-button-secondary">Segunda a sexta</button><button type="button" data-days="saturday" class="ui-button ui-button-secondary">Segunda a sábado</button><button type="button" data-days="none" class="ui-button ui-button-secondary">Limpar seleção</button></div>
+<div class="batch-days" id="batch-days">{% for row in batch_days %}<label class="batch-choice day-choice"><input type="checkbox" name="datas" value="{{ row.day|date:'Y-m-d' }}"{% if row.selected %} checked{% endif %}><span>{{ row.day|date:'D' }}</span><strong>{{ row.day|date:'d/m/Y' }}</strong></label>{% endfor %}</div>
+<p class="batch-muted">Marque ou desmarque qualquer data, inclusive feriados. Somente os dias marcados serão alterados.</p></section>
+<section class="batch-card"><span class="eyebrow">03 · RITMO DO DIA</span><h2>Defina os turnos.</h2><div class="batch-shifts">
+<fieldset class="batch-shift"><legend>☀️ Turno da manhã</legend><label>{{ form.manha }} Ativar turno da manhã</label><div class="batch-period"><p>{{ form.manha_inicio.label_tag }}{{ form.manha_inicio }}</p><p>{{ form.manha_fim.label_tag }}{{ form.manha_fim }}</p></div></fieldset>
+<fieldset class="batch-shift"><legend>🌤️ Turno da tarde</legend><label>{{ form.tarde }} Ativar turno da tarde</label><div class="batch-period"><p>{{ form.tarde_inicio.label_tag }}{{ form.tarde_inicio }}</p><p>{{ form.tarde_fim.label_tag }}{{ form.tarde_fim }}</p></div></fieldset></div>
+<p class="batch-break" id="batch-break">Intervalo entre os turnos: 12:00 → 13:00</p></section>
+<section class="batch-card"><span class="eyebrow">04 · TUDO CONFERIDO?</span><h2>Resumo da abertura</h2><p id="batch-summary" aria-live="polite">Selecione os profissionais e os dias.</p><p id="batch-hours"></p><p class="batch-muted">Horários existentes só serão alterados após sua confirmação. Dias com reservas futuras ou em andamento não podem ter seus horários alterados em lote.</p>
+{% if preview %}<p>{{ preview.created }} configurações novas · {{ preview.updated }} existentes · {{ preview.unchanged }} sem alteração.</p><input type="hidden" name="token" value="{{ preview.token }}">{% if preview.updated %}<ul>{% for change in preview.changes %}<li>{{ change }}</li>{% endfor %}</ul><label><input type="checkbox" name="confirmar" required> Confirmo a alteração dos horários existentes listados acima.</label>{% endif %}{% endif %}
+</section>
+<div class="batch-bar"><div><strong id="batch-count">Escolha sua equipe e os dias</strong><small id="batch-operation">Confira os detalhes antes de salvar</small></div><button type="submit" name="acao" value="{% if preview %}salvar_lote{% else %}prever_lote{% endif %}" id="batch-submit">Confirmar abertura das agendas</button></div>
+</form>
+<dialog id="batch-confirm" aria-labelledby="batch-confirm-heading"><form method="dialog"><h2 id="batch-confirm-heading">Confira antes de abrir</h2><p id="batch-preview-summary"></p><p id="batch-preview-schedule"></p><ul id="batch-changes"></ul><p>Reservas existentes serão preservadas. Os demais horários listados poderão ser substituídos, incluindo períodos anteriormente fechados.</p><label id="batch-consent"><input type="checkbox" id="batch-overwrite"> Confirmo a alteração dos horários existentes listados.</label><div class="batch-dialog-actions"><button value="cancel" class="ui-button ui-button-secondary">Voltar e ajustar</button><button value="confirm" id="batch-confirm-submit">Confirmar abertura</button></div></form></dialog>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'painel/data-br.js' %}?v=3" defer></script><script src="{% static 'painel/agenda-lote.js' %}?v=2" defer></script>{% endblock %}

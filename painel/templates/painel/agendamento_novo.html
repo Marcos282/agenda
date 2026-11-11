@@ -1,12 +1,13 @@
 {% extends 'painel/base.html' %}{% load static %}
 {% block title %}Novo agendamento · Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'agenda/cliente.css' %}"><link rel="stylesheet" href="{% static 'painel/data-br.css' %}">{% endblock %}
 {% block extra_css %}{{ block.super }}
 .panel-booking-form{width:100%;max-width:620px;margin-inline:auto;box-sizing:border-box}
 .panel-booking-form .edit-form{max-width:none;width:100%}
 .panel-booking-form .edit-form>button,.panel-booking-form .booking-confirm>button{width:100%;min-height:44px}
 .panel-booking-form .booking-confirm>button+button{margin-top:10px}
 {% endblock %}
+{% block scripts %}{{ block.super }}<script src="{% static 'painel/data-br.js' %}?v=3" defer></script>{% endblock %}
 {% block painel_content %}
 <div class="panel-booking-form">
 <span class="booking-step">AGENDAMENTO PELO ESTABELECIMENTO</span><h1>Novo agendamento</h1>

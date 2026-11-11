@@ -36,6 +36,9 @@ def selected_day(request):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def agenda(request, profissional_id=None):
+    if request.GET.get('lote') == '1':
+        from .agenda_lote import batch_page
+        return batch_page(request)
     dia = selected_day(request)
     if dia is None:
         return HttpResponseBadRequest('Data inválida. Use AAAA-MM-DD.')

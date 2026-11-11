@@ -5,6 +5,9 @@
 .login-actions{display:grid;gap:12px;margin-top:12px}
 .login-register{display:grid;gap:12px;margin-top:8px;padding-top:20px;border-top:1px solid var(--line)}
 .login-register p{margin:0;text-align:center;color:var(--muted);font-size:13px}
+.login-register .login-register-button{background:#245dab;border-color:#245dab;color:#fff;font-weight:650}
+.login-register .login-register-button:hover{background:#1c4a89;border-color:#1c4a89;color:#fff}
+.login-register .login-register-button:focus-visible{outline:3px solid #8db8ef;outline-offset:3px}
 .turnstile-auth{margin:16px 0;min-height:65px}
 .security-error{color:#9b2929;font-size:14px}
 {% endblock %}
@@ -25,7 +28,7 @@
     <p>Quer marcar um horário? Basta informar seu nome e WhatsApp. Não precisa criar conta nem senha.</p>
     <a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar sem cadastro</a>
     {% else %}
-    <a class="ui-button" href="{% url 'registro' %}">Quer cadastrar seu estabelecimento?</a>
+    <a class="ui-button login-register-button" href="{% url 'registro' %}">Quer cadastrar seu estabelecimento?</a>
     {% endif %}
   </div>
 </div>

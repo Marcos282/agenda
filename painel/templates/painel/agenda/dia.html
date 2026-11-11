@@ -3,6 +3,7 @@
 {% block extra_head %}<link rel="stylesheet" href="{% static 'painel/agenda.css' %}?v=refresh-status-2">{% endblock %}
 {% block painel_content %}
 <div class="agenda-page">
+<a class="agenda-button secondary" href="{% url 'painel:agenda' %}?lote=1&amp;data={{ data_iso }}{% if profissional %}&amp;profissional={{ profissional.pk }}{% endif %}">Abrir agendas em lote</a>
 <header class="agenda-header"><div><span class="agenda-kicker">SEU ESTABELECIMENTO, DIA A DIA</span><h1>Agenda</h1><p>Um dia de cada vez. Cada profissional no seu ritmo.</p></div><div class="agenda-header-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-14 4h3m4 0h3"/></svg></div></header>
 <section class="day-navigation" aria-label="Selecionar dia">
   <div class="day-arrows">

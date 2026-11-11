@@ -55,7 +55,10 @@ class AgendamentoPainelForm(forms.Form):
     nome = forms.CharField(label='Cliente', max_length=150, widget=forms.TextInput(attrs={'placeholder': 'Nome completo do cliente', 'autocomplete': 'name'}))
     whatsapp = WhatsAppNumberField()
     oferta = OfertaChoice(label='Profissional e serviço', queryset=ProfissionalServico.objects.none(), empty_label='Selecione o profissional e o serviço')
-    data = forms.DateField(label='Data do atendimento', widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'))
+    data = forms.DateField(label='Data do atendimento', input_formats=['%d/%m/%Y', '%Y-%m-%d'],
+        widget=forms.DateInput(format='%d/%m/%Y', attrs={'type': 'text', 'inputmode': 'numeric',
+            'placeholder': 'dd/mm/aaaa', 'maxlength': 10, 'autocomplete': 'off',
+            'pattern': '[0-9]{2}/[0-9]{2}/[0-9]{4}', 'data-date-br': '1'}))
 
     def __init__(self, *args, tenant, **kwargs):
         super().__init__(*args, **kwargs)
@@ -74,7 +77,10 @@ def novo(request):
     initial = {'data': hoje}
     # Preserve the professional/day when entering from the daily agenda.
     if request.method == 'GET':
-        initial['data'] = request.GET.get('data', hoje)
+        try:
+            initial['data'] = forms.DateField(input_formats=['%Y-%m-%d', '%d/%m/%Y']).clean(request.GET.get('data', hoje))
+        except ValidationError:
+            initial['data'] = hoje
     form = AgendamentoPainelForm(request.POST if request.method == 'POST' else None, tenant=request.tenant, initial=initial)
     profissional_id = request.GET.get('profissional', '')
     if profissional_id.isdecimal() and len(profissional_id) <= 18 and request.method == 'GET':
