@@ -1,1 +1,16 @@
 <div class="mobile-booking-action"><a class="ui-button mobile-booking-button" href="{% if request.tenant %}{% if booking_on_home %}#fim-servicos{% else %}{% url 'home' %}#talento-com-nome-proprio{% endif %}{% else %}{% url 'registro' %}{% endif %}">{% if request.tenant %}Faça seu agendamento{% else %}Cadastrar meu estabelecimento{% endif %} <span aria-hidden="true">→</span></a></div>
+{% if request.tenant and booking_on_home %}
+<script>
+(() => {
+  const action = document.querySelector('.mobile-booking-action');
+  const note = document.getElementById('fim-servicos');
+  if (!action || !note) return;
+  action.querySelector('a').addEventListener('click', (event) => {
+    if (!window.matchMedia('(max-width:767px)').matches) return;
+    event.preventDefault();
+    const top = window.scrollY + note.getBoundingClientRect().bottom - action.getBoundingClientRect().top + 12;
+    window.scrollTo({top: Math.max(0, top), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+  });
+})();
+</script>
+{% endif %}
