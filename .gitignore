@@ -11,3 +11,14 @@ staticfiles/
 venv/
 env/
 whatsapp-tests.sqlite3*
+
+# Configurações privadas e temporárias
+.env.*
+!.env.example
+!.env.sample
+
+# Imagens privadas dos estabelecimentos
+private-theme-media/
+
+# Arquivos temporários do Git
+FETCH_HEAD
