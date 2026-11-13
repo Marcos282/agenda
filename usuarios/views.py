@@ -177,7 +177,18 @@ def conta(request):
     return render(request, 'usuarios/conta.html', {'whatsapp_form': form})
 
 
-sair = tenant_required(LogoutView.as_view())
+class TenantLogoutView(LogoutView):
+    def get_success_url(self):
+        from django.http.request import split_domain_port
+
+        host = self.request.get_host()
+        domain, _ = split_domain_port(host.lower())
+        if domain == 'localhost' or domain.endswith('.localhost'):
+            return f'{self.request.scheme}://{host}/'
+        return f'https://{self.request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}/'
+
+
+sair = tenant_required(TenantLogoutView.as_view())
 
 
 @tenant_required

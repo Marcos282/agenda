@@ -92,6 +92,32 @@ class FoundationTests(TestCase):
             self.assertNotIn('_auth_user_id', self.client.session)
             self.assertTrue(response.context['form'].errors)
 
+    def test_logout_redirects_to_current_tenant_public_site(self):
+        with self.settings(DEBUG=False, TENANT_BASE_DOMAIN='tacombinado.net',
+                           ALLOWED_HOSTS=['.tacombinado.net'], STORE_BASE_DOMAIN='tacombinado.net'):
+            for tenant in (self.marcos, self.wanessa):
+                with self.subTest(tenant=tenant.subdomain):
+                    self.user.tenant = tenant
+                    self.user.save(update_fields=['tenant'])
+                    self.client.force_login(self.user)
+                    response = self.client.post(
+                        '/logout/?next=/login/',
+                        HTTP_HOST=f'{tenant.subdomain}.tacombinado.net',
+                    )
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(response['Location'], f'https://{tenant.subdomain}.tacombinado.net/')
+                    self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_logout_preserves_local_host_and_port(self):
+        with self.settings(DEBUG=True, TENANT_BASE_DOMAIN='localhost', ALLOWED_HOSTS=['.localhost']):
+            for host in ('marcos.localhost:8000', 'marcos.localhost:9000', 'marcos.localhost'):
+                with self.subTest(host=host):
+                    self.client.force_login(self.user)
+                    response = self.client.post('/logout/', HTTP_HOST=host)
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(response['Location'], f'http://{host}/')
+                    self.assertNotIn('_auth_user_id', self.client.session)
+
     def test_copied_session_is_rejected_on_other_tenants_and_root(self):
         self.user.tipo = User.Tipo.ADMIN
         self.user.save(update_fields=['tipo'])

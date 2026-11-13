@@ -1,6 +1,12 @@
 {% extends 'usuarios/base.html' %}
 {% block title %}{{ titulo }}{% endblock %}
+{% block main_class %}{% if login_form %}login-card {% endif %}{{ block.super }}{% endblock %}
+{% block body_class %}{% if login_form and request.tenant %}login-page {% endif %}{{ block.super }}{% endblock %}
 {% block extra_css %}
+main.login-card{box-sizing:border-box;width:calc(100% - 24px);max-width:506px;margin-inline:auto}
+body.login-page{min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:minmax(16px,1fr) auto minmax(16px,1fr)}
+.login-page main.login-card{grid-row:2;margin-block:16px}
+.login-page>footer{grid-row:3;align-self:end}
 .login-form button[type="submit"],.login-actions .ui-button{width:100%;min-height:44px}
 .login-actions{display:grid;gap:12px;margin-top:12px}
 .login-register{display:grid;gap:12px;margin-top:8px;padding-top:20px;border-top:1px solid var(--line)}
