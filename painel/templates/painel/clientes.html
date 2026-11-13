@@ -4,6 +4,7 @@
 {% block painel_content %}
 <div class="client-overview">
 <span class="eyebrow">RELACIONAMENTO COM SEUS CLIENTES</span><h1>Clientes</h1><p>Cada cliente é identificado pelo WhatsApp. Todos os agendamentos desse número ficam reunidos neste estabelecimento.</p>
+<a class="ui-button ui-button-secondary" href="{% url 'painel:meus_agendamentos' %}">Meus Agendamentos</a>
 <form method="get" class="client-search" role="search"><div><label for="client-search">Buscar cliente ou WhatsApp</label><input type="search" id="client-search" name="q" value="{{ termo }}" maxlength="150" placeholder="Nome, e-mail ou WhatsApp com DDD"></div><button type="submit">Buscar</button>{% if termo %}<a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}">Limpar</a>{% endif %}</form>
 <p class="client-muted">{{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }} encontrado{{ page_obj.paginator.count|pluralize }} · Um cliente por WhatsApp · Inclui cadastros ativos e inativos.</p>
 </div>

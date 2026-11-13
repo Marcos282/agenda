@@ -27,6 +27,28 @@ class PanelCustomerTests(BookingFixture, TestCase):
     def get(self,path=None,**query):
         return self.client.get(path or self.url,query,HTTP_HOST='marcos.localhost')
 
+    def test_my_bookings_navigation_and_admin_authorization(self):
+        url = reverse('painel:meus_agendamentos')
+        self.assertContains(self.get(),
+            f'<a class="ui-button ui-button-secondary" href="{url}">Meus Agendamentos</a>', html=True)
+        self.assertRedirects(self.get(url), reverse('agenda:meus'), fetch_redirect_response=False)
+        listing = self.get(reverse('agenda:meus'))
+        self.assertEqual(listing.context['agendamentos'].paginator.count, 0)
+        # Even an administrator cannot open another customer's personal reservation.
+        booking = Agendamento.objects.filter(cliente=self.user).first()
+        self.assertEqual(self.get(reverse('agenda:detalhe', args=[booking.pk])).status_code, 404)
+        self.client.force_login(self.user)
+        self.assertRedirects(self.get(url), '/login/?next=' + url, fetch_redirect_response=False)
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get(url, HTTP_HOST='wanessa.localhost').status_code, 403)
+        self.client.logout()
+        self.assertRedirects(self.get(url), '/login/?next=' + url, fetch_redirect_response=False)
+        for host in ['localhost', 'marcos.localhost']:
+            response = self.client.get('/login/', HTTP_HOST=host)
+            self.assertEqual(response.status_code, 200)
+            self.assertNotContains(response, 'Meus agendamentos')
+            self.assertNotContains(response, 'Meus Agendamentos')
+
     def test_list_contacts_history_totals_and_empty_inactive_customer(self):
         self.second.is_active=False;self.second.save()
         response=self.get()

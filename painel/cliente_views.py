@@ -230,3 +230,9 @@ def whatsapp_bloqueio(request, whatsapp):
         from django.http import HttpResponseBadRequest
         return HttpResponseBadRequest('Ação inválida.')
     return redirect('painel:clientes')
+
+
+@admin_tenant_required
+@require_http_methods(['GET'])
+def meus_agendamentos(request):
+    return redirect('agenda:meus')

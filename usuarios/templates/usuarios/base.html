@@ -32,7 +32,7 @@
       {% if user.tipo == "ADMIN" %}<a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}">Painel</a>{% endif %}
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="ui-button ui-button-quiet">Sair</button></form>
     {% else %}
-      <a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a><a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a>
+      {% if request.resolver_match.url_name != 'login' %}<a class="ui-button ui-button-secondary" href="{% url 'agenda:meus' %}">Meus agendamentos</a>{% endif %}<a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar horário</a>
     {% endif %}
   </nav>{% endif %}
   {% endblock %}

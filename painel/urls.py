@@ -28,6 +28,7 @@ urlpatterns = [
     path('agendamentos/<int:pk>/concluir/', agendamento_views.concluir, name='agendamento_concluir'),
     path('clientes/whatsapp/<str:whatsapp>/bloqueio/', cliente_views.whatsapp_bloqueio, name='whatsapp_bloqueio'),
     path('clientes/avaliacoes/<int:pk>/corrigir/', cliente_views.corrigir_reputacao, name='corrigir_reputacao'),
+    path('clientes/meus-agendamentos/', cliente_views.meus_agendamentos, name='meus_agendamentos'),
     path('clientes/', cliente_views.lista, name='clientes'),
     path('clientes/whatsapp/<str:whatsapp>/', cliente_views.whatsapp_historico, name='whatsapp_historico'),
     path('clientes/contatos/<int:pk>/', cliente_views.contato_historico, name='contato_historico'),
