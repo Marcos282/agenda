@@ -155,6 +155,8 @@ def reservar(*, tenant, cliente, oferta_id, dia, hora, nome, valor_exibido, dura
     from usuarios.models import WhatsAppBloqueado
     # Serialize blocking and reservations across professionals in this establishment.
     tenant = Tenant.objects.select_for_update().get(pk=tenant.pk, ativo=True)
+    if tenant.agendamentos_bloqueados:
+        raise ValidationError('Agendamentos temporariamente indisponíveis.')
     from usuarios.validators import whatsapp_liberado_para_testes
     if (not whatsapp_liberado_para_testes(tenant, numero)
             and WhatsAppBloqueado.objects.for_tenant(tenant).filter(whatsapp=numero).exists()):

@@ -1,0 +1,8 @@
+{% with status=request.tenant.assinatura %}{% if status.aviso %}
+<aside class="subscription-notice renewal-{{ status.cor }}" role="status" aria-label="Situação da assinatura">
+{% if status.bloqueado %}<strong>Sua assinatura está expirada.</strong><p>Os agendamentos online do seu estabelecimento estão temporariamente suspensos.</p><p>Seus dados e agendamentos permanecem preservados.</p>
+{% elif status.tolerancia %}<strong>Sua assinatura venceu!</strong><p>Você possui 3 dias de tolerância para regularizar sua assinatura e continuar recebendo agendamentos.</p><p>Tempo restante: até {{ status.horas_restantes }} hora{{ status.horas_restantes|pluralize }}.</p>
+{% elif status.cor == 'amarelo' %}<strong>Sua assinatura está próxima do vencimento.</strong><p>{% if status.dias %}Faltam {{ status.dias }} dia{{ status.dias|pluralize }} para o vencimento.{% else %}Sua assinatura vence hoje.{% endif %} Evite a interrupção dos agendamentos.</p>
+{% else %}<strong>Sua assinatura vence em {{ status.dias }} dias.</strong><p>Renove sua assinatura para continuar utilizando todos os recursos do Tá Combinado.</p>{% endif %}
+<a class="ui-button" href="{% url 'painel:mensalidade' %}">{% if status.bloqueado %}Reativar assinatura{% elif status.tolerancia %}Regularizar assinatura{% else %}Renovar agora{% endif %}</a>
+</aside>{% endif %}{% endwith %}

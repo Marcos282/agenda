@@ -152,3 +152,17 @@ class LembreteRetorno(models.Model):
             condition=(models.Q(status='ENVIADO', enviado_em__isnull=False)
                 | models.Q(status__in=['PROCESSANDO', 'ERRO', 'INCERTO', 'IGNORADO'], enviado_em__isnull=True)),
             name='retorno_status_envio_consistente')]
+
+
+class AvisoAssinatura(models.Model):
+    """Persistent claim per expiry and milestone; uncertain sends are not retried."""
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.PROTECT)
+    data_expiracao = models.DateField()
+    etapa = models.CharField(max_length=16)
+    status = models.CharField(max_length=20, default='PROCESSANDO')
+    criado_em = models.DateTimeField(auto_now_add=True)
+    enviado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['tenant', 'data_expiracao', 'etapa'],
+                                               name='wa_assinatura_aviso_unico')]

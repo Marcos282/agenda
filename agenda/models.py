@@ -154,6 +154,15 @@ class Agendamento(models.Model):
         return self.contato.whatsapp if self.contato_id else self.cliente.whatsapp
 
     def save(self, *args, **kwargs):
+        if self._state.adding:
+            from django.db import transaction
+            from tenants.models import Tenant
+            with transaction.atomic():
+                tenant = Tenant.objects.select_for_update().get(pk=self.tenant_id)
+                if tenant.agendamentos_bloqueados:
+                    raise ValidationError('Agendamentos temporariamente indisponíveis.')
+                self.full_clean()
+                return super().save(*args, **kwargs)
         self.full_clean()
         return super().save(*args, **kwargs)
 

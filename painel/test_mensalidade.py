@@ -33,7 +33,7 @@ class MensalidadeTests(TestCase):
         self.assertContains(page, 'R$ 30,00')
         self.assertNotContains(page, 'Plano Individual')
         self.assertEqual(len(page.context['planos']), 1)
-        self.assertEqual(page.context['dias_restantes'], 30)
+        self.assertEqual(page.context['dias_restantes'], 60)
         self.assertIn('no-store', page['Cache-Control'])
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, self.tenant.data_expiracao)
@@ -104,13 +104,13 @@ class MensalidadeTests(TestCase):
                 self.assertEqual(self.tenant.dias_para_expirar, remaining)
                 self.assertEqual(self.tenant.acesso_expirado, today > self.tenant.expira_em)
 
-    def test_long_expired_access_stays_at_zero_and_panel_remains_blocked(self):
+    def test_long_expired_access_stays_at_zero_and_panel_remains_accessible(self):
         self.tenant.expira_em = date(2026, 1, 1)
         self.tenant.save()
         with patch('django.utils.timezone.localdate', return_value=date(2026, 10, 1)):
             self.assertEqual(self.tenant.dias_para_expirar, 0)
             self.assertTrue(self.tenant.acesso_expirado)
-            self.assertRedirects(self.client.get('/painel/', **self.host), self.url, fetch_redirect_response=False)
+            self.assertEqual(self.client.get('/painel/', **self.host).status_code, 200)
             page = self.client.get(self.url, **self.host)
             self.assertTrue(page.context['prazo_expirado'])
             self.assertNotContains(page, 'Expira hoje')
@@ -118,14 +118,14 @@ class MensalidadeTests(TestCase):
     def test_registration_date_and_tenant_timezone(self):
         with patch('django.utils.timezone.now', return_value=datetime(2026, 10, 1, 1, tzinfo=timezone.utc)):
             tenant = Tenant.objects.create(nome='Teste', subdomain='teste', timezone='America/Sao_Paulo')
-            self.assertEqual(tenant.expira_em, date(2026, 10, 30))
-            self.assertEqual(tenant.dias_para_expirar, 30)
+            self.assertEqual(tenant.expira_em, date(2026, 11, 29))
+            self.assertEqual(tenant.dias_para_expirar, 60)
         with patch('django.utils.timezone.now', return_value=datetime(2026, 10, 2, 1, tzinfo=timezone.utc)):
             tenant.nome = 'Nome alterado'
             tenant.save()
             tenant.refresh_from_db()
-            self.assertEqual(tenant.expira_em, date(2026, 10, 30))
-            self.assertEqual(tenant.dias_para_expirar, 29)
+            self.assertEqual(tenant.expira_em, date(2026, 11, 29))
+            self.assertEqual(tenant.dias_para_expirar, 59)
 
     def test_backfill_uses_original_creation_date_and_preserves_manual_dates(self):
         from importlib import import_module

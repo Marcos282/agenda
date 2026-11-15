@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Página não encontrada · Tá Combinado</title>
+  <link rel="stylesheet" href="{% static 'usuarios/theme.css' %}">
+  <style>
+    body { min-height: 100svh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: radial-gradient(ellipse at 15% 15%, #e6efe6, transparent 60%), #f7f8f7; }
+    .error-card { box-sizing: border-box; width: 100%; max-width: 680px; margin: 0; padding: clamp(24px, 6vw, 64px); border-radius: 28px; box-shadow: 0 24px 80px #183e2410; }
+    .error-brand { font-size: 15px; font-weight: 700; text-decoration: none; letter-spacing: -.04em; }
+    .error-art { position: relative; width: fit-content; margin: 40px auto 28px; }
+    .error-code { color: var(--brand-color, #287454); font-size: clamp(100px, 25vw, 172px); line-height: 1; font-weight: 750; letter-spacing: -.08em; }
+    .error-tag { position: absolute; bottom: -8px; right: -8px; padding: 8px 14px; background: #fff7e7; border: 1px solid #eadbbd; border-radius: 12px; color: #795a2b; font-size: 12px; font-weight: 600; transform: rotate(-6deg); }
+    .error-copy { text-align: center; }
+    .error-copy h1 { margin: 0 0 16px; font-size: clamp(26px, 5vw, 36px); }
+    .error-copy p { max-width: 410px; margin: 0 auto; color: var(--muted, #69746e); }
+    .error-actions { justify-content: center; margin: 28px 0 0; }
+    .error-actions .ui-button { min-height: 46px; }
+    .error-note { margin: 36px 0 0; padding-top: 20px; border-top: 1px solid var(--line, #e5e9e6); font-size: 12px; text-align: center; color: var(--muted, #69746e); }
+    @media (max-width: 420px) { body { padding: 16px; } .error-actions { flex-direction: column; align-items: stretch; } .error-tag { right: 0; } }
+  </style>
+</head>
+<body>
+  <main class="error-card" aria-labelledby="error-title">
+    <a class="error-brand" href="{% url 'home' %}">Tá Combinado<span aria-hidden="true"> ✳</span></a>
+    <div class="error-art" aria-hidden="true"><div class="error-code">404</div><span class="error-tag">Fora da agenda</span></div>
+    <div class="error-copy">
+      <h1 id="error-title">Esse endereço ficou fora da agenda.</h1>
+      <p>A página que você procura pode ter mudado de endereço ou não estar mais disponível. Vamos encontrar o caminho de volta?</p>
+    </div>
+    <nav class="error-actions" aria-label="Encontrar uma página">
+      <a class="ui-button" href="{% url 'home' %}">← Voltar ao início</a>
+      {% if request.tenant %}<a class="ui-button ui-button-secondary" href="{% url 'loja' %}">Agendar um horário</a>{% endif %}
+    </nav>
+    <p class="error-note">Seu próximo encontro com o cuidado começa por aqui.</p>
+  </main>
+</body>
+</html>

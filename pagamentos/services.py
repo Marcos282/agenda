@@ -297,6 +297,14 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
         merchant_order = api_call(client.merchant_order().get, str(order['id']))
         if merchant_order.get('preference_id') != checkout.preferencia_id:
             return recusar('A ordem do Mercado Pago não corresponde à preferência da cobrança.')
+    approved = None
+    if status == 'approved':
+        try:
+            approved = parse_datetime(str(payment.get('date_approved', '')))
+        except (ValueError, TypeError):
+            pass
+        if not approved or not timezone.is_aware(approved) or approved > timezone.now():
+            return recusar('Data efetiva de aprovação ausente ou inválida.')
     with transaction.atomic():
         tenant = Tenant.objects.select_for_update().get(pk=checkout.tenant_id)
         record, _ = PagamentoAcesso.objects.get_or_create(
@@ -308,19 +316,15 @@ def confirmar_pagamento(payment_id, *, tenant_id=None, checkout_id=None, diagnos
         if record.creditado_em is None or status not in {'pending', 'in_process', 'authorized'}:
             record.status = status
         if status == 'approved' and record.creditado_em is None:
-            # Legacy checkout snapshots remain intact; they must never downgrade access.
+            # Preserve legacy checkout snapshots while keeping the current plan.
             tenant.plano = Tenant.Plano.PROFISSIONAL
-            today = timezone.localdate(timezone=ZoneInfo(tenant.timezone))
+            today = timezone.localdate(approved, timezone=ZoneInfo(settings.TIME_ZONE))
             record.validade_anterior = tenant.data_expiracao
-            tenant.expira_em = max(today, record.validade_anterior) + timedelta(days=checkout.dias)
+            tenant.expira_em = today + timedelta(days=30)
             record.nova_validade = tenant.expira_em
-            record.dias_concedidos = checkout.dias
+            record.dias_concedidos = 30
             tenant.save(update_fields=['expira_em', 'plano', 'atualizado_em'])
             record.creditado_em = timezone.now()
-            try:
-                approved = parse_datetime(str(payment.get('date_approved', '')))
-            except ValueError:
-                approved = None
-            record.aprovado_em = approved if approved and timezone.is_aware(approved) else record.creditado_em
+            record.aprovado_em = approved
         record.save(update_fields=['status', 'creditado_em', 'atualizado_em', 'aprovado_em', 'validade_anterior', 'nova_validade', 'dias_concedidos'])
         return record

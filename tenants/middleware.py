@@ -1,9 +1,8 @@
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
-from django.contrib.auth.views import redirect_to_login
 from django.http import Http404, HttpResponseForbidden
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from .domains import is_development_public_host, tenant_base_domain_for_host
@@ -71,14 +70,9 @@ class TenantMiddleware:
                 pass  # These endpoints authenticate signatures or redirect to a scoped tenant panel.
             elif not (user.is_superuser and user.tenant_id is None):
                 return HttpResponseForbidden("Acesse o subdomínio do seu estabelecimento.")
-        if request.tenant is not None and request.tenant.acesso_expirado:
-            if request.path_info.startswith('/painel/') and request.path_info.rstrip('/') != '/painel/mensalidade' and not request.path_info.startswith('/painel/mensalidade/comprovantes/'):
-                if user.is_authenticated:
-                    if user.tipo == 'ADMIN':
-                        return redirect('painel:mensalidade')
-                    return HttpResponseForbidden('O painel está indisponível enquanto o prazo de acesso estiver vencido.')
-                return redirect_to_login(reverse('painel:mensalidade'), login_url=reverse('login'))
-            if request.path_info.startswith('/agendamentos/servico/'):
+        if request.tenant is not None and request.tenant.agendamentos_bloqueados:
+            if (request.path_info.startswith('/agendamentos/servico/')
+                    or request.path_info.rstrip('/') == '/painel/agendamentos/novo'):
                 return render(request, 'usuarios/agendamentos_indisponiveis.html', status=503)
         with timezone.override(ZoneInfo(request.tenant.timezone) if request.tenant else settings.TIME_ZONE):
             return self.get_response(request)

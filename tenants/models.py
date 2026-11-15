@@ -50,7 +50,7 @@ class Tenant(models.Model):
         'Limite de agendamentos futuros por WhatsApp', default=2, validators=[MinValueValidator(1)])
     ativo = models.BooleanField(default=True)
     expira_em = models.DateField('Data de expiração', null=True, blank=True,
-        help_text='Validade do acesso. Quando não informada, será definida como 30 dias após o cadastro.')
+        help_text='Validade do acesso. Quando não informada, será definida como 60 dias após o cadastro.')
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
@@ -89,16 +89,28 @@ class Tenant(models.Model):
         if self.expira_em:
             return self.expira_em
         cadastro = self.criado_em or django_timezone.now()
-        return django_timezone.localtime(cadastro, ZoneInfo(self.timezone)).date() + timedelta(days=30)
+        from .subscriptions import BILLING_TIMEZONE
+        return django_timezone.localtime(cadastro, BILLING_TIMEZONE).date() + timedelta(days=60 if self._state.adding else 30)
+
+    @property
+    def assinatura(self):
+        from .subscriptions import subscription_status
+        return subscription_status(self)
+
+    @property
+    def agendamentos_bloqueados(self):
+        return self.assinatura.bloqueado
 
     @property
     def dias_para_expirar(self):
-        hoje = django_timezone.localdate(timezone=ZoneInfo(self.timezone))
+        from .subscriptions import BILLING_TIMEZONE
+        hoje = django_timezone.localdate(timezone=BILLING_TIMEZONE)
         return max(0, (self.data_expiracao - hoje).days)
 
     @property
     def acesso_expirado(self):
-        hoje = django_timezone.localdate(timezone=ZoneInfo(self.timezone))
+        from .subscriptions import BILLING_TIMEZONE
+        hoje = django_timezone.localdate(timezone=BILLING_TIMEZONE)
         return self.data_expiracao < hoje
 
     def save(self, *args, **kwargs):

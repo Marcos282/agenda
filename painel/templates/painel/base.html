@@ -23,12 +23,12 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 .panel-nav,.account-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .panel-nav .ui-button,.account-nav .ui-button{width:100%;height:100%;min-height:44px;text-align:center;text-decoration:none}
 .account-nav form{height:100%}
+.renewal-verde{--billing-bg:#e4f4ea;--billing-fg:#185b35}.renewal-azul{--billing-bg:#e5efff;--billing-fg:#194d88}.renewal-amarelo{--billing-bg:#fff5ce;--billing-fg:#705000}.renewal-laranja{--billing-bg:#ffead8;--billing-fg:#883900}.renewal-vermelho{--billing-bg:#fde8e8;--billing-fg:#962626}
+.panel-nav .renewal,.subscription-notice{background:var(--billing-bg);color:var(--billing-fg);border:1px solid currentColor}
+.subscription-notice{padding:18px;border-radius:12px;margin:0 0 24px;overflow-wrap:anywhere}.subscription-notice p{margin:8px 0}.subscription-notice .ui-button{background:var(--billing-fg);color:var(--billing-bg)}
 {% endblock %}
 {% block content %}
 {% if request.resolver_match.url_name != 'meu_cadastro' %}<nav class="panel-nav" aria-label="Painel administrativo">
-{% if request.tenant.acesso_expirado %}
-<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" aria-current="page">Renovação</a>
-{% else %}
 <a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}" {% if request.resolver_match.url_name == 'inicio' %}aria-current="page"{% endif %}>Painel</a><a class="ui-button ui-button-secondary" href="{% url 'painel:profissionais' %}" {% if 'profissionais' in request.path %}aria-current="page"{% endif %}>Profissionais</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:servicos' %}" {% if request.resolver_match.url_name == 'servicos' or request.resolver_match.url_name == 'servico_novo' or request.resolver_match.url_name == 'servico_editar' %}aria-current="page"{% endif %}>Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}" {% if request.resolver_match.url_name == 'agenda' or request.resolver_match.url_name == 'disponibilidades' %}aria-current="page"{% endif %}>Agenda</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:clientes' %}" {% if request.resolver_match.url_name == 'clientes' or request.resolver_match.url_name == 'cliente_historico' %}aria-current="page"{% endif %}>Clientes</a>
@@ -36,8 +36,8 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 <a class="ui-button ui-button-secondary" href="{% url 'painel:whatsapp' %}" {% if request.resolver_match.url_name == 'whatsapp' %}aria-current="page"{% endif %}>WhatsApp</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:loja_qrcode' %}" {% if request.resolver_match.url_name == 'loja_qrcode' %}aria-current="page"{% endif %}>QR Code da loja</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:estilo' %}" {% if request.resolver_match.url_name == 'estilo' or request.resolver_match.url_name == 'estilo_conteudo' %}aria-current="page"{% endif %}>Personalização</a>
-<a class="ui-button ui-button-secondary" href="{% url 'painel:mensalidade' %}" {% if request.resolver_match.url_name == 'mensalidade' %}aria-current="page"{% endif %}>Renovação</a>
-{% endif %}
+<a class="ui-button ui-button-secondary renewal renewal-{{ request.tenant.assinatura.cor }}" href="{% url 'painel:mensalidade' %}" {% if request.resolver_match.url_name == 'mensalidade' %}aria-current="page"{% endif %}>Renovação</a>
 </nav>{% endif %}
+{% include 'painel/aviso_assinatura.html' %}
 {% block painel_content %}{% endblock %}
 {% endblock %}

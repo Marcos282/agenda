@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 import hashlib
 import hmac
@@ -35,6 +35,9 @@ class CheckoutProTests(TestCase):
         cls.customer = User.objects.create_user('customer@example.test', tenant=cls.tenant)
 
     def setUp(self):
+        clock = patch('django.utils.timezone.now', return_value=datetime(2026, 12, 15, 15, tzinfo=dt_timezone.utc))
+        clock.start()
+        self.addCleanup(clock.stop)
         self.client.force_login(self.admin)
         self.host = {'HTTP_HOST': 'marcos.localhost'}
         self.url = reverse('painel:mensalidade')
@@ -68,7 +71,7 @@ class CheckoutProTests(TestCase):
     def payment(self, checkout, **changes):
         data = {'id': 789, 'external_reference': str(checkout.pk), 'transaction_amount': 30,
                 'currency_id': 'BRL', 'collector_id': 456, 'live_mode': False,
-                'status': 'approved', 'order': {'id': 999, 'type': 'mercadopago'}}
+                'date_approved': timezone.now().isoformat(), 'status': 'approved', 'order': {'id': 999, 'type': 'mercadopago'}}
         data.update(changes)
         self.sdk.payment.return_value.get.return_value = {'status': 200, 'response': data}
         return data
@@ -96,7 +99,7 @@ class CheckoutProTests(TestCase):
         self.payment(checkout, transaction_amount=30)
         confirmar_pagamento('789')
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
+        self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
         self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
 
     def test_pending_payment_does_not_change_plan_or_expiration(self):
@@ -117,7 +120,7 @@ class CheckoutProTests(TestCase):
         confirmar_pagamento('789')
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.plano, 'PROFISSIONAL')
-        self.assertEqual(self.tenant.expira_em, expiry + timedelta(days=30))
+        self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
         checkout.refresh_from_db()
         self.assertEqual(checkout.plano, 'INDIVIDUAL')
         self.assertEqual(checkout.valor, Decimal('30.00'))
@@ -230,7 +233,7 @@ class CheckoutProTests(TestCase):
         self.assertContains(page, 'Pagamento aprovado — +30 dias adicionados')
         self.assertContains(page, reverse('painel:comprovante_pagamento', args=['789']))
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.expira_em, original + timedelta(days=30))
+        self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
         self.assertEqual(PagamentoAcesso.objects.count(), 1)
         self.assertIsNotNone(PagamentoAcesso.objects.get().creditado_em)
 
@@ -242,14 +245,14 @@ class CheckoutProTests(TestCase):
         self.tenant.refresh_from_db()
         self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
 
-    def test_two_distinct_payments_each_credit_thirty_days(self):
+    def test_two_distinct_payments_replace_validity_from_receipt(self):
         original = self.tenant.expira_em
         checkout = self.checkout()
         for payment_id in ('789', '790'):
             self.payment(checkout, id=int(payment_id))
             confirmar_pagamento(payment_id)
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.expira_em, original + timedelta(days=60))
+        self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
 
     def test_pending_then_approved_and_late_notification(self):
         checkout = self.checkout()
@@ -263,7 +266,7 @@ class CheckoutProTests(TestCase):
         self.payment(checkout)
         confirmar_pagamento('789')
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.expira_em, original + timedelta(days=30))
+        self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
 
     def test_untrusted_status_or_other_tenant_return_cannot_grant_access(self):
         other_checkout = self.checkout(self.other)
@@ -311,7 +314,7 @@ class CheckoutProTests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertNotIn(b'do-not-expose', response.content)
         self.assertFalse(PagamentoAcesso.objects.exists())
-        retry = NotificacaoMercadoPago.objects.latest('recebido_em')
+        retry = NotificacaoMercadoPago.objects.order_by('-recebido_em', '-pk').first()
         self.assertEqual(retry.estado, NotificacaoMercadoPago.Estado.AGUARDANDO_REENVIO)
 
     def test_valid_webhook_is_stored_and_visible_only_to_its_tenant(self):
@@ -554,7 +557,7 @@ class CheckoutProTests(TestCase):
         confirmar_pagamento('789')
         self.assertIsNotNone(record.creditado_em)
         self.tenant.refresh_from_db()
-        self.assertEqual(self.tenant.expira_em, original + timedelta(days=30))
+        self.assertEqual(self.tenant.expira_em, timezone.localdate() + timedelta(days=30))
         self.assertFalse(record.checkout.producao)
         self.assertTrue(diagnostic['verificacao_recebedor']['conta_de_teste'])
 
@@ -582,3 +585,34 @@ class CheckoutProTests(TestCase):
         self.payment(checkout, live_mode=False)
         self.assertIsNone(confirmar_pagamento('789'))
         self.seller.assert_not_called()
+
+    def test_delayed_receipt_uses_approval_date_and_sao_paulo_midnight(self):
+        checkout = self.checkout()
+        self.payment(checkout, date_approved='2026-12-02T01:00:00+00:00')
+        record = confirmar_pagamento('789')
+        self.tenant.refresh_from_db()
+        self.assertEqual(self.tenant.expira_em.isoformat(), '2026-12-31')
+        self.assertEqual(record.aprovado_em.day, 2)
+        self.assertEqual(record.nova_validade, self.tenant.expira_em)
+
+    def test_approved_payment_requires_actual_aware_confirmation_date(self):
+        checkout = self.checkout()
+        for approved in (None, '', 'invalid', '2026-12-01', '2026-12-01T10:00:00', '2099-01-01T10:00:00Z'):
+            with self.subTest(approved=approved):
+                self.payment(checkout, date_approved=approved)
+                self.assertIsNone(confirmar_pagamento('789'))
+        self.assertFalse(PagamentoAcesso.objects.exists())
+
+    def test_payment_unblocks_only_its_tenant_and_removes_warning(self):
+        Tenant.objects.filter(pk__in=[self.tenant.pk, self.other.pk]).update(
+            expira_em=timezone.localdate() - timedelta(days=10))
+        self.payment(self.checkout())
+        confirmar_pagamento('789')
+        self.tenant.refresh_from_db()
+        self.other.refresh_from_db()
+        self.assertFalse(self.tenant.agendamentos_bloqueados)
+        self.assertTrue(self.other.agendamentos_bloqueados)
+        page = self.client.get(reverse('painel:inicio'), **self.host)
+        self.assertContains(page, 'renewal-verde')
+        self.assertNotContains(page, 'aria-label="Situação da assinatura"')
+        self.assertEqual(self.client.get(reverse('painel:agendamento_novo'), **self.host).status_code, 200)

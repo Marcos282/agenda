@@ -1,7 +1,6 @@
 {% extends 'usuarios/base.html' %}
 {% block title %}Agendamentos temporariamente indisponíveis{% endblock %}
 {% block content %}
-<h1>Agendamentos temporariamente indisponíveis</h1>
-<p>Este estabelecimento não está recebendo novos agendamentos no momento. Tente novamente mais tarde.</p>
+{% include 'usuarios/booking_unavailable.html' %}
 <a class="ui-button ui-button-secondary" href="{% url 'home' %}">Voltar ao início</a>
 {% endblock %}
