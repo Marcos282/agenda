@@ -8,7 +8,7 @@ from urllib.parse import urlsplit, parse_qs
 MANUAL_VIDEOS = {
     'primeiros-passos': 'https://youtu.be/IYXoUnOtWr4',
     'profissionais': 'https://www.youtube.com/watch?v=00OU4AqKa3s',
-    'servicos': '',
+    'servicos': 'https://www.youtube.com/watch?v=yjPwNG2kYJM',
     'agenda': '',
     'clientes': '',
     'whatsapp': '',
