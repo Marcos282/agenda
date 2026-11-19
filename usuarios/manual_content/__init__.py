@@ -7,7 +7,7 @@ from urllib.parse import urlsplit, parse_qs
 # Cole o endereço do vídeo (ou somente o ID). Vazio mostra “Vídeo em breve”.
 MANUAL_VIDEOS = {
     'primeiros-passos': 'https://youtu.be/IYXoUnOtWr4',
-    'profissionais': '',
+    'profissionais': 'https://www.youtube.com/watch?v=00OU4AqKa3s',
     'servicos': '',
     'agenda': '',
     'clientes': '',
