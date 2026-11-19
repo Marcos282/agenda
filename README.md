@@ -212,3 +212,106 @@ A reserva registra o WhatsApp utilizado para preservar a identificação mesmo q
 - [Plano Profissional único, migração e publicação](docs/planos-estabelecimento.md)
 
 - [Mensalidade, confirmação Mercado Pago e comprovantes](docs/pagamentos-mensalidade.md)
+
+## Manual interativo (acesso direto, sem divulgação nos menus)
+
+A rota pública `/manual/` reúne 23 tutoriais em nove categorias: Primeiros passos,
+Profissionais, Serviços, Agenda, Clientes, WhatsApp, Personalização, QR Code e
+Renovação. Reutiliza `usuarios/theme.css`, suas variáveis, tipografia e botões.
+Não há bibliotecas, modelos, migrações ou integrações externas novas.
+
+Para conferir localmente, no diretório do projeto:
+
+```bash
+myenv/bin/python manage.py runserver 127.0.0.1:8000
+```
+
+Abra diretamente `http://localhost:8000/manual/`. Não é necessário login nem
+assinatura ativa. Nenhum menu, cabeçalho ou rodapé existente ganhou links para
+o manual. A página tem `noindex, nofollow` e não foi adicionada ao sitemap.
+Isso reduz descoberta por buscadores, mas não transforma a URL pública em área
+privada. Nenhum deploy foi executado.
+
+O middleware trata somente essa URL exata como documento público sem tenant,
+assim como a política de privacidade. O Host continua sendo validado pelo Django.
+O conteúdo também é igual nos subdomínios, sem consultar estabelecimentos ou
+expor seus dados, inclusive em sessões autenticadas. As verificações das demais
+rotas permanecem as mesmas.
+
+### Conteúdo e manutenção
+
+- `usuarios/manual.py`: view somente de leitura e cabeçalho para buscadores.
+- `usuarios/manual_content/__init__.py`: estrutura dos tutoriais e carregamento
+  das categorias. Os nove arquivos adjacentes guardam o conteúdo por assunto.
+- `usuarios/templates/usuarios/manual/index.html`: estrutura independente dos
+  menus existentes; `tutorial.html`, `illustration.html` e `diagram.html` compõem
+  os passos, exemplos visuais em HTML/SVG e dicas.
+- `usuarios/manual_content/__init__.py`: IDs de vídeo configuráveis por
+  categoria em `MANUAL_VIDEOS`; os IDs são validados antes de serem enviados
+  ao navegador. O player `youtube-nocookie` só recebe `src` quando a categoria
+  é selecionada e é descarregado ao navegar para outra categoria.
+- `usuarios/templates/usuarios/manual/category_video.html`: player da categoria,
+  com carregamento tardio e sem reprodução automática.
+- `usuarios/static/usuarios/manual/manual.css`: estilos limitados ao manual,
+  responsividade e diagramas. Não altera CSS global.
+- `usuarios/static/usuarios/manual/manual.js`: pesquisa local por todas as
+  palavras, sem distinguir acentos ou maiúsculas, categorias, links de tutoriais,
+  histórico de navegação e avaliação por tutorial no `localStorage`.
+- `usuarios/test_manual.py` e `usuarios/test_manual_browser.py`: testes Django
+  e Chrome/Playwright. Os únicos arquivos de funcionamento existentes alterados
+  são `barbe/urls.py` e `tenants/middleware.py`, além deste README.
+
+Para adicionar um tutorial, use `guide(...)` no arquivo da categoria, com ID
+único, título, descrição, passos, dica, campos do exemplo e IDs relacionados.
+A pesquisa indexa o conteúdo renderizado e as palavras-chave. Não use dados
+pessoais em exemplos. As ilustrações são identificadas como esquemas e não
+representam capturas de produção. Sem JavaScript, os tutoriais e o menu continuam
+acessíveis com os controles nativos; pesquisa e avaliação dependem de JavaScript.
+
+A avaliação substitui a escolha anterior para o mesmo tutorial neste navegador;
+não envia dados ao servidor nem abre chamado de suporte. Se o armazenamento
+local estiver indisponível, a escolha funciona durante a visita e informa que
+não foi guardada.
+
+### Limites documentados
+
+A tela de QR Code atual permite copiar o endereço; salvar a imagem e compartilhar
+no WhatsApp são operações feitas pelo navegador/aplicativo, sem inventar botões
+de download ou envio. Personalização documenta somente os campos editáveis atuais,
+não campos legados de banner ou texto. A restauração não é histórico de versões.
+Não há vídeos inseridos porque não foram fornecidos vídeos reais aprovados.
+As regras de renovação descritas são as presentes no código desta versão, sem
+presumir que já tenham sido implantadas em produção.
+
+### Validação do manual
+
+```bash
+myenv/bin/python manage.py check
+myenv/bin/python manage.py makemigrations --check --dry-run
+myenv/bin/python manage.py test usuarios.test_manual usuarios.test_manual_browser
+```
+
+Os testes de navegador usam o Chrome em `/usr/bin/google-chrome`, Playwright já
+presente nas dependências de desenvolvimento e servidor/banco de teste local.
+Cobrem pesquisa por título e conteúdo, acentos, ausência de resultados, navegação
+entre categorias e tutoriais, voltar do navegador, persistência da avaliação,
+ilustrações, fallback sem JavaScript e larguras 1280, 768, 390 e 320 pixels sem
+rolagem horizontal. As requisições externas são bloqueadas no teste interativo.
+
+Resultado desta entrega: 55 testes executados em PostgreSQL 16 descartável,
+com 54 aprovados, incluindo todos os testes novos do manual. A única falha,
+`usuarios.test_privacidade.PrivacyTests.test_footer_links_are_canonical_and_not_duplicated`,
+foi reproduzida também no código HEAD original, em cópia e banco separados:
+a URL de agendamento esperada pelo teste retorna 404. Não foi causada pelo
+manual. As suítes adicionais foram `usuarios.test_privacidade`, `usuarios.test_home`,
+`usuarios.tests` e `tenants.tests`. `check`, ausência de novas migrações e
+`git diff --check` também foram verificados. Não houve alteração no banco
+configurado do projeto nem envio de mensagens externas.
+
+
+Vídeos a gravar: cada categoria possui um espaço “Vídeo em breve”. Edite o
+mapa `MANUAL_VIDEOS` em `usuarios/manual_content/__init__.py`: preencha o endereço
+YouTube (ou ID) da categoria correspondente. São aceitos links HTTPS do YouTube,
+YouTube Studio e youtu.be; o endereço é convertido em ID para a incorporação.
+Deixe `''` enquanto não houver vídeo. O vídeo existente de Primeiros passos foi
+preservado; os outros espaços não repetem esse vídeo.

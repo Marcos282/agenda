@@ -1,0 +1,27 @@
+from . import guide
+
+CATEGORY = dict(id='primeiros-passos', title='Primeiros passos', icon='🚀', description='Da primeira entrada ao primeiro agendamento.', tutorials=[
+    guide('primeira-configuracao', 'Configurando seu estabelecimento pela primeira vez',
+          'O Tá Combinado reúne sua equipe, serviços e horários em um site de agendamento próprio. Prepare a casa nesta ordem.',
+          ['No início do painel, abra Meu cadastro → Editar cadastro. Confira identificação, telefone e endereço e salve os dados.',
+           'Entre em Profissionais e cadastre as pessoas que vão atender. Mantenha Ativo marcado para quem receberá reservas.',
+           'Cadastre os nomes dos atendimentos em Serviços.',
+           'Em Profissionais, abra Serviços no cartão do profissional. Vincule cada serviço e defina seu valor e duração.',
+           'Abra Agenda, selecione o profissional e disponibilize os períodos de atendimento nas datas desejadas.',
+           'Em Personalização, escolha tema, cor e logomarca. Confira o resultado na prévia.',
+           'Em QR Code da loja, copie o endereço do site. Abra em outra aba, confira serviços e horários e compartilhe com seus clientes.'],
+          'Um serviço cadastrado ainda precisa estar vinculado a um profissional ativo, com períodos abertos, para receber reservas.',
+          [('1 · Dados', 'Meu cadastro'), ('2 · Equipe', 'Profissionais'), ('3 · Catálogo', 'Serviços'), ('4 · Valor e duração', 'Serviços do profissional'), ('5 · Horários', 'Agenda'), ('6 · Visual', 'Personalização'), ('7 · Divulgação', 'QR Code da loja')],
+          ('entrar-no-painel', 'vincular-servico', 'abrir-agenda'), 'começar configurar cadastrar loja início',
+    ),
+    guide('entrar-no-painel', 'Acessar o painel e recuperar a senha',
+          'Use o endereço do seu estabelecimento, com o subdomínio que você escolheu no cadastro.',
+          ['Abra o endereço do estabelecimento e acrescente /login/ ao final.',
+           'Informe o e-mail do responsável e a senha cadastrada. Conclua a verificação de segurança, quando solicitada.',
+           'Depois de entrar, acesse Painel. O login do proprietário é diferente do acesso do cliente, que agenda com nome e WhatsApp.',
+           'Se esqueceu a senha, use Esqueci minha senha na tela de entrada. Informe o e-mail cadastrado e procure a mensagem de recuperação, inclusive no spam.',
+           'Abra o link recebido e defina uma nova senha. Por segurança, a resposta não informa se um e-mail existe no sistema.'],
+          'Cada estabelecimento tem seu próprio endereço. Confira se você abriu a loja correta antes de entrar.',
+          [('Onde entrar', 'seu-subdomínio.tacombinado.net/login/'), ('Identificação', 'E-mail do responsável'), ('Acesso', 'Senha cadastrada'), ('Recuperação', 'Esqueci minha senha')],
+          ('primeira-configuracao',), 'login senha esqueci recuperar email acesso'),
+])

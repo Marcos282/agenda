@@ -41,8 +41,8 @@ class TenantMiddleware:
 
     def __call__(self, request):
         host = request.get_host()
-        # This institutional document never resolves or exposes tenant data.
-        if request.path_info == reverse('politica_privacidade'):
+        # These public documents never resolve or expose tenant data.
+        if request.path_info in {reverse('politica_privacidade'), reverse('manual')}:
             request.tenant = None
             with timezone.override(settings.TIME_ZONE):
                 return self.get_response(request)

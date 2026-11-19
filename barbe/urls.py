@@ -1,6 +1,7 @@
 from barbe.admin import site
 from django.urls import path, include
 from usuarios import views, registro, login_transfer
+from usuarios.manual import manual
 from django.views.generic import TemplateView
 from pagamentos.views import webhook, retorno
 from whatsapp.console import testezap, testes
@@ -11,6 +12,7 @@ from usuarios.seo import robots, sitemap
 from painel.theme_views import image as theme_image
 
 urlpatterns = [
+    path('manual/', manual, name='manual'),
     path('whatsapp/respostas/', receive_appointment_reply, name='whatsapp_appointment_reply'),
     path('politica-de-privacidade/', TemplateView.as_view(
         template_name='usuarios/politica_privacidade.html',

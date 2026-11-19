@@ -27,3 +27,33 @@
 .dashboard-card-button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 @media(max-width:1000px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){body>main{margin:12px;padding:18px}.dashboard-hero{padding:25px 22px}.dashboard-hero h1{font-size:27px}.dashboard-hero-art{display:none}.dashboard-section-heading{align-items:flex-start;flex-direction:column;gap:5px}.dashboard-grid{grid-template-columns:1fr}.dashboard-actions .ui-button{flex:1;white-space:nowrap}.dashboard-card{padding:20px}.dashboard-card p{margin-bottom:16px}}
+
+.dashboard-onboarding {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.dashboard-onboarding > div {
+  flex: 1 1 290px;
+}
+
+.dashboard-onboarding h2 {
+  margin: 0 0 6px;
+  color: #243b50;
+  font-size: 17px;
+}
+
+.dashboard-onboarding p {
+  margin: 0;
+}
+
+.dashboard-onboarding .dashboard-card-button {
+  width: auto;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+}

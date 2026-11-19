@@ -28,6 +28,7 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 .subscription-notice{padding:18px;border-radius:12px;margin:0 0 24px;overflow-wrap:anywhere}.subscription-notice p{margin:8px 0}.subscription-notice .ui-button{background:var(--billing-fg);color:var(--billing-bg)}
 {% endblock %}
 {% block content %}
+{% url 'manual' as manual_path %}
 {% if request.resolver_match.url_name != 'meu_cadastro' %}<nav class="panel-nav" aria-label="Painel administrativo">
 <a class="ui-button ui-button-secondary" href="{% url 'painel:inicio' %}" {% if request.resolver_match.url_name == 'inicio' %}aria-current="page"{% endif %}>Painel</a><a class="ui-button ui-button-secondary" href="{% url 'painel:profissionais' %}" {% if 'profissionais' in request.path %}aria-current="page"{% endif %}>Profissionais</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:servicos' %}" {% if request.resolver_match.url_name == 'servicos' or request.resolver_match.url_name == 'servico_novo' or request.resolver_match.url_name == 'servico_editar' %}aria-current="page"{% endif %}>Serviços</a><a class="ui-button ui-button-secondary" href="{% url 'painel:agenda' %}" {% if request.resolver_match.url_name == 'agenda' or request.resolver_match.url_name == 'disponibilidades' %}aria-current="page"{% endif %}>Agenda</a>
@@ -37,6 +38,7 @@ main{max-width:900px;margin:32px auto}.toolbar{display:flex;gap:8px;align-items:
 <a class="ui-button ui-button-secondary" href="{% url 'painel:loja_qrcode' %}" {% if request.resolver_match.url_name == 'loja_qrcode' %}aria-current="page"{% endif %}>QR Code da loja</a>
 <a class="ui-button ui-button-secondary" href="{% url 'painel:estilo' %}" {% if request.resolver_match.url_name == 'estilo' or request.resolver_match.url_name == 'estilo_conteudo' %}aria-current="page"{% endif %}>Personalização</a>
 <a class="ui-button ui-button-secondary renewal renewal-{{ request.tenant.assinatura.cor }}" href="{% url 'painel:mensalidade' %}" {% if request.resolver_match.url_name == 'mensalidade' %}aria-current="page"{% endif %}>Renovação</a>
+<a class="ui-button ui-button-secondary" href="https://tacombinado.net{{ manual_path }}#primeiros-passos" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">📖</span>&nbsp; Central de Ajuda</a>
 </nav>{% endif %}
 {% include 'painel/aviso_assinatura.html' %}
 {% block painel_content %}{% endblock %}

@@ -1,0 +1,28 @@
+{% load static %}<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#090d19">
+<title>Manual do Tá Combinado</title>
+<link rel="stylesheet" href="{% static 'usuarios/theme.css' %}">
+<link rel="stylesheet" href="{% static 'usuarios/plataforma-futuro.css' %}?v=profissional-30">
+<link rel="stylesheet" href="{% static 'usuarios/manual/manual.css' %}?v=site-theme-1">
+<script src="{% static 'usuarios/manual/manual.js' %}?v=primeiros-passos-1" defer></script>
+</head>
+<body class="manual-page">
+<a class="manual-skip" href="#manual-content">Pular para os tutoriais</a>
+<header class="manual-header"><a class="manual-brand future-brand" href="{% url 'manual' %}" aria-label="Início do manual"><span class="brand-mark" aria-hidden="true">✦</span>tá combinado<span class="brand-dot">.</span></a><span class="manual-label">CENTRAL DE AJUDA</span></header>
+<div class="manual-hero"><div><span class="eyebrow">UM PASSO DE CADA VEZ</span><h1>Manual do<br><em>Tá Combinado</em></h1><p>Aprenda a configurar e administrar seu estabelecimento de forma simples e rápida.</p></div><div class="manual-hero-art" role="img" aria-label="Aprender, configurar e receber agendamentos"><span aria-hidden="true">✳</span><div><span>01</span> Aprenda no seu ritmo</div><div><span>02</span> Configure seu espaço</div><div><span>03</span> Receba agendamentos</div></div></div>
+<div class="manual-search-wrap" hidden data-search-ui><label for="manual-search">🔎 O que você deseja aprender?</label><div class="manual-search-box"><input id="manual-search" type="search" placeholder="Tente “abrir agenda” ou “cadastrar profissional”" autocomplete="off" aria-controls="manual-content"><button type="button" class="ui-button ui-button-secondary" id="manual-clear">Limpar</button></div><p id="manual-results" role="status" aria-live="polite"></p></div>
+<div class="manual-layout">
+<aside class="manual-sidebar"><details open id="manual-menu"><summary>Explorar assuntos <span aria-hidden="true">⌄</span></summary><nav aria-label="Categorias do manual"><a href="#todos" data-category="todos" aria-current="true">Todos os assuntos <span>↗</span></a>{% for category in categories %}<a href="#{{ category.id }}" data-category="{{ category.id }}"><span class="manual-nav-number" aria-hidden="true">{{ category.icon }}</span>{{ category.title }}</a>{% if category.id == 'primeiros-passos' %}<div class="manual-sidebar-tutorials" role="group" aria-label="Tutoriais de Primeiros passos">{% for item in category.tutorials %}<a href="#{{ item.id }}"><span aria-hidden="true">{{ item.icon }}</span><span>{{ item.title }}</span></a>{% endfor %}</div>{% endif %}{% endfor %}</nav></details><p class="manual-sidebar-note">Seu estabelecimento,<br>bem cuidado.<br><span>Consulte cada passo quando precisar.</span></p></aside>
+<main id="manual-content" tabindex="-1">
+<div class="manual-content-heading"><div><span class="eyebrow">DO PRIMEIRO ACESSO À ROTINA</span><h2>Como podemos ajudar?</h2></div><span class="manual-read-tag">Guias passo a passo</span></div>
+<noscript><p class="notice">Você pode abrir os tutoriais abaixo sem JavaScript. Para pesquisar e registrar sua avaliação neste navegador, ative o JavaScript.</p></noscript>
+<p id="manual-empty" class="notice" hidden>Nenhum tutorial encontrado. Tente palavras como “agenda”, “serviço” ou “senha”.</p>
+{% for category in categories %}<section class="manual-category" id="{{ category.id }}" aria-labelledby="title-{{ category.id }}" data-group="{{ category.id }}">{% include 'usuarios/manual/category_video.html' %}<header class="manual-category-heading"><span class="manual-category-number" aria-hidden="true">{{ category.icon }}</span><div><h2 id="title-{{ category.id }}">{{ category.title }}</h2><p>{{ category.description }}</p></div></header>
+{% for tutorial in category.tutorials %}{% include 'usuarios/manual/tutorial.html' %}{% endfor %}</section>{% endfor %}
+<footer class="manual-footer">Feito para facilitar sua rotina. <a href="#todos" data-category="todos">Voltar a todos os assuntos ↑</a><p>Este manual descreve os recursos desta versão do projeto. A disponibilidade de pagamentos e mensagens depende da configuração do serviço.</p></footer>
+</main></div>
+</body></html>

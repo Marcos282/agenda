@@ -1,0 +1,10 @@
+<details class="manual-tutorial" id="{{ tutorial.id }}" data-tutorial data-keywords="{{ tutorial.keywords }}"{% if tutorial.id == 'primeira-configuracao' %} open{% endif %}>
+<summary><span class="manual-tutorial-icon" aria-hidden="true">{{ tutorial.icon }}</span><span class="manual-tutorial-copy"><strong>{{ tutorial.title }}</strong><span class="manual-description">{{ tutorial.description }}</span></span><span class="manual-expand" aria-hidden="true">+</span></summary>
+<div class="manual-tutorial-body">
+{% include 'usuarios/manual/illustration.html' %}
+<h3>Passo a passo</h3><ol class="manual-steps">{% for step in tutorial.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+<aside class="manual-tip"><strong>Uma dica para sua rotina</strong><p>{{ tutorial.tip }}</p></aside>
+
+{% if tutorial.links %}<nav class="manual-related" aria-label="Tutoriais relacionados a {{ tutorial.title }}"><h3>Continue aprendendo</h3>{% for link in tutorial.links %}<a href="#{{ link.id }}">{{ link.title }} <span aria-hidden="true">↗</span></a>{% endfor %}</nav>{% endif %}
+<div class="manual-feedback" data-feedback="{{ tutorial.id }}" hidden><p><strong>Este tutorial ajudou você?</strong></p><div><button type="button" class="ui-button ui-button-secondary" data-vote="sim" aria-pressed="false">👍 Sim</button><button type="button" class="ui-button ui-button-secondary" data-vote="ajuda" aria-pressed="false">👎 Preciso de ajuda</button></div><p class="manual-feedback-status" role="status"></p><small>A avaliação fica somente neste navegador. Não envia mensagens ao suporte.</small></div>
+</div></details>

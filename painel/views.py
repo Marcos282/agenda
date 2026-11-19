@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -6,6 +8,7 @@ from django.db import IntegrityError, transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from agenda.models import Disponibilidade
 from catalogo.models import Servico, ProfissionalServico
@@ -60,7 +63,11 @@ def edit_form(request, form, title, back_url, profissional=None):
 @admin_tenant_required
 @require_http_methods(['GET'])
 def inicio(request):
-    return render(request, 'painel/inicio.html')
+    criado_em = request.tenant.criado_em
+    agora = timezone.now()
+    return render(request, 'painel/inicio.html', {
+        'mostrar_primeiros_passos': criado_em is not None and criado_em <= agora < criado_em + timedelta(days=7),
+    })
 
 
 @admin_tenant_required
