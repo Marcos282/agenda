@@ -7,12 +7,14 @@ from pagamentos.views import webhook, retorno
 from whatsapp.console import testezap, testes
 from whatsapp.inbox_views import receive
 from whatsapp.reply_views import receive as receive_appointment_reply
-from usuarios.seo import robots, sitemap
+from usuarios.seo import SEGMENTS, robots, segment_page, sitemap
 
 from painel.theme_views import image as theme_image
 
 urlpatterns = [
     path('manual/', manual, name='manual'),
+    *(path(f'agenda-online-{segment}/', segment_page, {'segment': segment}, name=f'agenda-online-{segment}')
+      for segment in SEGMENTS),
     path('whatsapp/respostas/', receive_appointment_reply, name='whatsapp_appointment_reply'),
     path('politica-de-privacidade/', TemplateView.as_view(
         template_name='usuarios/politica_privacidade.html',

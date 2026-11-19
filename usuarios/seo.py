@@ -4,10 +4,13 @@ from xml.sax.saxutils import escape
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse
-from django.views.decorators.http import require_GET
+from django.http import Http404, HttpResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_GET, require_safe
 from django.urls import reverse
 from tenants.pricing import monthly_price
+
+from .seo_segments import SEGMENTS
 
 
 def platform_url():
@@ -19,12 +22,23 @@ def platform_url():
     return value.rstrip('/') + '/'
 
 
+def page_metadata(title, description, url, data):
+    return {
+        'seo_title': title, 'seo_description': description, 'seo_url': url,
+        'seo_json': json.dumps(data, ensure_ascii=False).replace('<', '\\u003c'),
+    }
+
+
+def institutional_url(name):
+    return platform_url().rstrip('/') + reverse(name)
+
+
 def platform_metadata():
     url = platform_url()
-    title = 'Agenda online para salões e barbearias | Tá Combinado'
+    title = 'Tá Combinado | Sistema de Agendamento Online para Profissionais'
     description = (
-        'Organize agendas, profissionais e agendamentos online com lembretes pelo WhatsApp. '
-        'Tá Combinado para salões e barbearias: experimente 30 dias grátis.'
+        'Organize seus agendamentos com o Tá Combinado. Ideal para salões, barbearias, '
+        'podólogos, dentistas e profissionais autônomos. Experimente 30 dias grátis.'
     )
     data = {
         '@context': 'https://schema.org',
@@ -41,8 +55,28 @@ def platform_metadata():
              ]},
         ],
     }
-    return {'seo_title': title, 'seo_description': description, 'seo_url': url,
-            'seo_json': json.dumps(data, ensure_ascii=False).replace('<', '\\u003c')}
+    return page_metadata(title, description, url, data)
+
+
+@require_safe
+def segment_page(request, segment):
+    if request.tenant is not None:
+        raise Http404
+    content = SEGMENTS[segment]
+    title = f"{content['title']} | Tá Combinado"
+    url = institutional_url(f'agenda-online-{segment}')
+    breadcrumbs = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+            {'@type': 'ListItem', 'position': 1, 'name': 'Início', 'item': platform_url()},
+            {'@type': 'ListItem', 'position': 2, 'name': content['label'], 'item': url},
+        ],
+    }
+    return render(request, 'usuarios/seo_segment.html', {
+        'segment': content,
+        **page_metadata(title, content['description'], url, breadcrumbs),
+    })
 
 
 def tenant_metadata(*, tenant, profissional=None, address=''):
@@ -81,7 +115,8 @@ def robots(request):
 def sitemap(request):
     location = ''
     if not settings.DEBUG and request.tenant is None:
-        location = f'<url><loc>{escape(platform_url())}</loc></url>'
+        pages = ['home', 'manual', 'politica_privacidade', *(f'agenda-online-{segment}' for segment in SEGMENTS)]
+        location = ''.join(f'<url><loc>{escape(institutional_url(name))}</loc></url>' for name in pages)
     elif not settings.DEBUG and request.tenant is not None:
         from profissionais.models import Profissional
         root = f'https://{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}'
@@ -102,7 +137,7 @@ class SearchIndexMiddleware:
         '/painel/', '/admin/', '/login/', '/logout/', '/conta/', '/registro',
         '/cadastro/', '/agendamentos/', '/pagamentos/', '/integracoes/',
         '/lembrar-senha/', '/redefinir-senha/', '/senha-redefinida/',
-        '/teste', '/testezap',
+        '/teste', '/testezap', '/whatsapp/',
     )
 
     def __init__(self, get_response):

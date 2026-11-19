@@ -7,21 +7,24 @@ from usuarios.manual_content import MANUAL_VIDEOS, categories
 
 
 PUBLIC = dict(TENANT_BASE_DOMAIN='tacombinado.net', DEV_PUBLIC_HOST='', DEV_TENANT_SUBDOMAIN='',
-              ALLOWED_HOSTS=['tacombinado.net', '.tacombinado.net'])
+              ALLOWED_HOSTS=['tacombinado.net', '.tacombinado.net'],
+              PLATFORM_PUBLIC_URL='https://tacombinado.net/')
 
 
 @override_settings(**PUBLIC)
 class ManualPublicTests(SimpleTestCase):
     def test_public_root_and_subdomains_without_tenant_queries(self):
         # SimpleTestCase rejects all DB queries, including tenant lookup.
-        original = self.client.get('/manual/', HTTP_HOST='tacombinado.net')
+        with override_settings(DEBUG=False, PLATFORM_PUBLIC_URL='https://tacombinado.net/'):
+            original = self.client.get('/manual/', HTTP_HOST='tacombinado.net')
+        self.assertNotIn('X-Robots-Tag', original)
+        self.assertContains(original, '<link rel="canonical" href="https://tacombinado.net/manual/">', html=True)
         self.assertContains(original, 'Manual do Tá Combinado')
         for host in ('salao.tacombinado.net', 'inexistente.tacombinado.net'):
             response = self.client.get('/manual/', HTTP_HOST=host)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.content, original.content)
             self.assertIsNone(response.wsgi_request.tenant)
-        self.assertEqual(original['X-Robots-Tag'], 'noindex, nofollow')
         self.assertEqual(self.client.head(reverse('manual'), HTTP_HOST='tacombinado.net').status_code, 200)
         self.assertEqual(self.client.post(reverse('manual'), HTTP_HOST='tacombinado.net').status_code, 405)
 

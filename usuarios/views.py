@@ -36,6 +36,7 @@ def home(request, profissional_id=None):
 
     if request.tenant is None:
         from tenants.pricing import monthly_price
+        from .seo import SEGMENTS, platform_metadata
         form = EstabelecimentoForm(request.GET if 'estabelecimento' in request.GET else None)
         if form.is_bound and form.is_valid():
             tenant = Tenant.objects.filter(subdomain=form.cleaned_data['estabelecimento'], ativo=True).first()
@@ -48,6 +49,8 @@ def home(request, profissional_id=None):
         return render(request, 'usuarios/plataforma.html', {
             'estabelecimento_form': form,
             'valor_mensalidade': monthly_price(),
+            'segment_links': [(f'agenda-online-{slug}', item['label']) for slug, item in SEGMENTS.items()],
+            **platform_metadata(),
         })
 
     ofertas = ProfissionalServico.objects.for_tenant(request.tenant).disponiveis().select_related('profissional', 'servico')
