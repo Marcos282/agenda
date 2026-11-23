@@ -9,7 +9,7 @@ MANUAL_VIDEOS = {
     'primeiros-passos': 'https://youtu.be/IYXoUnOtWr4',
     'profissionais': 'https://www.youtube.com/watch?v=00OU4AqKa3s',
     'servicos': 'https://www.youtube.com/watch?v=yjPwNG2kYJM',
-    'agenda': '',
+    'agenda': 'https://www.youtube.com/watch?v=U2MHSaprm8o',
     'clientes': '',
     'whatsapp': '',
     'personalizacao': '',
