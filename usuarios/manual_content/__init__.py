@@ -10,9 +10,9 @@ MANUAL_VIDEOS = {
     'profissionais': 'https://www.youtube.com/watch?v=00OU4AqKa3s',
     'servicos': 'https://www.youtube.com/watch?v=yjPwNG2kYJM',
     'agenda': 'https://www.youtube.com/watch?v=U2MHSaprm8o',
-    'clientes': '',
-    'whatsapp': '',
-    'personalizacao': '',
+    'clientes': 'https://www.youtube.com/watch?v=-61f04VSTVM',
+    'whatsapp': 'https://www.youtube.com/watch?v=p0svx0S9kRU',
+    'personalizacao': 'https://www.youtube.com/watch?v=caWfND-vwQk',
     'qr-code': '',
     'renovacao': '',
 }
