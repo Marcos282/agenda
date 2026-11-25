@@ -13,7 +13,7 @@ MANUAL_VIDEOS = {
     'clientes': 'https://www.youtube.com/watch?v=-61f04VSTVM',
     'whatsapp': 'https://www.youtube.com/watch?v=p0svx0S9kRU',
     'personalizacao': 'https://www.youtube.com/watch?v=caWfND-vwQk',
-    'qr-code': '',
+    'qr-code': 'https://youtu.be/vjNMxqQZGTg',
     'renovacao': '',
 }
 
