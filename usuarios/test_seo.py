@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 
+from .institutional_i18n import DEFAULT, LANGUAGES, PAGES, localized_path
 from .seo_segments import SEGMENTS
 
 
@@ -52,6 +53,8 @@ class InstitutionalSEOTests(SimpleTestCase):
         namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
         paths = [reverse(name) for name in ('home', 'manual', 'politica_privacidade')]
         paths.extend(reverse(f'agenda-online-{segment}') for segment in SEGMENTS)
+        paths.extend(localized_path(name, code)
+                     for code, *_ in LANGUAGES if code != DEFAULT for name in PAGES)
         self.assertCountEqual(
             [node.text for node in root.iter(namespace + 'loc')],
             [f'https://tacombinado.net{path}' for path in paths],

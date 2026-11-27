@@ -79,6 +79,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'tenants.middleware.TenantMiddleware',
+    'usuarios.institutional_i18n.InstitutionalLocaleMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -142,6 +143,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
 LANGUAGE_CODE = 'pt-br'
+LANGUAGES = [
+    ('pt-br', 'Português'), ('en', 'English'), ('es', 'Español'),
+    ('fr', 'Français'), ('it', 'Italiano'), ('de', 'Deutsch'),
+]
+LANGUAGE_COOKIE_NAME = 'tacombinado_language'
+LANGUAGE_COOKIE_AGE = 365 * 24 * 60 * 60
+LANGUAGE_COOKIE_SECURE = not DEBUG
 
 TIME_ZONE = 'America/Sao_Paulo'
 

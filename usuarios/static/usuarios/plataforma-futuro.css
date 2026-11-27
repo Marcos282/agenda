@@ -20,3 +20,40 @@
 .hero-copy{min-width:0}
 .hero-copy h1{font-size:clamp(36px,4.5vw,64px)}
 @media(max-width:680px){.preview-glow{left:-20px;right:-20px}}
+
+/* Institutional language menu */
+.future-header nav { flex-wrap: wrap; }
+.language-selector { position: relative; color: inherit; }
+.language-selector summary { display: flex; align-items: center; gap: .4rem; cursor: pointer; list-style: none; }
+.language-selector summary::-webkit-details-marker { display: none; }
+.language-selector form {
+  position: absolute;
+  z-index: 20;
+  inset-inline-end: 0;
+  top: calc(100% + .6rem);
+  display: grid;
+  min-width: 9.5rem;
+  padding: .4rem;
+  border: 1px solid #353d51;
+  border-radius: .75rem;
+  background: #111827;
+}
+.language-selector button {
+  padding: .5rem .65rem;
+  border: 0;
+  border-radius: .4rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: start;
+  white-space: nowrap;
+}
+.language-selector button:hover, .language-selector button[aria-current] { background: #283249; }
+.platform-future .hero-copy, .platform-future .hero-preview { min-width: 0; }
+.platform-future { overflow-wrap: anywhere; }
+@media (max-width: 680px) {
+  .future-header { position: relative; }
+  .language-selector { position: static; }
+  .language-selector form { inset-inline: 20px; top: 100%; }
+}

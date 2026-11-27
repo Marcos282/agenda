@@ -9,9 +9,19 @@ from whatsapp.inbox_views import receive
 from whatsapp.reply_views import receive as receive_appointment_reply
 from usuarios.seo import SEGMENTS, robots, segment_page, sitemap
 
+from usuarios.institutional_i18n import LANGUAGES, DEFAULT, select_language
+
 from painel.theme_views import image as theme_image
 
 urlpatterns = [
+    path('idioma/', select_language, name='institutional_language'),
+    *(localized
+      for code, *_ in LANGUAGES if code != DEFAULT
+      for localized in [
+          path(f'{code}/', views.home),
+          *(path(f'{code}/agenda-online-{segment}/', segment_page, {'segment': segment})
+            for segment in SEGMENTS),
+      ]),
     path('manual/', manual, name='manual'),
     *(path(f'agenda-online-{segment}/', segment_page, {'segment': segment}, name=f'agenda-online-{segment}')
       for segment in SEGMENTS),

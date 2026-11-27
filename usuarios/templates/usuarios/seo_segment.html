@@ -1,23 +1,24 @@
 {% extends 'usuarios/plataforma.html' %}
+{% load i18n %}
 {% block navigation %}
-<a href="{% url 'home' %}">Conhecer a plataforma</a>
-<a href="{% url 'manual' %}#primeiros-passos">Como usar</a>
-<a href="{% url 'login' %}" class="button button-outline">Entrar <span aria-hidden="true">↗</span></a>
+<a href="{{ institutional_home|default:'/' }}">{% translate 'Conhecer a plataforma' %}</a>
+<a href="{% url 'manual' %}#primeiros-passos">{% translate 'Como usar' %}</a>
+{% include 'usuarios/language_selector.html' %}<a href="{% url 'login' %}" class="button button-outline">{% translate 'Entrar' %} <span aria-hidden="true">↗</span></a>
 {% endblock %}
 {% block content %}
 <section class="future-section container">
-  <nav aria-label="Localização"><a class="text-link" href="{% url 'home' %}">Início</a> / <span aria-current="page">{{ segment.label }}</span></nav>
+  <nav aria-label="{% translate 'Localização' %}"><a class="text-link" href="{{ institutional_home|default:'/' }}">{% translate 'Início' %}</a> / <span aria-current="page">{{ segment.label }}</span></nav>
   <h1>{{ segment.title }}</h1>
   <p>{{ segment.intro }}</p>
-  <a class="button button-primary" href="{% url 'registro' %}">Experimentar grátis por 30 dias <span aria-hidden="true">↗</span></a>
+  <a class="button button-primary" href="{% url 'registro' %}">{% translate 'Experimentar grátis por 30 dias' %} <span aria-hidden="true">↗</span></a>
 </section>
 <section class="future-section container">
-  <div class="section-heading"><h2>Como funciona na sua rotina</h2></div>
+  <div class="section-heading"><h2>{% translate 'Como funciona na sua rotina' %}</h2></div>
   <div class="feature-grid">
     {% for heading, text in segment.benefits %}
     <article class="feature-card"><h3>{{ heading }}</h3><p>{{ text }}</p></article>
     {% endfor %}
   </div>
-  <p><a class="text-link" href="{% url 'manual' %}#primeiros-passos">Veja como configurar sua agenda no manual <span aria-hidden="true">→</span></a></p>
+  <p><a class="text-link" href="{% url 'manual' %}#primeiros-passos">{% translate 'Veja como configurar sua agenda no manual' %} <span aria-hidden="true">→</span></a></p>
 </section>
 {% endblock %}

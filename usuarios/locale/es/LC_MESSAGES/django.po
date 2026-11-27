@@ -1,0 +1,527 @@
+msgid "Pular para o conteúdo"
+msgstr "Saltar al contenido"
+
+msgid "Início"
+msgstr "Inicio"
+
+msgid "Navegação principal"
+msgstr "Navegación principal"
+
+msgid "Recursos"
+msgstr "Funciones"
+
+msgid "Como funciona"
+msgstr "Cómo funciona"
+
+msgid "Plano"
+msgstr "Plan"
+
+msgid "Como usar"
+msgstr "Guía de uso"
+
+msgid "Entrar"
+msgstr "Iniciar sesión"
+
+msgid "SEU NEGÓCIO. SEM DESENCONTROS."
+msgstr "TU NEGOCIO, SIEMPRE A TIEMPO."
+
+msgid "Sistema de Agendamento Online para"
+msgstr "Reservas en línea para"
+
+msgid "Profissionais e Estabelecimentos"
+msgstr "Profesionales y negocios"
+
+msgid "O futuro da sua agenda está combinado."
+msgstr "Una mejor forma de gestionar tu agenda."
+
+msgid "Experimentar grátis"
+msgstr "Pruébalo gratis"
+
+msgid "Conhecer a plataforma"
+msgstr "Conoce la plataforma"
+
+msgid "30 dias grátis"
+msgstr "30 días gratis"
+
+msgid "Seu espaço, sua equipe, sua agenda."
+msgstr "Tu espacio, tu equipo, tu agenda."
+
+msgid "Exemplo ilustrativo da agenda"
+msgstr "Ejemplo de agenda"
+
+msgid "SEU ESTABELECIMENTO"
+msgstr "TU NEGOCIO"
+
+msgid "QUARTA-FEIRA · SUA AGENDA"
+msgstr "MIÉRCOLES · TU AGENDA"
+
+msgid "Um dia bem organizado."
+msgstr "Un día bien organizado."
+
+msgid "HORÁRIO RESERVADO"
+msgstr "HORARIO RESERVADO"
+
+msgid "Corte & cuidado"
+msgstr "Corte y cuidado"
+
+msgid "Marina · com João"
+msgstr "Marina · con João"
+
+msgid "HORÁRIO DISPONÍVEL"
+msgstr "HORARIO DISPONIBLE"
+
+msgid "Espaço para o próximo cliente"
+msgstr "Espacio para el próximo cliente"
+
+msgid "Sua loja recebe o agendamento online."
+msgstr "Tu página recibe reservas en línea."
+
+msgid "Cada profissional, sua agenda."
+msgstr "Una agenda para cada profesional."
+
+msgid "Um lembrete. Um cuidado a mais."
+msgstr "Un recordatorio marca la diferencia."
+
+msgid "WhatsApp conectado à rotina da loja."
+msgstr "WhatsApp se integra en el día a día de tu negocio."
+
+msgid "Exemplo visual. Nomes e horários ilustrativos."
+msgstr "Ejemplo con nombres y horarios ficticios."
+
+msgid "Agendamento por profissão"
+msgstr "Reservas por profesión"
+
+msgid "FEITO PARA QUEM CUIDA DE PESSOAS"
+msgstr "PARA QUIENES CUIDAN DE LAS PERSONAS"
+
+msgid "TUDO CONECTADO"
+msgstr "TODO CONECTADO"
+
+msgid "Uma rotina mais simples."
+msgstr "Una rutina más sencilla."
+
+msgid "Um negócio mais seu."
+msgstr "Un negocio más tuyo."
+
+msgid "Do primeiro clique ao horário combinado, cada parte tem seu lugar."
+msgstr "Desde el primer clic hasta la cita, cada paso tiene su lugar."
+
+msgid "01 / ORGANIZAÇÃO"
+msgstr "01 / ORGANIZACIÓN"
+
+msgid "Uma agenda que acompanha seu ritmo."
+msgstr "Una agenda que sigue tu ritmo."
+
+msgid "Defina períodos, intervalos e serviços para cada profissional. Veja os agendamentos em uma agenda diária organizada."
+msgstr "Define horarios, pausas y servicios por profesional. Consulta las reservas en una agenda diaria organizada."
+
+msgid "Atendimento"
+msgstr "Cita"
+
+msgid "Intervalo"
+msgstr "Pausa"
+
+msgid "Seu próximo horário"
+msgstr "Tu próxima cita"
+
+msgid "02 / PRESENÇA ONLINE"
+msgstr "02 / PRESENCIA EN LÍNEA"
+
+msgid "Sua loja, ao alcance de um link."
+msgstr "Tu negocio, a un clic."
+
+msgid "Apresente serviços e profissionais. O cliente escolhe o horário e agenda com nome e WhatsApp, sem criar uma conta."
+msgstr "Presenta tus servicios y tu equipo. El cliente elige la hora y reserva con su nombre y WhatsApp, sin crear una cuenta."
+
+msgid "03 / WHATSAPP"
+msgstr "03 / WHATSAPP"
+
+msgid "O cuidado começa antes do atendimento."
+msgstr "La atención empieza antes de la cita."
+
+msgid "Seus clientes recebem lembretes automáticos pelo WhatsApp antes do atendimento."
+msgstr "Tus clientes reciben recordatorios automáticos por WhatsApp antes de la cita."
+
+msgid "Conecte o número da loja, personalize a mensagem e escolha a antecedência."
+msgstr "Conecta el número del negocio, personaliza el mensaje y elige cuándo enviarlo."
+
+msgid "04 / SUA EQUIPE"
+msgstr "04 / TU EQUIPO"
+
+msgid "Cada talento tem seu espaço."
+msgstr "Cada talento tiene su espacio."
+
+msgid "Cadastre profissionais e associe os serviços, preços e durações de cada um. Tudo organizado no painel do estabelecimento."
+msgstr "Registra a tu equipo y asigna servicios, precios y duraciones a cada profesional. Gestiona todo desde el panel."
+
+msgid "DO SEU JEITO. EM TRÊS PASSOS."
+msgstr "A TU MANERA, EN TRES PASOS."
+
+msgid "Pronto para o"
+msgstr "Todo listo para tu"
+
+msgid "próximo agendamento."
+msgstr "próxima cita."
+
+msgid "Crie seu espaço"
+msgstr "Crea tu espacio"
+
+msgid "Cadastre o estabelecimento e escolha o endereço da sua loja online."
+msgstr "Registra el negocio y elige la dirección de tu página de reservas."
+
+msgid "Prepare sua agenda"
+msgstr "Prepara tu agenda"
+
+msgid "Adicione profissionais e serviços. Abra os períodos de atendimento."
+msgstr "Añade profesionales y servicios. Define los horarios de atención."
+
+msgid "Compartilhe seu link"
+msgstr "Comparte tu enlace"
+
+msgid "Envie a loja aos clientes ou use o QR Code. Eles escolhem o horário disponível."
+msgstr "Envía a tus clientes el enlace de reservas o usa el código QR. Ellos eligen un horario disponible."
+
+msgid "UM ÚNICO PLANO. TUDO INCLUÍDO."
+msgstr "UN SOLO PLAN. TODO INCLUIDO."
+
+msgid "Sozinho ou em equipe."
+msgstr "Por tu cuenta o en equipo."
+
+msgid "Está combinado."
+msgstr "Todo listo."
+
+msgid "Todas as funcionalidades no Plano Profissional. Comece com 30 dias grátis."
+msgstr "El Plan Profesional incluye todas las funciones. Empieza con 30 días gratis."
+
+msgid "PARA TODO ESTABELECIMENTO"
+msgstr "PARA TODO NEGOCIO"
+
+msgid "Plano Profissional"
+msgstr "Plan Profesional"
+
+msgid "/mês"
+msgstr "/mes"
+
+#, python-format
+msgid "Depois do teste, R$ %(price)s por mês."
+msgstr "Tras la prueba, R$ %(price)s al mes."
+
+msgid "Profissionais e agendas ilimitados"
+msgstr "Profesionales y agendas ilimitados"
+
+msgid "Agenda e catálogo de serviços"
+msgstr "Agenda y catálogo de servicios"
+
+msgid "Loja online do seu estabelecimento"
+msgstr "Página de reservas de tu negocio"
+
+msgid "Lembretes pelo WhatsApp conectado"
+msgstr "Recordatorios desde tu WhatsApp conectado"
+
+msgid "Histórico de clientes"
+msgstr "Historial de clientes"
+
+msgid "QR Code para compartilhar a loja"
+msgstr "Código QR para compartir tu página de reservas"
+
+msgid "Todas as funcionalidades do painel"
+msgstr "Todas las funciones del panel"
+
+msgid "Experimentar grátis ↗"
+msgstr "Pruébalo gratis ↗"
+
+msgid "ANTES DE COMBINAR"
+msgstr "ANTES DE EMPEZAR"
+
+msgid "Vamos tirar"
+msgstr "Respuestas a"
+
+msgid "suas dúvidas."
+msgstr "tus preguntas."
+
+msgid "Meu cliente precisa criar uma conta?"
+msgstr "¿Mis clientes deben crear una cuenta?"
+
+msgid "Não. Ele escolhe o serviço e o horário e informa nome e WhatsApp para reservar."
+msgstr "No. Eligen el servicio y la hora e indican su nombre y WhatsApp para reservar."
+
+msgid "Posso trabalhar com vários profissionais?"
+msgstr "¿Puedo trabajar con varios profesionales?"
+
+msgid "Sim. Cada profissional tem seus próprios serviços, valores, durações e horários."
+msgstr "Sí. Cada profesional tiene sus propios servicios, precios, duraciones y horarios."
+
+msgid "Como funcionam os lembretes pelo WhatsApp?"
+msgstr "¿Cómo funcionan los recordatorios de WhatsApp?"
+
+msgid "Conecte o WhatsApp no painel, ative os lembretes e configure a mensagem e a antecedência. O envio depende da conexão e do processamento automático do servidor."
+msgstr "Conecta WhatsApp en el panel, activa los recordatorios y configura el mensaje y la antelación. El envío depende de la conexión y del procesamiento automático del servidor."
+
+msgid "Quanto custa depois do período grátis?"
+msgstr "¿Cuánto cuesta después de la prueba gratuita?"
+
+#, python-format
+msgid "Os primeiros 30 dias são grátis. Depois, o Plano Profissional custa R$ %(price)s/mês, com todas as funcionalidades. A renovação é avulsa por 30 dias, sem cobrança automática."
+msgstr "Los primeros 30 días son gratis. Después, el Plan Profesional cuesta R$ %(price)s al mes e incluye todas las funciones. Se renueva por períodos de 30 días, sin cobros automáticos."
+
+msgid "SEU TEMPO MERECE ESSE CUIDADO."
+msgstr "APROVECHA MEJOR TU TIEMPO."
+
+msgid "Vamos deixar"
+msgstr "¿Dejamos todo"
+
+msgid "tudo combinado?"
+msgstr "organizado?"
+
+msgid "Criar meu estabelecimento ↗"
+msgstr "Crear la página de mi negocio ↗"
+
+msgid "Já tem um estabelecimento?"
+msgstr "¿Ya registraste tu negocio?"
+
+msgid "Encontre sua loja pelo endereço cadastrado."
+msgstr "Encuentra tu página de reservas con la dirección que registraste."
+
+msgid "Endereço do estabelecimento"
+msgstr "Dirección del negocio"
+
+msgid "Ex.: marcos"
+msgstr "Ej.: marcos"
+
+msgid "Encontrar loja →"
+msgstr "Buscar mi página de reservas →"
+
+msgid "Tecnologia para organizar."
+msgstr "Tecnología para organizar."
+
+msgid "Tempo para cuidar."
+msgstr "Tiempo para cuidar."
+
+msgid "Não perca tempo!"
+msgstr "¡Empieza hoy!"
+
+msgid "Entre em contato para conhecer"
+msgstr "Contáctanos para saber más"
+
+msgid "Localização"
+msgstr "Ubicación"
+
+msgid "Experimentar grátis por 30 dias"
+msgstr "Prueba gratis durante 30 días"
+
+msgid "Como funciona na sua rotina"
+msgstr "Cómo encaja en tu rutina"
+
+msgid "Veja como configurar sua agenda no manual"
+msgstr "Consulta la guía para configurar tu agenda"
+
+msgid "Idioma"
+msgstr "Idioma"
+
+msgid "Entrar em contato pelo WhatsApp"
+msgstr "Contáctanos por WhatsApp"
+
+msgid "Manual do Sistema"
+msgstr "Guía de uso"
+
+msgid "Política de Privacidade"
+msgstr "Política de privacidad"
+
+msgid "Tá Combinado | Sistema de Agendamento Online para Profissionais"
+msgstr "Tá Combinado – Reservas en línea para profesionales"
+
+msgid "Organize seus agendamentos com o Tá Combinado. Ideal para salões, barbearias, podólogos, dentistas e profissionais autônomos. Experimente 30 dias grátis."
+msgstr "Gestiona tus citas con Tá Combinado. Para salones, barberías, podólogos, dentistas y profesionales independientes. Pruébalo gratis durante 30 días."
+
+msgid "Acesso por 30 dias com profissionais e agendas ilimitados."
+msgstr "Acceso durante 30 días con profesionales y agendas ilimitados."
+
+msgid "Estabelecimento não encontrado. Confira o endereço informado."
+msgstr "No se encontró el negocio. Revisa la dirección indicada."
+
+msgid "Use um subdomínio de até 63 caracteres: letras minúsculas, números e hífens internos."
+msgstr "Usa un subdominio de hasta 63 caracteres con minúsculas, números y guiones internos."
+
+msgid "Barbearias"
+msgstr "Barberías"
+
+msgid "Agenda online para barbearias"
+msgstr "Reservas en línea para barberías"
+
+msgid "Organize cortes e barbas por profissional, divulgue horários disponíveis e receba reservas online na sua barbearia com o Tá Combinado."
+msgstr "Organiza cortes y arreglos de barba por barbero, publica horarios y recibe reservas en línea con Tá Combinado."
+
+msgid "Quando o cliente quer marcar corte e barba, a barbearia pode mostrar pelo mesmo link quem atende, quais serviços oferece e quais horários ainda estão livres."
+msgstr "Cuando un cliente quiere un corte y un arreglo de barba, un solo enlace muestra el equipo, los servicios y los horarios libres."
+
+msgid "Reserve o tempo certo na cadeira"
+msgstr "Reserva el tiempo adecuado en el sillón"
+
+msgid "Cadastre corte, barba e o combo como serviços com preços e durações próprios. Assim, a reserva ocupa o intervalo definido para cada atendimento."
+msgstr "Registra cortes, arreglos de barba y combinados con precios y duraciones propios. Cada reserva ocupa el tiempo previsto para el servicio."
+
+msgid "Organize a agenda de cada barbeiro"
+msgstr "Organiza la agenda de cada barbero"
+
+msgid "Associe os serviços a quem os realiza e ajuste os períodos de trabalho de cada pessoa. O cliente escolhe o profissional e um horário disponível."
+msgstr "Asigna cada servicio a quien lo realiza y ajusta sus horarios. El cliente elige al barbero y una hora libre."
+
+msgid "Divulgue a agenda no balcão"
+msgstr "Promociona las reservas en el mostrador"
+
+msgid "Exponha o QR Code da loja para que quem já passou pela barbearia consiga marcar o próximo corte pelo celular."
+msgstr "Muestra tu código QR para que tus clientes puedan reservar su próximo corte desde el móvil."
+
+msgid "Salões de beleza"
+msgstr "Salones de belleza"
+
+msgid "Agenda online para salões de beleza"
+msgstr "Reservas en línea para salones de belleza"
+
+msgid "Organize serviços de beleza com durações diferentes, mostre a equipe e receba reservas para o seu salão na página do Tá Combinado."
+msgstr "Organiza servicios de belleza de distinta duración, presenta a tu equipo y recibe reservas en tu página de Tá Combinado."
+
+msgid "Uma escova rápida e uma coloração longa pedem horários diferentes. Com o Tá Combinado, o salão apresenta os serviços e permite que cada cliente reserve com quem os realiza."
+msgstr "Un secado rápido y una coloración completa requieren tiempos distintos. Publica tus servicios y permite que cada cliente reserve con el profesional adecuado."
+
+msgid "Mostre as opções antes da reserva"
+msgstr "Muestra las opciones antes de reservar"
+
+msgid "Publique serviços como escova, penteado ou manicure com preço e duração definidos. O cliente confere as opções no catálogo do salão."
+msgstr "Publica servicios como secado, peinado o manicura con sus precios y duraciones. El cliente ve las opciones en el catálogo."
+
+msgid "Distribua os horários por especialidade"
+msgstr "Distribuye los horarios por especialidad"
+
+msgid "Vincule os serviços aos profissionais e configure os períodos individuais. A equipe pode consultar as reservas do dia no painel."
+msgstr "Asigna los servicios y define los horarios de cada profesional. Tu equipo consulta las reservas del día en el panel."
+
+msgid "Compartilhe a página do salão"
+msgstr "Comparte la página del salón"
+
+msgid "Adicione o link da loja à bio das redes sociais e envie-o quando alguém perguntar pelos próximos horários. A reserva pode ser feita sem criar conta."
+msgstr "Añade el enlace de reservas a tus perfiles y envíalo cuando alguien pregunte por horarios. Se puede reservar sin cuenta."
+
+msgid "Podólogos"
+msgstr "Podólogos"
+
+msgid "Agenda online para podólogos"
+msgstr "Reservas en línea para podólogos"
+
+msgid "Disponibilize horários de podologia, organize a duração de cada atendimento e configure lembretes pelo WhatsApp com o Tá Combinado."
+msgstr "Publica citas de podología, define su duración y configura recordatorios de WhatsApp con Tá Combinado."
+
+msgid "Quem precisa organizar a próxima visita pode consultar os horários publicados pelo podólogo e reservar pelo celular, mesmo fora do expediente."
+msgstr "Los pacientes pueden consultar los horarios libres y reservar su próxima visita desde el móvil, incluso fuera del horario de atención."
+
+msgid "Planeje o tempo entre atendimentos"
+msgstr "Planifica el tiempo entre visitas"
+
+msgid "Defina a duração dos serviços no catálogo e configure períodos e intervalos para acomodar a preparação do espaço."
+msgstr "Define la duración de los servicios y configura horarios y pausas para preparar el espacio."
+
+msgid "Facilite a marcação da próxima visita"
+msgstr "Facilita la reserva de la próxima visita"
+
+msgid "Compartilhe o endereço da sua página ao final do atendimento. O cliente pode escolher outra data conforme os horários disponíveis."
+msgstr "Comparte tu página al finalizar la visita. Los pacientes pueden elegir otra fecha según la disponibilidad."
+
+msgid "Envie lembretes de horário"
+msgstr "Envía recordatorios de citas"
+
+msgid "Conecte o WhatsApp da loja e configure a antecedência do lembrete para avisar o cliente antes da visita."
+msgstr "Conecta el WhatsApp del negocio y elige con cuánta antelación avisar a los pacientes."
+
+msgid "Dentistas"
+msgstr "Dentistas"
+
+msgid "Agenda online para dentistas"
+msgstr "Reservas en línea para dentistas"
+
+msgid "Organize os horários da equipe do consultório e ofereça reserva online para atendimentos selecionados com o Tá Combinado."
+msgstr "Coordina la agenda del equipo dental y ofrece reservas en línea para determinadas consultas con Tá Combinado."
+
+msgid "O consultório pode publicar horários de atendimentos selecionados e enviar um link para quem precisa marcar. A equipe acompanha as reservas na agenda diária."
+msgstr "Publica horarios para determinadas consultas y comparte un enlace con los pacientes. Tu equipo sigue las reservas en la agenda diaria."
+
+msgid "Escolha quais horários oferecer"
+msgstr "Elige qué horarios ofrecer"
+
+msgid "Configure períodos e intervalos por profissional para publicar somente as janelas disponíveis para reservas no site."
+msgstr "Configura horarios y pausas por profesional para publicar solo las horas disponibles."
+
+msgid "Organize os tipos de agendamento"
+msgstr "Organiza los tipos de consulta"
+
+msgid "Associe os atendimentos do catálogo aos profissionais responsáveis e defina as respectivas durações, como em uma avaliação inicial."
+msgstr "Asigna las consultas a los profesionales correspondientes y fija las duraciones, por ejemplo para una evaluación inicial."
+
+msgid "Use o WhatsApp para lembrar a visita"
+msgstr "Usa WhatsApp para recordar la visita"
+
+msgid "Com o número do consultório conectado, configure a mensagem e a antecedência do lembrete. Na reserva, a pessoa informa nome e WhatsApp."
+msgstr "Conecta el número de la consulta y configura el mensaje y la antelación. Los pacientes indican su nombre y WhatsApp al reservar."
+
+msgid "Clínicas de estética"
+msgstr "Clínicas de estética"
+
+msgid "Agenda online para clínicas de estética"
+msgstr "Reservas en línea para clínicas de estética"
+
+msgid "Apresente os serviços da sua clínica de estética, organize horários por profissional e receba agendamentos online com o Tá Combinado."
+msgstr "Presenta los servicios de estética, organiza horarios por profesional y recibe reservas en línea con Tá Combinado."
+
+msgid "Quem conhece a clínica pelas redes sociais pode abrir o catálogo, conferir preços e reservar um horário com a profissional que oferece o serviço."
+msgstr "Quien te encuentre en redes puede abrir el catálogo, ver precios y reservar con el profesional que ofrece el servicio."
+
+msgid "Apresente seus serviços em um só lugar"
+msgstr "Presenta todos tus servicios en un solo lugar"
+
+msgid "Divulgue opções como limpeza de pele e design de sobrancelhas na página da clínica, com os preços e durações configurados pela equipe."
+msgstr "Publica limpiezas faciales y diseño de cejas en la página, con los precios y duraciones que defina el equipo."
+
+msgid "Planeje o tempo de cada sessão"
+msgstr "Planifica el tiempo de cada sesión"
+
+msgid "Configure durações diferentes para os serviços e inclua intervalos nos períodos de atendimento quando precisar preparar o espaço."
+msgstr "Define distintas duraciones y añade pausas cuando necesites preparar el espacio."
+
+msgid "Consulte os agendamentos do dia"
+msgstr "Consulta las reservas del día"
+
+msgid "Acompanhe no painel as reservas por profissional e divulgue a página da clínica por link ou QR Code."
+msgstr "Sigue las reservas por profesional en el panel y comparte la página por enlace o código QR."
+
+msgid "Profissionais autônomos"
+msgstr "Profesionales independientes"
+
+msgid "Agenda online para profissionais autônomos"
+msgstr "Reservas en línea para profesionales independientes"
+
+msgid "Divulgue seus serviços com um link próprio, controle os horários que oferece e receba reservas online como profissional autônomo."
+msgstr "Promociona tus servicios con tu propio enlace, controla tu disponibilidad y recibe reservas en línea como profesional independiente."
+
+msgid "Quem atende por conta própria pode compartilhar os horários disponíveis sem interromper um serviço em andamento para responder a cada pedido de agendamento."
+msgstr "Comparte tus horarios libres sin interrumpir un servicio para responder a cada solicitud de reserva."
+
+msgid "Publique apenas os períodos em que atende"
+msgstr "Publica solo las horas en que atiendes"
+
+msgid "Configure dias, janelas e intervalos na agenda para conciliar as reservas com outras atividades da semana."
+msgstr "Define días, franjas y pausas para encajar las reservas con el resto de tus actividades."
+
+msgid "Dê um endereço aos seus serviços"
+msgstr "Dale una dirección web a tus servicios"
+
+msgid "Crie um catálogo com nome, preço e duração de cada opção. Compartilhe a página no perfil profissional ou em uma mensagem."
+msgstr "Crea un catálogo con nombre, precio y duración de cada servicio. Comparte la página en tu perfil profesional o por mensaje."
+
+msgid "Organize os atendimentos mesmo sem equipe"
+msgstr "Organiza las citas aunque trabajes por tu cuenta"
+
+msgid "Consulte as reservas na agenda diária e, se conectar seu WhatsApp, configure lembretes automáticos para os clientes."
+msgstr "Consulta las reservas en la agenda diaria y conecta WhatsApp para configurar recordatorios automáticos."
+
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\nLanguage: es\n"
+

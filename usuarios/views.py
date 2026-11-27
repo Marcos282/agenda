@@ -36,7 +36,10 @@ def home(request, profissional_id=None):
 
     if request.tenant is None:
         from tenants.pricing import monthly_price
+        from django.utils.translation import gettext as _
+        from .institutional_i18n import language_context
         from .seo import SEGMENTS, platform_metadata
+        locale = language_context(request)
         form = EstabelecimentoForm(request.GET if 'estabelecimento' in request.GET else None)
         if form.is_bound and form.is_valid():
             tenant = Tenant.objects.filter(subdomain=form.cleaned_data['estabelecimento'], ativo=True).first()
@@ -45,12 +48,13 @@ def home(request, profissional_id=None):
                 suffix = ':' + port if port else ''
                 base_domain = tenant_base_domain_for_host(request.get_host())
                 return redirect(f'{request.scheme}://{tenant.subdomain}.{base_domain}{suffix}/')
-            form.add_error('estabelecimento', 'Estabelecimento não encontrado. Confira o endereço informado.')
+            form.add_error('estabelecimento', _('Estabelecimento não encontrado. Confira o endereço informado.'))
         return render(request, 'usuarios/plataforma.html', {
             'estabelecimento_form': form,
             'valor_mensalidade': monthly_price(),
             'segment_links': [(f'agenda-online-{slug}', item['label']) for slug, item in SEGMENTS.items()],
-            **platform_metadata(),
+            **platform_metadata(locale),
+            **locale,
         })
 
     ofertas = ProfissionalServico.objects.for_tenant(request.tenant).disponiveis().select_related('profissional', 'servico')
