@@ -1,5 +1,7 @@
 from datetime import timedelta
+from uuid import uuid4
 from django.utils import timezone as django_timezone
+from django.utils.translation import gettext_lazy as _
 
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -124,7 +126,10 @@ class Tenant(models.Model):
             if self.pk:
                 type(self).objects.select_for_update().filter(pk=self.pk).first()
             self.full_clean()
-            return super().save(*args, **kwargs)
+            creating = self._state.adding
+            super().save(*args, **kwargs)
+            if creating:
+                LogoAccount.open_for(self)
 
     def __str__(self):
         return self.nome
@@ -151,3 +156,70 @@ class TenantTheme(models.Model):
     logo_image_enabled = models.BooleanField(default=True)
     hero_transparent = models.BooleanField('Hero sem cor', default=False, help_text='Deixa o fundo do hero transparente, sem alterar o banner ou a logomarca.')
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class LogoSettings(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    enabled = models.BooleanField(_('Geração de logomarcas habilitada'), default=False)
+    initial_credits = models.PositiveIntegerField(_('Créditos iniciais'), default=3)
+
+    class Meta:
+        verbose_name = _('Configuração de logomarcas com IA')
+        verbose_name_plural = _('Configuração de logomarcas com IA')
+        constraints = [models.CheckConstraint(condition=models.Q(id=1), name='logo_settings_singleton')]
+
+    def __str__(self):
+        return str(self._meta.verbose_name)
+
+
+class LogoAccount(models.Model):
+    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name='logo_account')
+    enabled = models.BooleanField(_('Geração habilitada para este estabelecimento'), default=True)
+    credits = models.PositiveIntegerField(_('Saldo de créditos'), default=3)
+
+    class Meta:
+        verbose_name = _('Créditos de logomarca')
+        verbose_name_plural = _('Créditos de logomarcas')
+
+    def __str__(self):
+        return str(self.tenant)
+
+    @classmethod
+    def open_for(cls, tenant):
+        initial = LogoSettings.objects.values_list('initial_credits', flat=True).first()
+        return cls.objects.get_or_create(tenant=tenant, defaults={'credits': 3 if initial is None else initial})[0]
+
+
+class LogoGeneration(models.Model):
+    class Status(models.TextChoices):
+        QUEUED = 'queued', _('Na fila')
+        RUNNING = 'running', _('Gerando')
+        READY = 'ready', _('Concluída')
+        FAILED = 'failed', _('Falhou')
+
+    ACTIVE = (Status.QUEUED, Status.RUNNING)
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='logo_generations')
+    request_id = models.UUIDField(editable=False)
+    status = models.CharField(_('Estado'), max_length=8, choices=Status, default=Status.QUEUED)
+    brief = models.JSONField(default=dict, editable=False)
+    image = models.ImageField(storage=theme_storage, upload_to=theme_upload_path, blank=True)
+    model_name = models.CharField(_('Modelo da OpenAI'), max_length=100, blank=True)
+    provider_request_id = models.CharField(_('ID da requisição na OpenAI'), max_length=150, blank=True)
+    usage = models.JSONField(_('Consumo informado pela API'), default=dict, blank=True)
+    error_code = models.CharField(_('Código do erro'), max_length=40, blank=True)
+    created_at = models.DateTimeField(_('Solicitada em'), auto_now_add=True)
+    started_at = models.DateTimeField(_('Iniciada em'), null=True, blank=True)
+    finished_at = models.DateTimeField(_('Finalizada em'), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Geração de logomarca')
+        verbose_name_plural = _('Histórico de geração de logomarcas')
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['status', 'created_at']), models.Index(fields=['tenant', 'created_at'])]
+        constraints = [
+            models.UniqueConstraint(fields=['tenant', 'request_id'], name='logo_request_idempotency'),
+            models.UniqueConstraint(fields=['tenant'], condition=models.Q(status__in=['queued', 'running']),
+                                    name='logo_one_active_generation'),
+        ]

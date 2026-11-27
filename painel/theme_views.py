@@ -5,10 +5,11 @@ from django.http import FileResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
-from tenants.models import TenantTheme
+from tenants.models import LogoGeneration, TenantTheme
 from tenants.themes import gallery, PALETTE
 from tenants.decorators import tenant_required
 from .decorators import admin_tenant_required
+from .logo_views import logo_context, saved_logo_url
 from .theme_forms import AppearanceForm, ContentForm
 
 
@@ -36,6 +37,8 @@ def appearance(request):
 @require_http_methods(['GET', 'POST'])
 def content(request):
     theme = current_theme(request)
+    logo_name = theme.logo_image.name
+    logo_url = saved_logo_url(theme)
     form = ContentForm(request.POST if request.method == 'POST' else None, request.FILES or None, instance=theme)
     if request.method == 'POST' and form.is_valid():
         # Only content fields are updated; concurrent appearance edits are preserved.
@@ -43,7 +46,13 @@ def content(request):
             TenantTheme.objects.update_or_create(tenant=request.tenant, defaults=form.visual_values())
         messages.success(request, 'Conteúdo visual salvo.')
         return redirect('painel:estilo_conteudo')
-    return render(request, 'painel/estilo_conteudo.html', {'form': form})
+    logo_is_ai = bool(logo_name) and LogoGeneration.objects.filter(
+        tenant=request.tenant, image=logo_name, status=LogoGeneration.Status.READY,
+    ).exists()
+    return render(request, 'painel/estilo_conteudo.html', {
+        'form': form, 'saved_logo_url': logo_url, 'saved_logo_is_ai': logo_is_ai,
+        **logo_context(request.tenant, theme),
+    })
 
 
 @admin_tenant_required

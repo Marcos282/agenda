@@ -1,0 +1,30 @@
+{% extends 'painel/base.html' %}
+{% load i18n static %}
+{% block title %}{% translate 'Minhas logomarcas' %}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}?v=logo-1">{% endblock %}
+{% block painel_content %}
+<h1>{% translate 'Minhas logomarcas' %}</h1>
+<p><a href="{% url 'painel:estilo_conteudo' %}">{% translate 'Voltar para Conteúdo do Site' %}</a></p>
+<div class="cards">
+{% for logo in logos %}
+  <article class="card">
+    <img class="logo-art" loading="lazy" src="{% url 'painel:logo_image' logo.pk %}" alt="{% translate 'Logomarca gerada' %}">
+    <p>{{ logo.created_at|date:'SHORT_DATETIME_FORMAT' }}</p>
+    <form class="toolbar" method="post" action="{% url 'painel:logo_apply' logo.pk %}">
+      {% csrf_token %}
+      <button class="ui-button" type="submit">{% translate 'Aplicar logomarca' %}</button>
+      <a class="ui-button ui-button-secondary" href="{% url 'painel:logo_download' logo.pk %}">{% translate 'Baixar imagem' %}</a>
+    </form>
+  </article>
+{% empty %}
+  <p>{% translate 'Suas logomarcas geradas aparecerão aqui.' %}</p>
+{% endfor %}
+</div>
+{% if logos.has_other_pages %}
+<nav class="toolbar" aria-label="{% translate 'Páginas do histórico' %}">
+  {% if logos.has_previous %}<a href="?page={{ logos.previous_page_number }}">{% translate 'Anterior' %}</a>{% endif %}
+  <span>{{ logos.number }} / {{ logos.paginator.num_pages }}</span>
+  {% if logos.has_next %}<a href="?page={{ logos.next_page_number }}">{% translate 'Próxima' %}</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

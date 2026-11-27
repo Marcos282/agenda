@@ -1,5 +1,6 @@
 from django.urls import path, re_path
 from django.views.generic import RedirectView
+from . import logo_views
 from . import theme_views, views, agenda_views, agendamento_views, cliente_views, loja_qrcode_views, mensalidade_views
 
 from whatsapp.views import configuracao_whatsapp
@@ -19,6 +20,12 @@ urlpatterns = [
     path('', views.inicio, name='inicio'),
     re_path(r'^estilo/?$', theme_views.appearance, name='estilo'),
     path('estilo/conteudo/', theme_views.content, name='estilo_conteudo'),
+    path('estilo/logomarcas/', logo_views.history, name='logo_history'),
+    path('estilo/logomarcas/gerar/', logo_views.generate, name='logo_generate'),
+    path('estilo/logomarcas/<uuid:pk>/', logo_views.status, name='logo_status'),
+    path('estilo/logomarcas/<uuid:pk>/imagem/', logo_views.image, name='logo_image'),
+    path('estilo/logomarcas/<uuid:pk>/baixar/', logo_views.image, {'download': True}, name='logo_download'),
+    path('estilo/logomarcas/<uuid:pk>/aplicar/', logo_views.apply, name='logo_apply'),
     path('estilo/visualizar/', theme_views.preview, name='estilo_preview'),
     path('estilo/restaurar/', theme_views.restore, name='estilo_restaurar'),
     path('agendamentos/novo/', agendamento_views.novo, name='agendamento_novo'),

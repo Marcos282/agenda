@@ -51,3 +51,68 @@
 .theme-instructions a{font-weight:600;color:#205b40;text-decoration:underline;text-underline-offset:3px}
 .theme-instructions .theme-instructions-note{font-size:12px;color:#53695c;margin-bottom:0}
 @media(max-width:640px){.theme-instructions{padding:16px}.theme-instructions p{font-size:13px}}
+
+.logo-dialog {
+  box-sizing: border-box;
+  width: min(34rem, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  padding: clamp(16px, 4vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: inherit;
+}
+.logo-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.logo-dialog-header h2 { margin: 0; overflow-wrap: anywhere; }
+.logo-dialog-close {
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.logo-dialog-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.logo-dialog::backdrop { background: rgb(0 0 0 / .6); }
+.logo-dialog [hidden] { display: none !important; }
+.logo-dialog fieldset { border: 0; padding: 0; min-width: 0; }
+.logo-dialog label { display: block; }
+.logo-dialog input:not([type=color]), .logo-dialog select, .logo-dialog textarea { width: 100%; box-sizing: border-box; }
+.logo-dialog input[type=color] { width: 3.5rem; min-height: 2.75rem; }
+.logo-dialog [data-logo-message]:empty { display: none; }
+.logo-loading { display: flex; align-items: center; gap: .75rem; }
+.logo-loading span {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  border: 3px solid var(--line);
+  border-top-color: var(--brand-color);
+  border-radius: 50%;
+  animation: logo-spin .8s linear infinite;
+}
+@keyframes logo-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .logo-loading span { animation: none; } }
+.logo-art {
+  display: block;
+  width: min(100%, 20rem);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 20px 20px;
+}
+
+.saved-logo { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0 12px; }
+.saved-logo[hidden], .logo-upload summary[hidden] { display: none; }
+.saved-logo a { display: inline-flex; align-items: center; gap: 10px; }
+.saved-logo img {
+  display: block;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+}
+.saved-logo .saved-logo-success { margin: 0; color: #23734c; font-weight: 600; }
+.logo-upload summary { list-style: none; cursor: pointer; }
+.logo-upload summary::-webkit-details-marker { display: none; }

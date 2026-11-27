@@ -1,10 +1,36 @@
-{% extends 'painel/base.html' %}{% load static %}
+{% extends 'painel/base.html' %}{% load static i18n %}
 {% block title %}Conteúdo do Site · Personalização{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}"><script src="{% static 'painel/estilos.js' %}" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'painel/estilos.css' %}?v=logo-3"><script src="{% static 'painel/estilos.js' %}" defer></script>{% if logo_form %}<script src="{% static 'painel/logo-generation.js' %}?v=3" defer></script>{% endif %}{% endblock %}
 {% block painel_content %}
 <p class="eyebrow">Personalização → Conteúdo do Site</p><h1>Conteúdo do Site</h1><p>Personalize a apresentação do seu estabelecimento. Os botões mantêm suas ações originais.</p>
 <nav class="toolbar"><a class="ui-button ui-button-secondary" href="{% url 'painel:estilo' %}">Aparência do Site</a><a class="ui-button" href="{% url 'painel:estilo_conteudo' %}" aria-current="page">Conteúdo do Site</a></nav>
-{% if form.instance.logo_image %}<p><a href="{% url 'theme_image' 'logo_image' %}" target="_blank" rel="noopener">Ver Logomarca salva</a></p>{% endif %}
-<form method="post" enctype="multipart/form-data" class="edit-form theme-content-form" data-preview-url="{% url 'painel:estilo_preview' %}">{% csrf_token %}<input type="hidden" name="preview_kind" value="content">{{ form.as_p }}<p>Imagens JPG, PNG ou WebP, até 5 MB e 20 megapixels. Serão otimizadas para WebP. Para a logomarca, escolha ativar, desativar sem remover ou remover do site. As opções só serão aplicadas ao clicar em Salvar e aplicar. Remover desvincula a imagem; o arquivo original é preservado.</p><div class="toolbar"><button class="ui-button ui-button-secondary" type="button" data-preview>Visualizar</button><button class="ui-button" type="submit">Salvar e aplicar</button></div></form>
+{% include 'painel/logo_dialog.html' %}
+<form method="post" enctype="multipart/form-data" class="edit-form theme-content-form" data-preview-url="{% url 'painel:estilo_preview' %}">
+  {% csrf_token %}
+  <input type="hidden" name="preview_kind" value="content">
+  {{ form.non_field_errors }}
+  {% for field in form %}
+    {{ field.errors }}
+    {% if field.name == 'logo_image' %}
+      <div class="saved-logo" data-saved-logo{% if not saved_logo_url %} hidden{% endif %}>
+        <a data-saved-logo-link href="{{ saved_logo_url }}" target="_blank" rel="noopener">
+          <img data-saved-logo-thumbnail {% if saved_logo_url %}src="{{ saved_logo_url }}"{% endif %} alt="{% translate 'Ver logomarca atual' %}" width="80" height="80">
+          <span>{% translate 'Ver Logomarca salva' %}</span>
+        </a>
+        <p class="saved-logo-success" data-saved-logo-success role="status"{% if not saved_logo_is_ai %} hidden{% endif %}>
+          <span aria-hidden="true">✓</span> {% translate 'Logomarca criada por IA e aplicada com sucesso' %}
+        </p>
+      </div>
+      <details class="logo-upload" data-logo-upload{% if not saved_logo_url or field.errors %} open{% endif %}>
+        <summary class="ui-button ui-button-secondary" data-alter-logo{% if not saved_logo_url %} hidden{% endif %}>{% translate 'Alterar logomarca' %}</summary>
+        <p>{{ field.label_tag }} {{ field }} <span class="helptext" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span></p>
+      </details>
+    {% else %}
+      <p>{{ field.label_tag }} {{ field }}{% if field.help_text %} <span class="helptext" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}</p>
+    {% endif %}
+  {% endfor %}
+  <p>Imagens JPG, PNG ou WebP, até 5 MB e 20 megapixels. Serão otimizadas para WebP. Para a logomarca, escolha ativar, desativar sem remover ou remover do site. As opções só serão aplicadas ao clicar em Salvar e aplicar. Remover desvincula a imagem; o arquivo original é preservado.</p>
+  <div class="toolbar"><button class="ui-button ui-button-secondary" type="button" data-preview>Visualizar</button><button class="ui-button" type="submit">Salvar e aplicar</button></div>
+</form>
 {% include 'painel/estilo_preview.html' %}
 {% endblock %}

@@ -34,6 +34,10 @@ class ContentForm(forms.ModelForm):
 
     def visual_values(self):
         values = {field: self.cleaned_data[field] for field in self._meta.fields}
+        for field in self.IMAGE_FIELDS:
+            if field not in self.files and self.cleaned_data.get(field + '_action') != 'remove':
+                # Keep the current stored reference if another request applied a logo.
+                values.pop(field, None)
         for field in (name + '_enabled' for name in self.IMAGE_FIELDS):
             values[field] = getattr(self.instance, field)
         return values

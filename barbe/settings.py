@@ -278,3 +278,5 @@ CACHES = {
         'LOCATION': os.environ.get('SECURITY_CACHE_DIR', str(Path(tempfile.gettempdir()) / 'tacombinado-security-cache')),
     },
 }
+
+OPENAI_IMAGE_MODEL = os.environ.get('OPENAI_IMAGE_MODEL', 'gpt-image-2.5-flare').strip()

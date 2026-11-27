@@ -1,0 +1,41 @@
+{% load i18n %}
+{% if logo_form or logo_has_history %}
+<div class="toolbar">
+  {% if logo_form %}<button type="button" class="ui-button ui-button-secondary" data-open-logo>✨ {% translate 'Criar logomarca com IA' %}</button>{% endif %}
+  <a class="ui-button ui-button-secondary" href="{% url 'painel:logo_history' %}">{% translate 'Minhas logomarcas' %}</a>
+</div>
+{% endif %}
+{% if logo_form %}
+<dialog class="logo-dialog" aria-labelledby="logo-title"
+  {% if logo_active_job %}data-active-url="{% url 'painel:logo_status' logo_active_job.pk %}"{% endif %}
+  data-network-error="{% translate 'Não foi possível concluir a comunicação. Tente novamente.' %}">
+  <div class="logo-dialog-header">
+    <h2 id="logo-title">{% translate 'Criar logomarca com IA' %}</h2>
+    <button type="button" class="ui-button ui-button-secondary logo-dialog-close" data-close-logo aria-label="{% translate 'Fechar modal' %}">
+      <span aria-hidden="true">×</span>
+    </button>
+  </div>
+  <p data-logo-credits aria-live="polite">{{ logo_credits_message }}</p>
+  <form action="{% url 'painel:logo_generate' %}" method="post" class="edit-form">
+    {% csrf_token %}
+    <fieldset data-logo-fields>{{ logo_form.as_p }}</fieldset>
+    <div data-logo-loading class="logo-loading" role="status" hidden>
+      <span aria-hidden="true"></span>
+      {% translate 'Estamos criando sua logomarca com inteligência artificial.' %}
+    </div>
+    <p data-logo-message role="status"></p>
+    <div data-logo-result hidden>
+      <img class="logo-art" alt="{% translate 'Prévia da logomarca gerada' %}">
+    </div>
+    <div class="toolbar">
+      <button type="submit" class="ui-button" data-logo-generate{% if not logo_credits %} disabled{% endif %}>{% translate 'Gerar logomarca' %}</button>
+      <div class="logo-dialog-actions">
+        <button type="button" class="ui-button" data-logo-apply hidden>{% translate 'Aplicar logomarca' %}</button>
+        <button type="button" class="ui-button ui-button-secondary" data-close-logo>{% translate 'Fechar' %}</button>
+      </div>
+      <button type="submit" class="ui-button ui-button-secondary" data-logo-regenerate hidden>{% translate 'Gerar novamente' %}</button>
+      <a class="ui-button ui-button-secondary" data-logo-download hidden>{% translate 'Baixar imagem' %}</a>
+    </div>
+  </form>
+</dialog>
+{% endif %}
