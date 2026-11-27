@@ -8,9 +8,6 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_safe
 from django.urls import reverse
-from django.utils.translation import gettext as _
-
-from .institutional_i18n import DEFAULT, LANGUAGES, PAGES, is_institutional_host, language_context, localized_path
 from tenants.pricing import monthly_price
 
 from .seo_segments import SEGMENTS
@@ -36,11 +33,10 @@ def institutional_url(name):
     return platform_url().rstrip('/') + reverse(name)
 
 
-def platform_metadata(locale=None):
-    current = (locale or {}).get('current_language', {})
-    url = current.get('url') or platform_url()
-    title = _('Tá Combinado | Sistema de Agendamento Online para Profissionais')
-    description = _(
+def platform_metadata():
+    url = platform_url()
+    title = 'Tá Combinado | Sistema de Agendamento Online para Profissionais'
+    description = (
         'Organize seus agendamentos com o Tá Combinado. Ideal para salões, barbearias, '
         'podólogos, dentistas e profissionais autônomos. Experimente 30 dias grátis.'
     )
@@ -49,13 +45,13 @@ def platform_metadata(locale=None):
         '@graph': [
             {'@type': 'Organization', '@id': url + '#organization', 'name': 'Tá Combinado', 'url': url},
             {'@type': 'WebSite', '@id': url + '#website', 'name': 'Tá Combinado',
-             'url': url, 'inLanguage': current.get('tag', 'pt-BR'), 'publisher': {'@id': url + '#organization'}},
+             'url': url, 'inLanguage': 'pt-BR', 'publisher': {'@id': url + '#organization'}},
             {'@type': 'SoftwareApplication', 'name': 'Tá Combinado', 'url': url,
              'applicationCategory': 'BusinessApplication', 'operatingSystem': 'Web',
              'description': description,
              'offers': [
-                 {'@type': 'Offer', 'name': _('Plano Profissional'), 'price': f'{monthly_price():.2f}',
-                  'priceCurrency': 'BRL', 'description': _('Acesso por 30 dias com profissionais e agendas ilimitados.')},
+                 {'@type': 'Offer', 'name': 'Plano Profissional', 'price': f'{monthly_price():.2f}',
+                  'priceCurrency': 'BRL', 'description': 'Acesso por 30 dias com profissionais e agendas ilimitados.'},
              ]},
         ],
     }
@@ -68,21 +64,18 @@ def segment_page(request, segment):
         raise Http404
     content = SEGMENTS[segment]
     title = f"{content['title']} | Tá Combinado"
-    locale = language_context(request)
-    current = locale.get('current_language', {})
-    url = current.get('url') or institutional_url(f'agenda-online-{segment}')
+    url = institutional_url(f'agenda-online-{segment}')
     breadcrumbs = {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         'itemListElement': [
-            {'@type': 'ListItem', 'position': 1, 'name': _('Início'), 'item': platform_url().rstrip('/') + localized_path('home', current.get('code', DEFAULT))},
-            {'@type': 'ListItem', 'position': 2, 'name': str(content['label']), 'item': url},
+            {'@type': 'ListItem', 'position': 1, 'name': 'Início', 'item': platform_url()},
+            {'@type': 'ListItem', 'position': 2, 'name': content['label'], 'item': url},
         ],
     }
     return render(request, 'usuarios/seo_segment.html', {
         'segment': content,
-        **locale,
-        **page_metadata(title, str(content['description']), url, breadcrumbs),
+        **page_metadata(title, content['description'], url, breadcrumbs),
     })
 
 
@@ -123,11 +116,7 @@ def sitemap(request):
     location = ''
     if not settings.DEBUG and request.tenant is None:
         pages = ['home', 'manual', 'politica_privacidade', *(f'agenda-online-{segment}' for segment in SEGMENTS)]
-        urls = [institutional_url(name) for name in pages]
-        if is_institutional_host(request):
-            urls.extend(platform_url().rstrip('/') + localized_path(name, code)
-                        for code, *_ in LANGUAGES if code != DEFAULT for name in PAGES)
-        location = ''.join(f'<url><loc>{escape(url)}</loc></url>' for url in urls)
+        location = ''.join(f'<url><loc>{escape(institutional_url(name))}</loc></url>' for name in pages)
     elif not settings.DEBUG and request.tenant is not None:
         from profissionais.models import Profissional
         root = f'https://{request.tenant.subdomain}.{settings.STORE_BASE_DOMAIN}'

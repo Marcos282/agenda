@@ -1,4 +1,3 @@
-from django.utils.translation import gettext, gettext_lazy
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import BaseUserCreationForm
@@ -84,14 +83,10 @@ class LoginForm(forms.Form):
 
 
 class EstabelecimentoForm(forms.Form):
-    estabelecimento = forms.CharField(label=gettext_lazy('Endereço do estabelecimento'), max_length=63)
+    estabelecimento = forms.CharField(label='Endereço do estabelecimento', max_length=63)
 
     def clean_estabelecimento(self):
         from tenants.models import subdomain_validator
         value = self.cleaned_data['estabelecimento'].strip().lower()
-        try:
-            subdomain_validator(value)
-        except forms.ValidationError as error:
-            error.message = gettext('Use um subdomínio de até 63 caracteres: letras minúsculas, números e hífens internos.')
-            raise
+        subdomain_validator(value)
         return value
